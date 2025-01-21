@@ -128,10 +128,10 @@ struct LocalVolumetricFogDatas
     LocalFogCustomData localFogCustomData;
 };
 
-struct LocalVolumetricFogRenderDatas
-{
-    VolumetricMaterialRenderingData volumetricRenderData;
-};
+// struct LocalVolumetricFogRenderDatas
+// {
+//     VolumetricMaterialRenderingData volumetricRenderData;
+// };
 
 #define MAX_VOLUMETRIC_FOG_COUNT 32
 

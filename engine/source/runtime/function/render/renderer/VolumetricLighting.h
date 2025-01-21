@@ -151,7 +151,6 @@ namespace MoYu
 		//std::shared_ptr<RHI::D3D12Buffer> pFogIndirectSortCommandBuffer;
 
 		std::shared_ptr<RHI::D3D12Buffer> pVolumetricGlobalIndirectArgsBuffer;
-		std::shared_ptr<RHI::D3D12Buffer> pVolumetricGlobalIndirectionBuffer;
 		std::shared_ptr<RHI::D3D12Buffer> pVolumetricMaterialDataBuffer;
 
 		RHI::RgBufferDesc sortDispatchArgsBufferDesc;

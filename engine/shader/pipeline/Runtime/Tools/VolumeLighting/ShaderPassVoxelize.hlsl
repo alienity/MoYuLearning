@@ -10,14 +10,14 @@
 
 cbuffer RootConstants : register(b0, space0)
 {
-    uint _VolumetricFogIndex;
+    uint _VolumeIndex;
 };
 
-ConstantBuffer<FrameUniforms> _PerFrameBuffer : register(b1, space0);
+ConstantBuffer<FrameUniforms> _FrameUniform : register(b1, space0);
 ConstantBuffer<ShaderVariablesVolumetric> _ShaderVariablesVolumetric : register(b2, space0);
-StructuredBuffer<LocalVolumetricFogDatas> _VolumetricFogData : register(t0, space0);
-StructuredBuffer<LocalVolumetricFogRenderDatas> _VolumetricFogRenderData : register(t1, space0);
-// ByteAddressBuffer _VolumetricGlobalIndirectionBuffer;
+
+StructuredBuffer<VolumetricMaterialRenderingData> _VolumetricMaterialData : register(t0, space0);
+StructuredBuffer<LocalVolumetricFogDatas> _VolumetricFogData : register(t1, space0);
 
 // Jittered ray with screen-space derivatives.
 struct JitteredRay
@@ -39,8 +39,7 @@ struct VertexToFragment
 
 float3 GetCubeVertexPosition(uint vertexIndex)
 {
-    // int index = _VolumetricGlobalIndirectionBuffer.Load(_VolumetricFogGlobalIndex << 2);
-    return _VolumetricFogRenderData[_VolumetricFogIndex].volumetricRenderData.obbVertexPositionWS[vertexIndex].xyz;
+    return _VolumetricMaterialData[_VolumeIndex].obbVertexPositionWS[vertexIndex].xyz;
 }
 
 // VertexCubeSlicing needs GetCubeVertexPosition to be declared before
@@ -55,22 +54,20 @@ VertexToFragment Vert(uint instanceId : SV_InstanceID, uint fvertexId : SV_Verte
     
     VertexToFragment output;
 
-    CameraUniform _CameraUniform = _PerFrameBuffer.cameraUniform;
+    CameraUniform _CameraUniform = _FrameUniform.cameraUniform;
     float4 _ZBufferParams = _CameraUniform._ZBufferParams;
     
-    // int materialDataIndex = _VolumetricGlobalIndirectionBuffer.Load(_VolumetricFogGlobalIndex << 2);
-
-    LocalVolumetricTransform _LocalTransformData = _VolumetricFogData[_VolumetricFogIndex].localTransformData;
+    LocalVolumetricTransform _LocalTransformData = _VolumetricFogData[_VolumeIndex].localTransformData;
     
-    VolumetricMaterialRenderingData _VolumetricMaterialData =_VolumetricFogRenderData[_VolumetricFogIndex].volumetricRenderData;
+    VolumetricMaterialRenderingData _CurVolumetricMaterialData =_VolumetricMaterialData[_VolumeIndex];
 
-    VBufferUniform _VBufferUniform = _PerFrameBuffer.vBufferUniform;
+    VBufferUniform _VBufferUniform = _FrameUniform.vBufferUniform;
     float _VBufferRcpSliceCount = _VBufferUniform._VBufferRcpSliceCount;
     float4 _VBufferDistanceDecodingParams = _VBufferUniform._VBufferDistanceDecodingParams;
     
-    uint sliceCount = _VolumetricMaterialData.sliceCount;
+    uint sliceCount = _CurVolumetricMaterialData.sliceCount;
     
-    uint sliceStartIndex = _VolumetricMaterialData.startSliceIndex;
+    uint sliceStartIndex = _CurVolumetricMaterialData.startSliceIndex;
 
     uint sliceIndex = sliceStartIndex + (instanceId % sliceCount);
     output.depthSlice = sliceIndex;
@@ -88,12 +85,12 @@ VertexToFragment Vert(uint instanceId : SV_InstanceID, uint fvertexId : SV_Verte
 #else
 
     output.positionCS = GetQuadVertexPosition(vertexId);
-    output.positionCS.xy = output.positionCS.xy * _VolumetricMaterialData.viewSpaceBounds.zw + _VolumetricMaterialData.viewSpaceBounds.xy;
+    output.positionCS.xy = output.positionCS.xy * _CurVolumetricMaterialData.viewSpaceBounds.zw + _CurVolumetricMaterialData.viewSpaceBounds.xy;
     output.positionCS.z = EyeDepthToLinear(sliceDepth, _ZBufferParams);
     output.positionCS.w = 1;
 
     float3 positionWS = ComputeWorldSpacePosition(output.positionCS, UNITY_MATRIX_I_VP(_CameraUniform));
-    output.viewDirectionWS = GetWorldSpaceViewDir(_PerFrameBuffer, positionWS);
+    output.viewDirectionWS = GetWorldSpaceViewDir(_FrameUniform, positionWS);
 
     // Calculate object space position
     // output.positionOS = mul(UNITY_MATRIX_I_M, float4(positionWS, 1)).xyz;
@@ -108,8 +105,7 @@ FragInputs BuildFragInputs(VertexToFragment v2f, float3 voxelPositionOS, float3 
 {
     FragInputs output;
 
-    // int index = _VolumetricGlobalIndirectionBuffer.Load(_VolumetricFogGlobalIndex << 2);
-    float4x4 modelMatrix = _VolumetricFogData[_VolumetricFogIndex].localTransformData.objectToWorldMatrix;
+    float4x4 modelMatrix = _VolumetricFogData[_VolumeIndex].localTransformData.objectToWorldMatrix;
     
     float3 positionWS = mul(modelMatrix, float4(voxelPositionOS, 1)).xyz;
     output.positionSS = v2f.positionCS;
@@ -154,8 +150,7 @@ void GetVolumeData(FragInputs fragInputs, float3 V, out float3 scatteringColor, 
 
 void Frag(VertexToFragment v2f, out float4 outColor : SV_Target0)
 {
-    // int index = _VolumetricGlobalIndirectionBuffer.Load(_VolumetricFogGlobalIndex << 2);
-    LocalVolumetricFogDatas _LocalVolumetricFogData = _VolumetricFogData[_VolumetricFogIndex];
+    LocalVolumetricFogDatas _LocalVolumetricFogData = _VolumetricFogData[_VolumeIndex];
     VolumetricMaterialDataCBuffer _VolumeMaterialDataCBuffer = _LocalVolumetricFogData.volumeMaterialDataCBuffer;
 
     float4 _VolumetricMaterialObbRight = _VolumeMaterialDataCBuffer._VolumetricMaterialObbRight;
@@ -176,12 +171,12 @@ void Frag(VertexToFragment v2f, out float4 outColor : SV_Target0)
     int _FogVolumeBlendMode = localFogCustomData._FogVolumeBlendMode;
 
     
-    float3 _WorldSpaceCameraPos = _PerFrameBuffer.cameraUniform._WorldSpaceCameraPos;
+    float3 _WorldSpaceCameraPos = _FrameUniform.cameraUniform._WorldSpaceCameraPos;
 
     float3 albedo;
     float extinction;
 
-    VBufferUniform _VBufferUniform = _PerFrameBuffer.vBufferUniform;
+    VBufferUniform _VBufferUniform = _FrameUniform.vBufferUniform;
     
     int _VBufferSliceCount = _VBufferUniform._VBufferSliceCount;
     float _VBufferRcpSliceCount = _VBufferUniform._VBufferRcpSliceCount;
@@ -191,7 +186,7 @@ void Frag(VertexToFragment v2f, out float4 outColor : SV_Target0)
 
     // Compute voxel center position and test against volume OBB
     float3 raycenterDirWS = normalize(-v2f.viewDirectionWS); // Normalize
-    float3 rayoriginWS    = GetCurrentViewPosition(_PerFrameBuffer);
+    float3 rayoriginWS    = GetCurrentViewPosition(_FrameUniform);
     float3 voxelCenterWS = rayoriginWS + sliceDistance * raycenterDirWS;
 
     float3x3 obbFrame = float3x3(_VolumetricMaterialObbRight.xyz, _VolumetricMaterialObbUp.xyz, cross(_VolumetricMaterialObbRight.xyz, _VolumetricMaterialObbUp.xyz));

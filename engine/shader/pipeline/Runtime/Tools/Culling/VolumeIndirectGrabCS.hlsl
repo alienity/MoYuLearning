@@ -11,8 +11,7 @@ ByteAddressBuffer g_CounterBuffer : register(t1, space0);
 ByteAddressBuffer g_SortIndexDisBuffer : register(t2, space0);
 
 RWBuffer<uint> _VolumetricGlobalIndirectArgsBuffer : register(u0, space0);
-RWByteAddressBuffer _VolumetricGlobalIndirectionBuffer : register(u1, space0);
-RWStructuredBuffer<VolumetricMaterialRenderingData> _VolumetricMaterialData : register(u2, space0);
+RWStructuredBuffer<VolumetricMaterialRenderingData> _VolumetricMaterialData : register(u1, space0);
 
 int DistanceToSlice(float distance, float _VBufferRcpSliceCount, float4 _VBufferDistanceEncodingParams)
 {
@@ -222,14 +221,12 @@ void ComputeVolumetricMaterialRenderingParameters(uint3 dispatchThreadID : SV_Di
     int stopSliceIndex = DistanceToSlice(maxVertexDepth, _VBufferRcpSliceCount, _VBufferDistanceEncodingParams);
     uint sliceCount = clamp(stopSliceIndex - startSliceIndex, 0, int(_MaxSliceCount) - startSliceIndex);
 
-    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 0] = 6; // IndexCountPerInstance
-    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 1] = sliceCount; // InstanceCount
-    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 2] = 0; // StartIndexLocation
-    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 3] = 0; // BaseVertexLocation
-    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 4] = 0; // StartInstanceLocation
-
-    // Provide smaller buffer index in the global indirection buffer to sample those buffers in the vertex during the voxelization.
-    _VolumetricGlobalIndirectionBuffer.Store(globalBufferWriteIndex << 2, volumeIndex);
+    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 0] = volumeIndex; // ExecuteIndirect Index
+    
+    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 1] = 6; // VertexCountPerInstance
+    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 2] = sliceCount; // InstanceCount
+    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 3] = 0; // StartVertexLocation
+    _VolumetricGlobalIndirectArgsBuffer[globalBufferWriteIndex * 5 + 5] = 0; // StartInstanceLocation
 
     _VolumetricMaterialData[materialDataIndex].sliceCount = sliceCount;
     _VolumetricMaterialData[materialDataIndex].startSliceIndex = startSliceIndex;

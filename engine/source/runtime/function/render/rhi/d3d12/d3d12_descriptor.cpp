@@ -978,7 +978,7 @@ namespace RHI
             uint32_t m_BytesPerPixel = D3D12RHIUtils::BytesPerPixel(BufferFormat);
 
             UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            UAVDesc.Format = BufferFormat;
+            UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
             UAVDesc.Buffer.FirstElement = 0;
             UAVDesc.Buffer.NumElements = (UINT)m_BufferSize / m_BytesPerPixel;
             UAVDesc.Buffer.StructureByteStride = m_BytesPerPixel;
