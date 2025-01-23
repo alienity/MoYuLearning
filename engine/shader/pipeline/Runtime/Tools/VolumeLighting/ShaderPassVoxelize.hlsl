@@ -138,7 +138,7 @@ void GetVolumeData(FragInputs fragInputs, float3 V, out float3 scatteringColor, 
     
     
     
-    scatteringColor = float3(1, 0, 0);
+    scatteringColor = float3(1, 1, 1);
     density = 1.0f;
     
     // SurfaceDescriptionInputs surfaceDescriptionInputs = FragInputsToSurfaceDescriptionInputs(fragInputs, V);
@@ -170,7 +170,6 @@ void Frag(VertexToFragment v2f, out float4 outColor : SV_Target0)
     float3 _FogVolumeSingleScatteringAlbedo = localFogCustomData._FogVolumeSingleScatteringAlbedo.rgb;
     int _FogVolumeBlendMode = localFogCustomData._FogVolumeBlendMode;
 
-    
     float3 _WorldSpaceCameraPos = _FrameUniform.cameraUniform._WorldSpaceCameraPos;
 
     float3 albedo;
@@ -191,7 +190,7 @@ void Frag(VertexToFragment v2f, out float4 outColor : SV_Target0)
 
     float3x3 obbFrame = float3x3(_VolumetricMaterialObbRight.xyz, _VolumetricMaterialObbUp.xyz, cross(_VolumetricMaterialObbRight.xyz, _VolumetricMaterialObbUp.xyz));
 
-    float3 voxelCenterBS = mul(voxelCenterWS - _VolumetricMaterialObbCenter.xyz + _WorldSpaceCameraPos.xyz, transpose(obbFrame));
+    float3 voxelCenterBS = mul(transpose(obbFrame), voxelCenterWS - _VolumetricMaterialObbCenter.xyz/* + _WorldSpaceCameraPos.xyz*/);
     float3 voxelCenterCS = (voxelCenterBS * rcp(_VolumetricMaterialObbExtents.xyz));
 
     // Still need to clip pixels outside of the box because of the froxel buffer shape

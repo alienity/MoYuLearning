@@ -219,11 +219,10 @@ namespace MoYu
 				localVolumetricFogData.textureTiling = internalFog.ref_fog.m_Tilling;
 				localVolumetricFogData.invertFade = internalFog.ref_fog.m_InvertBlend ? 1 : 0;
 				localVolumetricFogData.textureScroll = internalFog.ref_fog.m_ScrollSpeed;
-				localVolumetricFogData.rcpDistFadeLen =
-					1.0f / glm::max(internalFog.ref_fog.m_DistanceFadeEnd - internalFog.ref_fog.m_DistanceFadeStart, 0.00001526f);
-				localVolumetricFogData.rcpPosFaceFade = glm::float3(0.1f, 0.1f, 0.1f);
+				localVolumetricFogData.rcpDistFadeLen = 1.0f / glm::max(internalFog.ref_fog.m_DistanceFadeEnd - internalFog.ref_fog.m_DistanceFadeStart, 0.00001526f);
+				localVolumetricFogData.rcpPosFaceFade = glm::float3(10.0f, 10.0f, 10.0f);
 				localVolumetricFogData.endTimesRcpDistFadeLen = internalFog.ref_fog.m_DistanceFadeEnd * localVolumetricFogData.rcpDistFadeLen;
-				localVolumetricFogData.rcpNegFaceFade = glm::float3(0.1f, 0.1f, 0.1f);
+				localVolumetricFogData.rcpNegFaceFade = glm::float3(10.0f, 10.0f, 10.0f);
 				localVolumetricFogData.blendingMode = 1;
 
 				HLSL::LocalVolumetricFogTextures& localFogTexturesData = localVolemFogData.localFogTextures;
@@ -234,13 +233,11 @@ namespace MoYu
 				volumeMaterialDataCBuffer._VolumetricMaterialObbUp = glm::float4(bounds.up, 0);
 				volumeMaterialDataCBuffer._VolumetricMaterialObbExtents = glm::float4(bounds.extentX, bounds.extentY, bounds.extentZ, 0);
 				volumeMaterialDataCBuffer._VolumetricMaterialObbCenter = glm::float4(bounds.center, 0);
-				volumeMaterialDataCBuffer._VolumetricMaterialRcpPosFaceFade = glm::float4(0.1f, 0.1f, 0.1f, 0);
-				volumeMaterialDataCBuffer._VolumetricMaterialRcpNegFaceFade = glm::float4(0.1f, 0.1f, 0.1f, 0);
+				volumeMaterialDataCBuffer._VolumetricMaterialRcpPosFaceFade = glm::float4(10.0f, 10.0f, 10.0f, 0);
+				volumeMaterialDataCBuffer._VolumetricMaterialRcpNegFaceFade = glm::float4(10.0f, 10.0f, 10.0f, 0);
 				volumeMaterialDataCBuffer._VolumetricMaterialInvertFade = internalFog.ref_fog.m_InvertBlend ? 1 : 0;
-				volumeMaterialDataCBuffer._VolumetricMaterialRcpDistFadeLen =
-					1.0f / glm::max(internalFog.ref_fog.m_DistanceFadeEnd - internalFog.ref_fog.m_DistanceFadeStart, 0.00001526f);
-				volumeMaterialDataCBuffer._VolumetricMaterialEndTimesRcpDistFadeLen =
-					internalFog.ref_fog.m_DistanceFadeEnd * localVolumetricFogData.rcpDistFadeLen;
+				volumeMaterialDataCBuffer._VolumetricMaterialRcpDistFadeLen = 1.0f / glm::max(internalFog.ref_fog.m_DistanceFadeEnd - internalFog.ref_fog.m_DistanceFadeStart, 0.00001526f);
+				volumeMaterialDataCBuffer._VolumetricMaterialEndTimesRcpDistFadeLen = internalFog.ref_fog.m_DistanceFadeEnd * volumeMaterialDataCBuffer._VolumetricMaterialRcpDistFadeLen;
 				volumeMaterialDataCBuffer._VolumetricMaterialFalloffMode = internalFog.ref_fog.m_FalloffMode;
 
 				HLSL::LocalFogCustomData& localFogCustomData = localVolemFogData.localFogCustomData;
@@ -1104,8 +1101,8 @@ namespace MoYu
 				graphicContext->TransitionBarrier(RegGetBuf(volumetricGlobalIndirectArgsBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 				graphicContext->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 				graphicContext->TransitionBarrier(RegGetBuf(mShaderVariablesVolumetricHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-				graphicContext->TransitionBarrier(RegGetBuf(volumetricMaterialDataBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-				graphicContext->TransitionBarrier(RegGetBuf(volumesDataBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				graphicContext->TransitionBarrier(RegGetBuf(volumetricMaterialDataBufferHandle), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+				graphicContext->TransitionBarrier(RegGetBuf(volumesDataBufferHandle), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 				graphicContext->TransitionBarrier(RegGetTex(mVBufferDensityHandle), D3D12_RESOURCE_STATE_RENDER_TARGET);
 				graphicContext->FlushResourceBarriers();
 
@@ -1143,6 +1140,10 @@ namespace MoYu
 		passOutput.vBufferDensityHandle = mVBufferDensityHandle;
 		passOutput.shaderVariablesVolumetricHandle = mShaderVariablesVolumetricHandle;
 	}
+
+
+
+
 
 
 	void VolumetriLighting::bitonicSort(RHI::D3D12ComputeContext* context,
