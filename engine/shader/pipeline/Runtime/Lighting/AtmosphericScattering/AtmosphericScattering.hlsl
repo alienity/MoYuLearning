@@ -5,7 +5,9 @@
 #include "../../ShaderLibrary/Filtering.hlsl"
 #include "../../ShaderLibrary/GeometricTools.hlsl"
 
-#include "../../Lighting/AtmosphericScattering/AtmosphericScattering.cs.hlsl"
+#define FOGCOLORMODE_CONSTANT_COLOR (0)
+#define FOGCOLORMODE_SKY_COLOR (1)
+
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/VolumetricLighting/VBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Sky/PhysicallyBasedSky/PhysicallyBasedSkyCommon.hlsl"
@@ -251,15 +253,6 @@ void EvaluateAtmosphericScattering(PositionInputs posInput, float3 V, out float3
 {
     color = opacity = 0;
 
-#ifdef DEBUG_DISPLAY
-    // Don't sample atmospheric scattering when lighting debug more are enabled so fog is not visible
-    if (_DebugLightingMode == DEBUGLIGHTINGMODE_MATCAP_VIEW || (_DebugLightingMode >= DEBUGLIGHTINGMODE_DIFFUSE_LIGHTING && _DebugLightingMode <= DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING))
-        return;
-
-    if (_DebugShadowMapMode == SHADOWMAPDEBUGMODE_SINGLE_SHADOW || _DebugLightingMode == DEBUGLIGHTINGMODE_LUX_METER || _DebugLightingMode == DEBUGLIGHTINGMODE_LUMINANCE_METER)
-        return;
-#endif
-
     // TODO: do not recompute this, but rather pass it directly.
     // Note1: remember the hacked value of 'posInput.positionWS'.
     // Note2: we do not adjust it anymore to account for the distance to the planet. This can lead to wrong results (since the planet does not write depth).
@@ -321,57 +314,6 @@ void EvaluateAtmosphericScattering(PositionInputs posInput, float3 V, out float3
         opacity = volFog.a;
     }
 
-#if 0 // _PBRFogEnabled is disabled from C# anyway
-    // Sky pass already applies atmospheric scattering to the far plane.
-    // This pass only handles geometry.
-    if (_PBRFogEnabled && (posInput.deviceDepth != UNITY_RAW_FAR_CLIP_VALUE))
-    {
-        float3 skyColor = 0, skyOpacity = 0;
-
-        // Convert it to distance along the ray. Doesn't work with tilt shift, etc.
-        float tFrag = posInput.linearDepth * rcp(dot(-V, GetViewForwardDir1(UNITY_MATRIX_V)));
-
-        EvaluatePbrAtmosphere(_WorldSpaceCameraPos.xyz, V, tFrag, false, skyColor, skyOpacity);
-        skyColor *= _IntensityMultiplier * GetCurrentExposureMultiplier();
-
-        // Rendering of fog and atmospheric scattering cannot really be decoupled.
-#if 0
-        // The best workaround is to deep composite them.
-        float3 fogOD = OpticalDepthFromOpacity(fogOpacity);
-
-        float3 fogRatio;
-        fogRatio.r = (fogOpacity.r >= FLT_EPS) ? (fogOD.r * rcp(fogOpacity.r)) : 1;
-        fogRatio.g = (fogOpacity.g >= FLT_EPS) ? (fogOD.g * rcp(fogOpacity.g)) : 1;
-        fogRatio.b = (fogOpacity.b >= FLT_EPS) ? (fogOD.b * rcp(fogOpacity.b)) : 1;
-        float3 skyRatio;
-        skyRatio.r = (skyOpacity.r >= FLT_EPS) ? (skyOD.r * rcp(skyOpacity.r)) : 1;
-        skyRatio.g = (skyOpacity.g >= FLT_EPS) ? (skyOD.g * rcp(skyOpacity.g)) : 1;
-        skyRatio.b = (skyOpacity.b >= FLT_EPS) ? (skyOD.b * rcp(skyOpacity.b)) : 1;
-
-        float3 logFogColor = fogRatio * fogColor;
-        float3 logSkyColor = skyRatio * skyColor;
-
-        float3 logCompositeColor = logFogColor + logSkyColor;
-        float3 compositeOD = fogOD + skyOD;
-
-        opacity = OpacityFromOpticalDepth(compositeOD);
-
-        float3 rcpCompositeRatio;
-        rcpCompositeRatio.r = (opacity.r >= FLT_EPS) ? (opacity.r * rcp(compositeOD.r)) : 1;
-        rcpCompositeRatio.g = (opacity.g >= FLT_EPS) ? (opacity.g * rcp(compositeOD.g)) : 1;
-        rcpCompositeRatio.b = (opacity.b >= FLT_EPS) ? (opacity.b * rcp(compositeOD.b)) : 1;
-
-        color = rcpCompositeRatio * logCompositeColor;
-#else
-        // Deep compositing assumes that the fog spans the same range as the atmosphere.
-        // Our fog is short range, so deep compositing gives surprising results.
-        // Using the "shallow" over operator is more appropriate in our context.
-        // We could do something more clever with deep compositing, but this would
-        // probably be a waste in terms of perf.
-        CompositeOver(color, opacity, skyColor, skyOpacity, color, opacity);
-#endif
-    }
-#endif
 }
 
 
