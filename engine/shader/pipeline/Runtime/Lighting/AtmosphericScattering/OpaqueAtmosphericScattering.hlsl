@@ -12,10 +12,10 @@
 #include "../../ShaderLibrary/ShaderVariables.hlsl"
 #include "../../Sky/SkyUtils.hlsl"
 
-Texture2D<float4>(_ColorTextureMS);
-Texture2D<float>(_DepthTextureMS);
-Texture2D _ColorTexture;
-float _MultipleScatteringIntensity;
+ConstantBuffer<FrameUniforms> _FrameUniforms : register(b0, space0);
+Texture2D<float4> _ColorTextureMS : register(t0, space0);
+Texture2D<float> _DepthTextureMS : register(t1, space0);
+Texture2D _ColorTexture : register(t2, space0);
 
 struct Attributes
 {
@@ -51,11 +51,6 @@ FragOutput ComputeFragmentOutput(float4 color, float3 fogOpacity, float3 debugCo
     #if defined(OUTPUT_TRANSMITTANCE_BUFFER)
     float finalOpacity = (fogOpacity.x + fogOpacity.y + fogOpacity.z) / 3.0f;
     output.fogTransmittance = 1 - finalOpacity;
-    #endif
-
-    #ifdef DEBUG_DISPLAY
-    if (_DebugFullScreenMode == FULLSCREENDEBUGMODE_VOLUMETRIC_FOG)
-        output.color = float4(debugColor, 0.0f);
     #endif
 
     return output;

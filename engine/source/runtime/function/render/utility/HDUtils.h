@@ -77,7 +77,6 @@ namespace MoYu
 
             //// Transpose for HLSL.
             //return Matrix4x4.Transpose(worldToViewMatrix.transpose * viewSpaceRasterTransform);
-
             return glm::transpose(worldToViewMatrix) * viewSpaceRasterTransform;
         }
 
