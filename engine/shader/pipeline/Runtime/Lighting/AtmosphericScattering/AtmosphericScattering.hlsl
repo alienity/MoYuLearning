@@ -8,9 +8,9 @@
 #define FOGCOLORMODE_CONSTANT_COLOR (0)
 #define FOGCOLORMODE_SKY_COLOR (1)
 
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/ShaderVariables.hlsl"
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/VolumetricLighting/VBuffer.hlsl"
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Sky/PhysicallyBasedSky/PhysicallyBasedSkyCommon.hlsl"
+#include "../../ShaderLibrary/ShaderVariables.hlsl"
+#include "../../Lighting/VolumetricLighting/VBuffer.hlsl"
+// #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Sky/PhysicallyBasedSky/PhysicallyBasedSkyCommon.hlsl"
 
 TEXTURE3D(_VBufferLighting);
 

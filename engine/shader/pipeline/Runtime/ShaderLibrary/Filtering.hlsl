@@ -91,7 +91,7 @@ void BiquadraticFilter(float2 fracCoord, out float2 weights[2], out float2 offse
 }
 
 // texSize = (width, height, 1/width, 1/height)
-float4 SampleTexture2DBiquadratic(TEXTURE2D_PARAM(tex, smp), float2 coord, float4 texSize)
+float4 SampleTexture2DBiquadratic(Texture2D tex, SamplerState smp, float2 coord, float4 texSize)
 {
     float2 xy = coord * texSize.xy;
     float2 ic = floor(xy);
@@ -101,14 +101,14 @@ float4 SampleTexture2DBiquadratic(TEXTURE2D_PARAM(tex, smp), float2 coord, float
     BiquadraticFilter(1.0 - fc, weights, offsets); // Inverse-translate the filter centered around 0.5
 
     // Apply the viewport scale right at the end.
-    return weights[0].x * weights[0].y * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[0].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Top left
-         + weights[1].x * weights[0].y * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[0].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Top right
-         + weights[0].x * weights[1].y * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[1].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Bottom left
-         + weights[1].x * weights[1].y * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[1].y)) * (texSize.zw * 1.0), 1.0), 0.0); // Bottom right
+    return weights[0].x * weights[0].y * tex.SampleLevel(smp, min((ic + float2(offsets[0].x, offsets[0].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Top left
+         + weights[1].x * weights[0].y * tex.SampleLevel(smp, min((ic + float2(offsets[1].x, offsets[0].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Top right
+         + weights[0].x * weights[1].y * tex.SampleLevel(smp, min((ic + float2(offsets[0].x, offsets[1].y)) * (texSize.zw * 1.0), 1.0), 0.0)  // Bottom left
+         + weights[1].x * weights[1].y * tex.SampleLevel(smp, min((ic + float2(offsets[1].x, offsets[1].y)) * (texSize.zw * 1.0), 1.0), 0.0); // Bottom right
 }
 
 // texSize = (width, height, 1/width, 1/height)
-float4 SampleTexture2DBicubic(TEXTURE2D_PARAM(tex, smp), float2 coord, float4 texSize, float2 maxCoord, uint unused /* needed to match signature of texarray version below */)
+float4 SampleTexture2DBicubic(Texture2D tex, SamplerState smp, float2 coord, float4 texSize, float2 maxCoord, uint unused /* needed to match signature of texarray version below */)
 {
     float2 xy = coord * texSize.xy + 0.5;
     float2 ic = floor(xy);
@@ -117,13 +117,13 @@ float4 SampleTexture2DBicubic(TEXTURE2D_PARAM(tex, smp), float2 coord, float4 te
     float2 weights[2], offsets[2];
     BicubicFilter(fc, weights, offsets);
 
-    return weights[0].y * (weights[0].x * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), 0.0)  +
-                           weights[1].x * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), 0.0)) +
-           weights[1].y * (weights[0].x * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), 0.0)  +
-                           weights[1].x * SAMPLE_TEXTURE2D_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), 0.0));
+    return weights[0].y * (weights[0].x * tex.SampleLevel(smp, min((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), 0.0)  +
+                           weights[1].x * tex.SampleLevel(smp, min((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), 0.0)) +
+           weights[1].y * (weights[0].x * tex.SampleLevel(smp, min((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), 0.0)  +
+                           weights[1].x * tex.SampleLevel(smp, min((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), 0.0));
 }
 
-float4 SampleTexture2DArrayBicubic(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 coord, float slice, float4 texSize)
+float4 SampleTexture2DArrayBicubic(Texture2DArray tex, SamplerState smp, float2 coord, float slice, float4 texSize)
 {
     float2 xy = coord * texSize.xy + 0.5;
     float2 ic = floor(xy);
@@ -132,13 +132,13 @@ float4 SampleTexture2DArrayBicubic(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 coord
     float2 weights[2], offsets[2];
     BicubicFilter(fc, weights, offsets);
 
-    return weights[0].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY(tex, smp, (ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, slice).rgba  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY(tex, smp, (ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, slice).rgba) +
-           weights[1].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY(tex, smp, (ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, slice).rgba  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY(tex, smp, (ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, slice).rgba);
+    return weights[0].y * (weights[0].x * tex.Sample(smp, float3((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, slice)).rgba  +
+                           weights[1].x * tex.Sample(smp, float3((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, slice)).rgba) +
+           weights[1].y * (weights[0].x * tex.Sample(smp, float3((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, slice)).rgba  +
+                           weights[1].x * tex.Sample(smp, float3((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, slice)).rgba);
 }
 
-float4 SampleTexture2DArrayBicubicLOD(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 coord, float slice, float4 texSize, int lod)
+float4 SampleTexture2DArrayBicubicLOD(Texture2DArray tex, SamplerState smp, float2 coord, float slice, float4 texSize, int lod)
 {
     float2 xy = coord * texSize.xy + 0.5;
     float2 ic = floor(xy);
@@ -147,16 +147,16 @@ float4 SampleTexture2DArrayBicubicLOD(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 co
     float2 weights[2], offsets[2];
     BicubicFilter(fc, weights, offsets);
 
-    return weights[0].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, (ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, slice, lod).rgba  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, (ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, slice, lod).rgba) +
-           weights[1].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, (ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, slice, lod).rgba  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, (ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, slice, lod).rgba);
+    return weights[0].y * (weights[0].x * tex.SampleLevel(smp, float3((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, slice), lod).rgba  +
+                           weights[1].x * tex.SampleLevel(smp, float3((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, slice), lod).rgba) +
+           weights[1].y * (weights[0].x * tex.SampleLevel(smp, float3((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, slice), lod).rgba  +
+                           weights[1].x * tex.SampleLevel(smp, float3((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, slice), lod).rgba);
 }
 
 #if !defined(SHADER_API_GLES)
 // texSize = (width, height, 1/width, 1/height)
 // texture array version for XR single-pass
-float4 SampleTexture2DBicubic(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 coord, float4 texSize, float2 maxCoord, uint slice)
+float4 SampleTexture2DBicubic(Texture2DArray tex, SamplerState smp, float2 coord, float4 texSize, float2 maxCoord, uint slice)
 {
     float2 xy = coord * texSize.xy + 0.5;
     float2 ic = floor(xy);
@@ -165,10 +165,10 @@ float4 SampleTexture2DBicubic(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 coord, flo
     float2 weights[2], offsets[2];
     BicubicFilter(fc, weights, offsets);
 
-    return weights[0].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), slice, 0.0)  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), slice, 0.0)) +
-           weights[1].y * (weights[0].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, min((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), slice, 0.0)  +
-                           weights[1].x * SAMPLE_TEXTURE2D_ARRAY_LOD(tex, smp, min((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), slice, 0.0));
+    return weights[0].y * (weights[0].x * tex.SampleLevel(smp, float3(min((ic + float2(offsets[0].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), slice), 0.0)  +
+                           weights[1].x * tex.SampleLevel(smp, float3(min((ic + float2(offsets[1].x, offsets[0].y) - 0.5) * texSize.zw, maxCoord), slice), 0.0)) +
+           weights[1].y * (weights[0].x * tex.SampleLevel(smp, float3(min((ic + float2(offsets[0].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), slice), 0.0)  +
+                           weights[1].x * tex.SampleLevel(smp, float3(min((ic + float2(offsets[1].x, offsets[1].y) - 0.5) * texSize.zw, maxCoord), slice), 0.0));
 }
 #else
 #define SampleTexture2DBicubic ERROR_ON_UNSUPPORTED_FUNCTION(SampleTexture2DBicubic)
