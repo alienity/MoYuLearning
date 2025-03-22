@@ -480,7 +480,7 @@ namespace MoYu
         glm::float2 lensShift = glm::float2(0);
 
         return HDUtils::ComputePixelCoordToWorldSpaceViewDirectionMatrix(
-            verticalFoV, lensShift, resolution, viewConstants.viewMatrix, false, aspect, rawCameraData.m_isPerspective);
+            verticalFoV, lensShift, resolution, viewConstants.viewMatrix, false, aspect, !rawCameraData.m_isPerspective);
     }
 
     void RenderCamera::GetPixelCoordToViewDirWS(glm::float4 resolution, float aspect, glm::float4x4& transforms)
