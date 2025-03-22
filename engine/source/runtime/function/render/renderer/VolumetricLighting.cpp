@@ -859,13 +859,15 @@ namespace MoYu
 
 
 			// VolumetricLightingFiltering
+			int sliceCount = fogData.volumetricCB._VBufferSliceCount;
+			
 			pContext->SetRootSignature(pVolumetricLightingFilteringSignature.get());
 			pContext->SetPipelineState(pVolumetricLightingFilteringPSO.get());
 
 			pContext->SetConstantBuffer(0, RegGetBuf(perframeBufferHandle)->GetGpuVirtualAddress());
 			pContext->SetDynamicDescriptor(1, 0, RegGetTex(mLightBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
 
-			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.y + 7) / 8, 1);
+			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.y + 7) / 8, sliceCount);
 		});
 
 		passOutput.vbufferLightingHandle = mLightBufferHandle;

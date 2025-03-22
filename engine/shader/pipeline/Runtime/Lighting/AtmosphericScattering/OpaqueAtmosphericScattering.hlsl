@@ -73,14 +73,17 @@ FragOutput OutputFog(float4 surfColor, float3 volColor, float3 volOpacity, float
 
 FragOutput Frag(Varyings input)
 {
-    float4x4 _PixelCoordToViewDirWS;
-    Texture2D<float> cameraDepthTex;
+    CameraUniform cameraUniform = _FrameUniforms.cameraUniform;
+    float4 _ScreenSize = _FrameUniforms.baseUniform._ScreenSize;
+    
+    float4x4 _PixelCoordToViewDirWS; // TODO: 
     
     float2 positionSS = input.positionCS.xy;
     float3 V          = GetSkyViewDirWS(positionSS, _PixelCoordToViewDirWS);
-    float  depth      = LoadCameraDepth(cameraDepthTex, positionSS);
+    float  depth      = LoadCameraDepth(_DepthTextureMS, positionSS);
 
-    PositionInputs posInput = GetPositionInput(input.positionCS.xy, _ScreenSize.zw, depth, UNITY_MATRIX_I_VP, UNITY_MATRIX_V);;
+    PositionInputs posInput = GetPositionInput(input.positionCS.xy, _ScreenSize.zw, depth,
+        UNITY_MATRIX_I_VP(cameraUniform), UNITY_MATRIX_V(cameraUniform));;
     // PositionInputs posInput = GetPositionInput(input, depth);
 
     float3 volColor, volOpacity;

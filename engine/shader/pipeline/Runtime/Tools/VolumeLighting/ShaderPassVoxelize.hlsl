@@ -131,7 +131,8 @@ FragInputs BuildFragInputs(VertexToFragment v2f, float3 voxelPositionOS, float3 
 //     );
 // }
 
-void GetVolumeData(FragInputs fragInputs, float3 V, out float3 scatteringColor, out float density)
+void GetVolumeData(FragInputs fragInputs, float3 V,
+    out float3 scatteringColor, out float density)
 {
     // LocalVolumetricFogDatas localVolumetricFogData = _VolumetricFogData[_VolumetricFogIndex];
     // localVolumetricFogData.localTransformData.

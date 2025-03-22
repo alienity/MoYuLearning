@@ -32,9 +32,9 @@ namespace MoYu
                 // For ortho cameras, project the skybox with no perspective
                 // the same way as builtin does (case 1264647)
                 viewSpaceRasterTransform = glm::float4x4(
-                    glm::float4(-2.0f * screenSize.z, 0.0f, 1.0f, 0.0f),
-                    glm::float4(0.0f, -2.0f * screenSize.w, 1.0f, 0.0f),
-                    glm::float4(0.0f, 0.0f, -1.0f, 0.0f),
+                    glm::float4(-2.0f * screenSize.z, 0.0f, 0.0f, 0.0f),
+                    glm::float4(0.0f, -2.0f * screenSize.w, 0.0f, 0.0f),
+                    glm::float4(1.0f, 1.0f, -1.0f, 0.0f),
                     glm::float4(0.0f, 0.0f, 0.0f, 0.0f));
             }
             else
@@ -48,23 +48,23 @@ namespace MoYu
                 float tanHalfVertFoV = glm::tan(0.5f * verticalFoV);
 
                 // Compose the matrix.
-                float m12 = (1.0f - 2.0f * lensShift.y) * tanHalfVertFoV;
+                float m21 = (1.0f - 2.0f * lensShift.y) * tanHalfVertFoV;
                 float m11 = -2.0f * screenSize.w * tanHalfVertFoV;
 
-                float m02 = (1.0f - 2.0f * lensShift.x) * tanHalfVertFoV * aspectRatio;
+                float m20 = (1.0f - 2.0f * lensShift.x) * tanHalfVertFoV * aspectRatio;
                 float m00 = -2.0f * screenSize.z * tanHalfVertFoV * aspectRatio;
 
                 if (renderToCubemap)
                 {
                     // Flip Y.
                     m11 = -m11;
-                    m12 = -m12;
+                    m21 = -m21;
                 }
 
                 viewSpaceRasterTransform = glm::float4x4(
-                    glm::float4(m00, 0.0f, m02, 0.0f),
-                    glm::float4(0.0f, m11, m12, 0.0f),
-                    glm::float4(0.0f, 0.0f, -1.0f, 0.0f),
+                    glm::float4(m00, 0.0f, 0.0f, 0.0f),
+                    glm::float4(0.0f, m11, 0.0f, 0.0f),
+                    glm::float4(m20, m21, -1.0f, 0.0f),
                     glm::float4(0.0f, 0.0f, 0.0f, 1.0f));
             }
 
@@ -77,7 +77,7 @@ namespace MoYu
 
             //// Transpose for HLSL.
             //return Matrix4x4.Transpose(worldToViewMatrix.transpose * viewSpaceRasterTransform);
-            return glm::transpose(worldToViewMatrix) * viewSpaceRasterTransform;
+            return glm::transpose(glm::transpose(worldToViewMatrix) * viewSpaceRasterTransform);
         }
 
         inline static float ComputZPlaneTexelSpacing(float planeDepth, float verticalFoV, float resolutionY)

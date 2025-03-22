@@ -95,7 +95,7 @@ namespace MoYu
         RenderCamera(bool perspective = true);
         ~RenderCamera();
 
-        RenderCameraType m_current_camera_type {RenderCameraType::Editor};
+        RenderCameraType m_current_camera_type{ RenderCameraType::Editor };
 
         long long taaFrameIndex{ 0 };
         glm::float4 taaJitter;
@@ -131,12 +131,12 @@ namespace MoYu
 
         static const glm::float3 X, Y, Z;
 
-        static constexpr float MIN_FOVY {10.0f};
-        static constexpr float MAX_FOVY {120.0f};
-        static constexpr int   MAIN_VIEW_MATRIX_INDEX {0};
+        static constexpr float MIN_FOVY{ 10.0f };
+        static constexpr float MAX_FOVY{ 120.0f };
+        static constexpr int   MAIN_VIEW_MATRIX_INDEX{ 0 };
 
         void setMainViewMatrix(const glm::float4x4& view_matrix, RenderCameraType type = RenderCameraType::Editor);
-         
+
         void move(glm::float3 delta);
         void rotate(glm::float2 delta); // delta.x -- yaw, delta.y -- pitch
         void zoom(float offset);
@@ -208,8 +208,8 @@ namespace MoYu
         std::mutex m_view_matrix_mutex;
     };
 
-    inline const glm::float3 RenderCamera::X = {1.0f, 0.0f, 0.0f};
-    inline const glm::float3 RenderCamera::Y = {0.0f, 1.0f, 0.0f};
-    inline const glm::float3 RenderCamera::Z = {0.0f, 0.0f, 1.0f};
+    inline const glm::float3 RenderCamera::X = { 1.0f, 0.0f, 0.0f };
+    inline const glm::float3 RenderCamera::Y = { 0.0f, 1.0f, 0.0f };
+    inline const glm::float3 RenderCamera::Z = { 0.0f, 0.0f, 1.0f };
 
 } // namespace MoYu
