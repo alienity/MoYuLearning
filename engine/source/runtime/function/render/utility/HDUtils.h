@@ -15,6 +15,7 @@ namespace MoYu
 			return matrix[1][1] / matrix[0][0];
 		}
 
+        // https://www.songho.ca/opengl/gl_projectionmatrix.html
 		// Determine if a projection matrix is off-center
 		inline static bool IsProjectionMatrixAsymmetric(glm::float4x4 matrix)
 		{

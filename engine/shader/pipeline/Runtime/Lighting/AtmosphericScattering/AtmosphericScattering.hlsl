@@ -10,29 +10,26 @@
 
 #include "../../ShaderLibrary/ShaderVariables.hlsl"
 #include "../../Lighting/VolumetricLighting/VBuffer.hlsl"
-// #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Sky/PhysicallyBasedSky/PhysicallyBasedSkyCommon.hlsl"
+#include "../../../Runtime/Sky/PhysicallyBasedSkyCommon.hlsl"
 
-TEXTURE3D(_VBufferLighting);
+#define _PlanetCenterPosition(_PlanetCenterRadius) _PlanetCenterRadius.xyz // camera relative
+#define _GroundAlbedo(_GroundAlbedo_PlanetRadius) _GroundAlbedo_PlanetRadius.xyz
+#define _PlanetUp(_PlanetUpAltitude) _PlanetUpAltitude.xyz
+#define _CameraAltitude(_PlanetUpAltitude) _PlanetUpAltitude.w
 
-float3 ExpLerp(float3 A, float3 B, float t, float x, float y)
-{
-    // Remap t: (exp(10 k t) - 1) / (exp(10 k) - 1) = exp(x t) y - y.
-    t = exp(x * t) * y - y;
-    // Perform linear interpolation using the new value of t.
-    return lerp(A, B, t);
-}
+#define _PlanetaryRadius(_PlanetCenterRadius) _PlanetCenterRadius.w
 
-float3 GetFogColor(float3 V, float fragDist)
+float3 GetFogColor(float3 _FogColor, float3 V, float fragDist)
 {
     float3 color = _FogColor.rgb;
 
-    if (_FogColorMode == FOGCOLORMODE_SKY_COLOR)
-    {
-        // Based on Uncharted 4 "Mip Sky Fog" trick: http://advances.realtimerendering.com/other/2016/naughty_dog/NaughtyDog_TechArt_Final.pdf
-        float mipLevel = (1.0 - _MipFogMaxMip * saturate((fragDist - _MipFogNear) / (_MipFogFar - _MipFogNear))) * (ENVCONSTANTS_CONVOLUTION_MIP_COUNT - 1);
-        // For the atmospheric scattering, we use the GGX convoluted version of the cubemap. That matches the of the idnex 0
-        color *= SampleSkyTexture(-V, mipLevel, 0).rgb; // '_FogColor' is the tint
-    }
+    // if (_FogColorMode == FOGCOLORMODE_SKY_COLOR)
+    // {
+    //     // Based on Uncharted 4 "Mip Sky Fog" trick: http://advances.realtimerendering.com/other/2016/naughty_dog/NaughtyDog_TechArt_Final.pdf
+    //     float mipLevel = (1.0 - _MipFogMaxMip * saturate((fragDist - _MipFogNear) / (_MipFogFar - _MipFogNear))) * (ENVCONSTANTS_CONVOLUTION_MIP_COUNT - 1);
+    //     // For the atmospheric scattering, we use the GGX convoluted version of the cubemap. That matches the of the idnex 0
+    //     color *= SampleSkyTexture(-V, mipLevel, 0).rgb; // '_FogColor' is the tint
+    // }
 
     return color;
 }
@@ -42,18 +39,21 @@ float3 GetFogColor(float3 V, float fragDist)
 // We evaluate atmospheric scattering for the sky and other celestial bodies
 // during the sky pass. The opaque atmospheric scattering pass applies atmospheric
 // scattering to all other opaque geometry.
-void EvaluatePbrAtmosphere(float3 worldSpaceCameraPos, float3 V, float distAlongRay, bool renderSunDisk,
-                           out float3 skyColor, out float3 skyOpacity)
+void EvaluatePbrAtmosphere(
+    VolumetricLightingUniform volumeLightUniform,
+    ShaderVariablesPhysicallyBasedSky shaderVariablesPhysicallyBasedSky,
+    float3 worldSpaceCameraPos, float3 V, float distAlongRay, bool renderSunDisk,
+    out float3 skyColor, out float3 skyOpacity)
 {
     skyColor = skyOpacity = 0;
 
-    const float  R = _PlanetaryRadius;
-    const float2 n = float2(_AirDensityFalloff, _AerosolDensityFalloff);
-    const float2 H = float2(_AirScaleHeight,    _AerosolScaleHeight);
+    const float  R = _PlanetaryRadius(volumeLightUniform._PlanetCenterRadius);
+    const float2 n = float2(shaderVariablesPhysicallyBasedSky._AirDensityFalloff, shaderVariablesPhysicallyBasedSky._AerosolDensityFalloff);
+    const float2 H = float2(shaderVariablesPhysicallyBasedSky._AirScaleHeight, shaderVariablesPhysicallyBasedSky._AerosolScaleHeight);
 
     // TODO: Not sure it's possible to precompute cam rel pos since variables
     // in the two constant buffers may be set at a different frequency?
-    const float3 O     = worldSpaceCameraPos - _PlanetCenterPosition.xyz;
+    const float3 O     = worldSpaceCameraPos - _PlanetCenterPosition(volumeLightUniform._PlanetCenterRadius);
     const float  tFrag = abs(distAlongRay); // Clear the "hit ground" flag
 
     float3 N; float r; // These params correspond to the entry point
@@ -249,24 +249,26 @@ float3 GetViewForwardDir1(float4x4 viewMatrix)
     return -viewMatrix[2].xyz;
 }
 
-void EvaluateAtmosphericScattering(PositionInputs posInput, float3 V, out float3 color, out float3 opacity)
+void EvaluateAtmosphericScattering(FrameUniforms frameUniform, PositionInputs posInput, float3 V, out float3 color, out float3 opacity)
 {
+    VolumetricLightingUniform volumeLightUniform = frameUniform.volumetricLightingUniform;
+    
     color = opacity = 0;
 
     // TODO: do not recompute this, but rather pass it directly.
     // Note1: remember the hacked value of 'posInput.positionWS'.
     // Note2: we do not adjust it anymore to account for the distance to the planet. This can lead to wrong results (since the planet does not write depth).
-    float fogFragDist = distance(posInput.positionWS, GetCurrentViewPosition());
+    float fogFragDist = distance(posInput.positionWS, GetCurrentViewPosition(frameUniform));
 
-    if (_FogEnabled)
+    if (volumeLightUniform._FogEnabled)
     {
         float4 volFog = float4(0.0, 0.0, 0.0, 0.0);
 
         float expFogStart = 0.0f;
 
-        if (_EnableVolumetricFog != 0)
+        if (volumeLightUniform._EnableVolumetricFog != 0)
         {
-            bool doBiquadraticReconstruction = _VolumetricFilteringEnabled == 0; // Only if filtering is disabled.
+            bool doBiquadraticReconstruction = volumeLightUniform._VolumetricFilteringEnabled == 0; // Only if filtering is disabled.
             float4 value = SampleVBuffer(TEXTURE3D_ARGS(_VBufferLighting, s_linear_clamp_sampler),
                                          posInput.positionNDC,
                                          fogFragDist,
@@ -290,7 +292,7 @@ void EvaluateAtmosphericScattering(PositionInputs posInput, float3 V, out float3
         if ((distDelta > 0))
         {
             // Apply the distant (fallback) fog.
-            float3 positionWS = GetCurrentViewPosition() - V * expFogStart;
+            float3 positionWS = GetCurrentViewPosition(frameUniform) - V * expFogStart;
             float  startHeight = positionWS.y;
             float  cosZenith = -V.y;
 

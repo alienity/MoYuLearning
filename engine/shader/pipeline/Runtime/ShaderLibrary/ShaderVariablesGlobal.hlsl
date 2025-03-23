@@ -325,6 +325,8 @@ struct ExposureUniform
 
 struct VolumetricLightingUniform
 {
+    float4 _PlanetCenterRadius;
+    float4 _PlanetUpAltitude;
     int _FogEnabled;
     int _PBRFogEnabled;
     int _EnableVolumetricFog;
@@ -356,6 +358,40 @@ struct VBufferUniform
     float _VBufferRcpSliceCount;
     float _VBufferRcpInstancedViewCount;  // Used to remap VBuffer coordinates for XR
     float _VBufferLastSliceDist;          // The distance to the middle of the last slice
+};
+
+struct ShaderVariablesPhysicallyBasedSky
+{
+    float _AtmosphericRadius;
+    float _AerosolAnisotropy;
+    float _AerosolPhasePartConstant;
+    float _AerosolSeaLevelExtinction;
+    float _AirDensityFalloff;
+    float _AirScaleHeight;
+    float _AerosolDensityFalloff;
+    float _AerosolScaleHeight;
+    float2 _OzoneScaleOffset;
+    float _OzoneLayerStart;
+    float _OzoneLayerEnd;
+    float4 _AirSeaLevelExtinction;
+    float4 _AirSeaLevelScattering;
+    float4 _AerosolSeaLevelScattering;
+    float4 _OzoneSeaLevelExtinction;
+    float4 _GroundAlbedo_PlanetRadius;
+    float4 _HorizonTint;
+    float4 _ZenithTint;
+    float _IntensityMultiplier;
+    float _ColorSaturation;
+    float _AlphaSaturation;
+    float _AlphaMultiplier;
+    float _HorizonZenithShiftPower;
+    float _HorizonZenithShiftScale;
+    uint _CelestialLightCount;
+    uint _CelestialBodyCount;
+    float _AtmosphericDepth;
+    float _RcpAtmosphericDepth;
+    float _CelestialLightExposure;
+    float _VolumetricCloudsBottomAltitude;
 };
 
 // =======================================
