@@ -18,6 +18,11 @@ ConstantBuffer<ShaderVariablesPhysicallyBasedSky> _ShaderVariablesPhysicallyBase
 Texture3D _VBufferLighting : register(t0, space0);
 Texture2D<float> _DepthTextureMS : register(t1, space0);
 
+SamplerState sampler_LinearClamp : register(s10);
+SamplerState sampler_LinearRepeat : register(s11);
+SamplerState sampler_PointClamp : register(s12);
+SamplerState sampler_PointRepeat : register(s13);
+
 struct Attributes
 {
     uint vertexID : SV_VertexID;
@@ -88,7 +93,9 @@ FragOutput Frag(Varyings input)
     // PositionInputs posInput = GetPositionInput(input, depth);
 
     float3 volColor, volOpacity;
-    EvaluateAtmosphericScattering(_FrameUniforms, posInput, V, volColor, volOpacity);
+    EvaluateAtmosphericScattering(
+        _FrameUniforms, _ShaderVariablesPhysicallyBasedSky, _ShaderVariablesVolumetric,
+        _VBufferLighting, sampler_LinearClamp, posInput, V, volColor, volOpacity);
 
     return OutputFog(volColor, volOpacity);
 }
