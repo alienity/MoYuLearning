@@ -7,8 +7,8 @@
 
 #include "../../ShaderLibrary/Common.hlsl"
 #include "../../ShaderLibrary/Color.hlsl"
-#include "../../Lighting/Lighting.hlsl"
 #include "../../ShaderLibrary/ShaderVariables.hlsl"
+#include "../../Lighting/Lighting.hlsl"
 #include "../../Tools/VolumeLighting/VolumetricLightingCommon.hlsl"
 #include "../../Sky/SkyUtils.hlsl"
 

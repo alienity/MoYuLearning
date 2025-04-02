@@ -144,6 +144,11 @@ namespace MoYu
 		std::shared_ptr<RHI::D3D12PipelineState> pIndirectDrawVolumePSO;
 		std::shared_ptr<RHI::D3D12CommandSignature> pIndirectDrawVolumeCommandSignature;
 
+		Shader mOpaqueAtmosphericScatteringVS;
+		Shader mOpaqueAtmosphericScatteringPS;
+		std::shared_ptr<RHI::D3D12RootSignature> pOpaqueAtmosphericScatteringSignature;
+		std::shared_ptr<RHI::D3D12PipelineState> pOpaqueAtmosphericScatteringPSO;
+
 		std::shared_ptr<RHI::D3D12Buffer> pUploadVolumesDataBuffer;
 		std::shared_ptr<RHI::D3D12Buffer> pVolumesDataBuffer;
 		

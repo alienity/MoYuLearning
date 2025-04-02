@@ -641,6 +641,73 @@ namespace MoYu
 				pIndirectDrawVolumePSO = std::make_shared<RHI::D3D12PipelineState>(m_Device, L"IndirectVolumeDraw", psoDesc);
 			}
 		}
+
+		{
+			mOpaqueAtmosphericScatteringVS = m_ShaderCompiler->CompileShader(RHI_SHADER_TYPE::Vertex,
+				m_ShaderRootPath / "pipeline/Runtime//Lighting/AtmosphericScattering/OpaqueAtmosphericScattering.hlsl", ShaderCompileOptions(L"Vert"));
+			mOpaqueAtmosphericScatteringPS = m_ShaderCompiler->CompileShader(RHI_SHADER_TYPE::Pixel,
+				m_ShaderRootPath / "pipeline/Runtime//Lighting/AtmosphericScattering/OpaqueAtmosphericScattering.hlsl", ShaderCompileOptions(L"Frag"));
+
+			{
+				RHI::RootSignatureDesc rootSigDesc =
+					RHI::RootSignatureDesc()
+					//.Add32BitConstants<0, 0>(16)
+					.AddConstantBufferView<0, 0>()
+					.AddConstantBufferView<1, 0>()
+					.AddConstantBufferView<2, 0>()
+					.AddDescriptorTable(RHI::D3D12DescriptorTable(1).AddSRVRange<0, 0>(2, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0))
+					.AddStaticSampler<10, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 4)
+					.AddStaticSampler<11, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP, 4)
+					.AddStaticSampler<12, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 4)
+					.AddStaticSampler<13, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP, 4)
+					.AllowInputLayout()
+					.AllowResourceDescriptorHeapIndexing()
+					.AllowSampleDescriptorHeapIndexing();
+
+				pOpaqueAtmosphericScatteringSignature = std::make_shared<RHI::D3D12RootSignature>(m_Device, rootSigDesc);
+			}
+
+			{
+				RHI::D3D12InputLayout InputLayout = {};
+
+				RHIDepthStencilState DepthStencilState;
+				DepthStencilState.DepthEnable = false;
+				DepthStencilState.DepthWrite = false;
+				DepthStencilState.DepthFunc = RHI_COMPARISON_FUNC::Always;
+
+				RHIRenderTargetState RenderTargetState;
+				RenderTargetState.RTFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+				RenderTargetState.NumRenderTargets = 1;
+				RenderTargetState.DSFormat = DXGI_FORMAT_D32_FLOAT;
+
+				RHISampleState SampleState;
+				SampleState.Count = 1;
+
+				struct PsoStream
+				{
+					PipelineStateStreamRootSignature     RootSignature;
+					PipelineStateStreamInputLayout       InputLayout;
+					PipelineStateStreamPrimitiveTopology PrimitiveTopologyType;
+					PipelineStateStreamVS                VS;
+					PipelineStateStreamPS                PS;
+					PipelineStateStreamDepthStencilState DepthStencilState;
+					PipelineStateStreamRenderTargetState RenderTargetState;
+					PipelineStateStreamSampleState       SampleState;
+				} psoStream;
+				psoStream.RootSignature = PipelineStateStreamRootSignature(pOpaqueAtmosphericScatteringSignature.get());
+				psoStream.InputLayout = &InputLayout;
+				psoStream.PrimitiveTopologyType = RHI_PRIMITIVE_TOPOLOGY::Triangle;
+				psoStream.VS = &mOpaqueAtmosphericScatteringVS;
+				psoStream.PS = &mOpaqueAtmosphericScatteringPS;
+				psoStream.DepthStencilState = DepthStencilState;
+				psoStream.RenderTargetState = RenderTargetState;
+				psoStream.SampleState = SampleState;
+
+				PipelineStateStreamDesc psoDesc = { sizeof(PsoStream), &psoStream };
+
+				pOpaqueAtmosphericScatteringPSO = std::make_shared<RHI::D3D12PipelineState>(m_Device, L"OpaqueAtmosphericScattering", psoDesc);
+			}
+		}
 	}
 
 	void VolumetriLighting::GenerateMaxZForVolumetricPass(RHI::RenderGraph& graph, GenMaxZInputStruct& passInput, GenMaxZOutputStruct& passOutput)

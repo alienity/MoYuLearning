@@ -1,6 +1,7 @@
 #ifndef UNITY_ATMOSPHERIC_SCATTERING_INCLUDED
 #define UNITY_ATMOSPHERIC_SCATTERING_INCLUDED
 
+#include "../../ShaderLibrary/Macros.hlsl"
 #include "../../ShaderLibrary/VolumeRendering.hlsl"
 #include "../../ShaderLibrary/Filtering.hlsl"
 #include "../../ShaderLibrary/GeometricTools.hlsl"
@@ -10,7 +11,7 @@
 
 #include "../../ShaderLibrary/ShaderVariables.hlsl"
 #include "../../Lighting/VolumetricLighting/VBuffer.hlsl"
-#include "../../../Runtime/Sky/PhysicallyBasedSkyCommon.hlsl"
+// #include "../../../Runtime/Sky/PhysicallyBasedSkyCommon.hlsl"
 
 #define _PlanetCenterPosition(_PlanetCenterRadius) _PlanetCenterRadius.xyz // camera relative
 #define _GroundAlbedo(_GroundAlbedo_PlanetRadius) _GroundAlbedo_PlanetRadius.xyz
@@ -261,7 +262,7 @@ void EvaluateAtmosphericScattering(
     VBufferUniform vBufferUniform = frameUniform.vBufferUniform;
     VolumetricLightingUniform volumeLightUniform = frameUniform.volumetricLightingUniform;
 
-    float3 _FogColor = volumeLightUniform._FogColor;
+    float3 _FogColor = volumeLightUniform._FogColor.rgb;
     
     color = opacity = 0;
 
