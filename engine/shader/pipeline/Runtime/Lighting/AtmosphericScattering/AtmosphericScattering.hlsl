@@ -254,7 +254,7 @@ float3 GetViewForwardDir1(float4x4 viewMatrix)
 }
 
 void EvaluateAtmosphericScattering(
-    FrameUniforms frameUniform, ShaderVariablesPhysicallyBasedSky shaderVariablesPhysicallyBasedSky,
+    FrameUniforms frameUniform,
     ShaderVariablesVolumetric shaderVariablesVolumetric,
     Texture3D vBufferLighting, SamplerState samplerLinearClamp,
     PositionInputs posInput, float3 V, out float3 color, out float3 opacity)
@@ -301,7 +301,7 @@ void EvaluateAtmosphericScattering(
         // and the latter resides on the far plane, the computation will be numerically unstable.
         float distDelta = fogFragDist - expFogStart;
 
-        if ((distDelta > 0))
+        if (distDelta > 0)
         {
             // Apply the distant (fallback) fog.
             float3 positionWS = GetCurrentViewPosition(frameUniform) - V * expFogStart;

@@ -74,6 +74,20 @@ namespace MoYu
 			RHI::RgResourceHandle vbufferLightingHandle;
 		};
 
+		struct VolumeFogDrawInputStruct
+		{
+			RHI::RgResourceHandle perframeBufferHandle;
+			RHI::RgResourceHandle shaderVariablesVolumetricHandle;
+			RHI::RgResourceHandle vbufferLightingHandle;
+			RHI::RgResourceHandle depthMipMapHandle;
+		};
+
+		struct VolumeFogDrawOutputStruct
+		{
+			RHI::RgResourceHandle renderTargetColorHandle;
+			RHI::RgResourceHandle renderTargetDepthHandle;
+		};
+
 		~VolumetriLighting() { destroy(); }
 
 		void updateShaderVariableslVolumetrics(HLSL::ShaderVariablesVolumetric& cb, glm::vec4 resolution, int maxSliceCount);
@@ -84,6 +98,8 @@ namespace MoYu
 		void GenerateMaxZForVolumetricPass(RHI::RenderGraph& graph, GenMaxZInputStruct& passInput, GenMaxZOutputStruct& passOutput);
 		void FogVolumeAndVFXVoxelizationPass(RHI::RenderGraph& graph, ClearPassInputStruct& passInput, ClearPassOutputStruct& passOutput);
 		void VolumetricLightingPass(RHI::RenderGraph& graph, VolumeLightPassInputStruct& passInput, VolumeLightPassOutputStruct& passOutput);
+
+		void RenderOpaqueFog(RHI::RenderGraph& graph, VolumeFogDrawInputStruct& passInput, VolumeFogDrawOutputStruct& passOutput);
 
 		void UpdateVolumetricLightingUniform(const FogVolume& fog, HLSL::VolumetricLightingUniform& inoutVolumetricLightingUniform);
 		void UpdateVolumetricLightingUniform(const FogVolume& fog, HLSL::VBufferUniform& inoutVBufferUniform);

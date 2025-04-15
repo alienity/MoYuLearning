@@ -795,6 +795,7 @@ namespace MoYu
         mVolumeLightInput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
         mVolumeLightInput.spotShadowmapHandles = spotShadowmapHandle;
         mVolumeLightPass->VolumetricLightingPass(graph, mVolumeLightInput, mVolumeLightOutput);
+
         //=================================================================================
 
         ///*
@@ -968,6 +969,22 @@ namespace MoYu
         mVolumeCloudPass->update(graph, mVCIntputParams, mVCOutputParams);
 
         outColorHandle = mVCOutputParams.outColorHandle;
+        //=================================================================================
+
+        //=================================================================================
+        VolumetriLighting::VolumeFogDrawInputStruct mVolumeFogDrawInput;
+        VolumetriLighting::VolumeFogDrawOutputStruct mVolumeFogDrawOutput;
+        mVolumeFogDrawInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+        mVolumeFogDrawInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
+        mVolumeFogDrawInput.vbufferLightingHandle = mVolumeLightOutput.vbufferLightingHandle;
+        mVolumeFogDrawInput.depthMipMapHandle = mDepthPyramidOutput.averageDepthPyramidHandle;
+
+        mVolumeFogDrawOutput.renderTargetColorHandle = mVCOutputParams.outColorHandle;
+        mVolumeFogDrawOutput.renderTargetDepthHandle = mGBufferOutput.depthHandle;
+
+        mVolumeLightPass->RenderOpaqueFog(graph, mVolumeFogDrawInput, mVolumeFogDrawOutput);
+
+        outColorHandle = mVolumeFogDrawOutput.renderTargetColorHandle;
         //=================================================================================
 
 

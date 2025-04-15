@@ -74,11 +74,11 @@ namespace MoYu
     void DepthPyramidPass::update(RHI::RenderGraph& graph, DrawInputParameters& passInput, DrawOutputParameters& passOutput)
     {
         {
-            //std::shared_ptr<RHI::D3D12Texture> pAverageDpethPyramid = GetDepthPyramid(DepthMipGenerateMode::AverageType, true);
+            std::shared_ptr<RHI::D3D12Texture> pAverageDpethPyramid = GetDepthPyramid(DepthMipGenerateMode::AverageType, true);
             std::shared_ptr<RHI::D3D12Texture> pMinDpethPyramid = GetDepthPyramid(DepthMipGenerateMode::MinType, true);
             std::shared_ptr<RHI::D3D12Texture> pMaxDpethPyramid = GetDepthPyramid(DepthMipGenerateMode::MaxType, true);
 
-            //RHI::RgResourceHandle averageDepthPyramidHandle = GImport(graph, pAverageDpethPyramid.get());
+            RHI::RgResourceHandle averageDepthPyramidHandle = GImport(graph, pAverageDpethPyramid.get());
             RHI::RgResourceHandle minDepthPyramidHandle = GImport(graph, pMinDpethPyramid.get());
             RHI::RgResourceHandle maxDepthPyramidHandle = GImport(graph, pMaxDpethPyramid.get());
 
@@ -93,7 +93,7 @@ namespace MoYu
             RHI::RenderPass& genHeightMapMipMapPass = graph.AddRenderPass(passName);
 
             genHeightMapMipMapPass.Read(depthHandle, true);
-            //genHeightMapMipMapPass.Write(averageDepthPyramidHandle, true);
+            genHeightMapMipMapPass.Write(averageDepthPyramidHandle, true);
             genHeightMapMipMapPass.Write(minDepthPyramidHandle, true);
             genHeightMapMipMapPass.Write(maxDepthPyramidHandle, true);
 
@@ -102,15 +102,15 @@ namespace MoYu
 
                 {
                     pContext->TransitionBarrier(RegGetTex(depthHandle), D3D12_RESOURCE_STATE_COPY_SOURCE);
-                    //pContext->TransitionBarrier(RegGetTex(averageDepthPyramidHandle), D3D12_RESOURCE_STATE_COPY_DEST, 0);
+                    pContext->TransitionBarrier(RegGetTex(averageDepthPyramidHandle), D3D12_RESOURCE_STATE_COPY_DEST, 0);
                     pContext->TransitionBarrier(RegGetTex(minDepthPyramidHandle), D3D12_RESOURCE_STATE_COPY_DEST, 0);
                     pContext->TransitionBarrier(RegGetTex(maxDepthPyramidHandle), D3D12_RESOURCE_STATE_COPY_DEST, 0);
                     pContext->FlushResourceBarriers();
 
                     const CD3DX12_TEXTURE_COPY_LOCATION src(RegGetTex(depthHandle)->GetResource(), 0);
 
-                    //const CD3DX12_TEXTURE_COPY_LOCATION dst_avg(RegGetTex(averageDepthPyramidHandle)->GetResource(), 0);
-                    //context->GetGraphicsCommandList()->CopyTextureRegion(&dst_avg, 0, 0, 0, &src, nullptr);
+                    const CD3DX12_TEXTURE_COPY_LOCATION dst_avg(RegGetTex(averageDepthPyramidHandle)->GetResource(), 0);
+                    context->GetGraphicsCommandList()->CopyTextureRegion(&dst_avg, 0, 0, 0, &src, nullptr);
 
                     const CD3DX12_TEXTURE_COPY_LOCATION dst_min(RegGetTex(minDepthPyramidHandle)->GetResource(), 0);
                     context->GetGraphicsCommandList()->CopyTextureRegion(&dst_min, 0, 0, 0, &src, nullptr);
@@ -121,13 +121,13 @@ namespace MoYu
                     context->FlushResourceBarriers();
                 }
 
-                ////--------------------------------------------------
-                //// 生成AverageDepthPyramid
-                ////--------------------------------------------------
-                //{
-                //    RHI::D3D12Texture* _SrcTexture = RegGetTex(averageDepthPyramidHandle);
-                //    generateMipmapForDepthPyramid(pContext, _SrcTexture, DepthMipGenerateMode::AverageType);
-                //}
+                //--------------------------------------------------
+                // 生成AverageDepthPyramid
+                //--------------------------------------------------
+                {
+                    RHI::D3D12Texture* _SrcTexture = RegGetTex(averageDepthPyramidHandle);
+                    generateMipmapForDepthPyramid(pContext, _SrcTexture, DepthMipGenerateMode::AverageType);
+                }
 
                 //--------------------------------------------------
                 // 生成MinDepthPyramid
@@ -146,7 +146,7 @@ namespace MoYu
                 }
             });
 
-            //passOutput.averageDepthPyramidHandle = averageDepthPyramidHandle;
+            passOutput.averageDepthPyramidHandle = averageDepthPyramidHandle;
             passOutput.minDepthPtyramidHandle = minDepthPyramidHandle;
             passOutput.maxDepthPtyramidHandle = maxDepthPyramidHandle;
         }

@@ -654,7 +654,6 @@ namespace MoYu
 					//.Add32BitConstants<0, 0>(16)
 					.AddConstantBufferView<0, 0>()
 					.AddConstantBufferView<1, 0>()
-					.AddConstantBufferView<2, 0>()
 					.AddDescriptorTable(RHI::D3D12DescriptorTable(1).AddSRVRange<0, 0>(2, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0))
 					.AddStaticSampler<10, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 4)
 					.AddStaticSampler<11, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP, 4)
@@ -671,9 +670,9 @@ namespace MoYu
 				RHI::D3D12InputLayout InputLayout = {};
 
 				RHIDepthStencilState DepthStencilState;
-				DepthStencilState.DepthEnable = false;
+				DepthStencilState.DepthEnable = true;
 				DepthStencilState.DepthWrite = false;
-				DepthStencilState.DepthFunc = RHI_COMPARISON_FUNC::Always;
+				DepthStencilState.DepthFunc = RHI_COMPARISON_FUNC::LessEqual;
 
 				RHIRenderTargetState RenderTargetState;
 				RenderTargetState.RTFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -938,6 +937,53 @@ namespace MoYu
 		});
 
 		passOutput.vbufferLightingHandle = mLightBufferHandle;
+	}
+
+	void VolumetriLighting::RenderOpaqueFog(RHI::RenderGraph& graph, VolumeFogDrawInputStruct& passInput, VolumeFogDrawOutputStruct& passOutput)
+	{
+		RHI::RgResourceHandle perframeBufferHandle = passInput.perframeBufferHandle;
+		RHI::RgResourceHandle shaderVariablesVolumetricHandle = passInput.shaderVariablesVolumetricHandle;
+		RHI::RgResourceHandle vbufferLightingHandle = passInput.vbufferLightingHandle;
+		RHI::RgResourceHandle depthMipMapHandle = passInput.depthMipMapHandle;
+
+		RHI::RgResourceHandle rtColorHandle = passOutput.renderTargetColorHandle;
+		RHI::RgResourceHandle rtDepthHandle = passOutput.renderTargetDepthHandle;
+
+		RHI::RenderPass& opaqueFogPass = graph.AddRenderPass("OpaqueAtmosphericScattering");
+
+		opaqueFogPass.Read(perframeBufferHandle, false, RHIResourceState::RHI_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		opaqueFogPass.Read(shaderVariablesVolumetricHandle, false, RHIResourceState::RHI_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		opaqueFogPass.Read(vbufferLightingHandle, false, RHIResourceState::RHI_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+		opaqueFogPass.Read(depthMipMapHandle, false, RHIResourceState::RHI_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+
+		opaqueFogPass.Write(rtColorHandle, false, RHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET);
+		opaqueFogPass.Write(rtDepthHandle, false, RHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
+
+		opaqueFogPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
+			
+			RHI::D3D12GraphicsContext* graphicContext = context->GetGraphicsContext();
+
+			RHI::D3D12RenderTargetView* colorRenderTarget = RegGetTex(rtColorHandle)->GetDefaultRTV().get();
+			RHI::D3D12DepthStencilView* depthRenderTarget = RegGetTex(rtDepthHandle)->GetDefaultDSV().get();
+
+			graphicContext->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			graphicContext->SetViewport(RHIViewport{ 0.0f, 0.0f, (float)colorTexDesc.Width, (float)colorTexDesc.Height, 0.0f, 1.0f });
+			graphicContext->SetScissorRect(RHIRect{ 0, 0, (int)colorTexDesc.Width, (int)colorTexDesc.Height });
+			graphicContext->SetRenderTarget(colorRenderTarget, depthRenderTarget);
+
+			graphicContext->SetRootSignature(pOpaqueAtmosphericScatteringSignature.get());
+			graphicContext->SetPipelineState(pOpaqueAtmosphericScatteringPSO.get());
+
+			graphicContext->SetConstantBuffer(0, RegGetBuf(perframeBufferHandle)->GetGpuVirtualAddress());
+			graphicContext->SetConstantBuffer(1, RegGetBuf(shaderVariablesVolumetricHandle)->GetGpuVirtualAddress());
+			graphicContext->SetDynamicDescriptor(2, 0, RegGetTex(vbufferLightingHandle)->GetDefaultSRV(1)->GetCpuHandle());
+			graphicContext->SetDynamicDescriptor(2, 1, RegGetTex(depthMipMapHandle)->GetDefaultSRV(1)->GetCpuHandle());
+
+			graphicContext->Draw(3);
+		});
+
+		passOutput.renderTargetColorHandle = rtColorHandle;
+		passOutput.renderTargetDepthHandle = rtDepthHandle;
 	}
 
 	void VolumetriLighting::UpdateVolumetricLightingUniform(const FogVolume& fog, HLSL::VolumetricLightingUniform& inoutVolumetricLightingUniform)

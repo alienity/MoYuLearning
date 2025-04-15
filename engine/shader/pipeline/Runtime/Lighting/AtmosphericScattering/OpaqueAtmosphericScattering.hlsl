@@ -14,7 +14,6 @@
 
 ConstantBuffer<FrameUniforms> _FrameUniforms : register(b0, space0);
 ConstantBuffer<ShaderVariablesVolumetric> _ShaderVariablesVolumetric : register(b1, space0);
-ConstantBuffer<ShaderVariablesPhysicallyBasedSky> _ShaderVariablesPhysicallyBasedSky : register(b2, space0);
 Texture3D _VBufferLighting : register(t0, space0);
 Texture2D<float> _DepthTextureMS : register(t1, space0);
 
@@ -94,7 +93,7 @@ FragOutput Frag(Varyings input)
 
     float3 volColor, volOpacity;
     EvaluateAtmosphericScattering(
-        _FrameUniforms, _ShaderVariablesPhysicallyBasedSky, _ShaderVariablesVolumetric,
+        _FrameUniforms, _ShaderVariablesVolumetric,
         _VBufferLighting, sampler_LinearClamp, posInput, V, volColor, volOpacity);
 
     return OutputFog(volColor, volOpacity);
