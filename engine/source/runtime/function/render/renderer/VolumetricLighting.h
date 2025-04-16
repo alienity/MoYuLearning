@@ -85,7 +85,6 @@ namespace MoYu
 		struct VolumeFogDrawOutputStruct
 		{
 			RHI::RgResourceHandle renderTargetColorHandle;
-			RHI::RgResourceHandle renderTargetDepthHandle;
 		};
 
 		~VolumetriLighting() { destroy(); }

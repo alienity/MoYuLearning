@@ -670,9 +670,9 @@ namespace MoYu
 				RHI::D3D12InputLayout InputLayout = {};
 
 				RHIDepthStencilState DepthStencilState;
-				DepthStencilState.DepthEnable = true;
+				DepthStencilState.DepthEnable = false;
 				DepthStencilState.DepthWrite = false;
-				DepthStencilState.DepthFunc = RHI_COMPARISON_FUNC::LessEqual;
+				DepthStencilState.DepthFunc = RHI_COMPARISON_FUNC::GreaterEqual;
 
 				RHIRenderTargetState RenderTargetState;
 				RenderTargetState.RTFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -682,6 +682,18 @@ namespace MoYu
 				RHISampleState SampleState;
 				SampleState.Count = 1;
 
+				RHIRenderTargetBlendDesc BlendDesc0;
+				BlendDesc0.BlendEnable = true;
+				BlendDesc0.SrcBlendRgb = RHI_FACTOR::One;
+				BlendDesc0.DstBlendRgb = RHI_FACTOR::OneMinusSrcAlpha;
+				BlendDesc0.BlendOpRgb = RHI_BLEND_OP::Add;
+				BlendDesc0.SrcBlendAlpha = RHI_FACTOR::One;
+				BlendDesc0.DstBlendAlpha = RHI_FACTOR::OneMinusSrcAlpha;
+				BlendDesc0.BlendOpAlpha = RHI_BLEND_OP::Add;
+
+				RHIBlendState BlendState;
+				BlendState.RenderTargets[0] = BlendDesc0;
+
 				struct PsoStream
 				{
 					PipelineStateStreamRootSignature     RootSignature;
@@ -689,6 +701,7 @@ namespace MoYu
 					PipelineStateStreamPrimitiveTopology PrimitiveTopologyType;
 					PipelineStateStreamVS                VS;
 					PipelineStateStreamPS                PS;
+					PipelineStateStreamBlendState        BlendState;
 					PipelineStateStreamDepthStencilState DepthStencilState;
 					PipelineStateStreamRenderTargetState RenderTargetState;
 					PipelineStateStreamSampleState       SampleState;
@@ -698,6 +711,7 @@ namespace MoYu
 				psoStream.PrimitiveTopologyType = RHI_PRIMITIVE_TOPOLOGY::Triangle;
 				psoStream.VS = &mOpaqueAtmosphericScatteringVS;
 				psoStream.PS = &mOpaqueAtmosphericScatteringPS;
+				psoStream.BlendState = BlendState;
 				psoStream.DepthStencilState = DepthStencilState;
 				psoStream.RenderTargetState = RenderTargetState;
 				psoStream.SampleState = SampleState;
@@ -708,6 +722,7 @@ namespace MoYu
 			}
 		}
 	}
+
 
 	void VolumetriLighting::GenerateMaxZForVolumetricPass(RHI::RenderGraph& graph, GenMaxZInputStruct& passInput, GenMaxZOutputStruct& passOutput)
 	{
@@ -947,7 +962,6 @@ namespace MoYu
 		RHI::RgResourceHandle depthMipMapHandle = passInput.depthMipMapHandle;
 
 		RHI::RgResourceHandle rtColorHandle = passOutput.renderTargetColorHandle;
-		RHI::RgResourceHandle rtDepthHandle = passOutput.renderTargetDepthHandle;
 
 		RHI::RenderPass& opaqueFogPass = graph.AddRenderPass("OpaqueAtmosphericScattering");
 
@@ -955,21 +969,20 @@ namespace MoYu
 		opaqueFogPass.Read(shaderVariablesVolumetricHandle, false, RHIResourceState::RHI_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		opaqueFogPass.Read(vbufferLightingHandle, false, RHIResourceState::RHI_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 		opaqueFogPass.Read(depthMipMapHandle, false, RHIResourceState::RHI_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+		opaqueFogPass.Read(rtColorHandle, true);
 
 		opaqueFogPass.Write(rtColorHandle, false, RHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET);
-		opaqueFogPass.Write(rtDepthHandle, false, RHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
-
+		
 		opaqueFogPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
 			
 			RHI::D3D12GraphicsContext* graphicContext = context->GetGraphicsContext();
 
 			RHI::D3D12RenderTargetView* colorRenderTarget = RegGetTex(rtColorHandle)->GetDefaultRTV().get();
-			RHI::D3D12DepthStencilView* depthRenderTarget = RegGetTex(rtDepthHandle)->GetDefaultDSV().get();
-
+			
 			graphicContext->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			graphicContext->SetViewport(RHIViewport{ 0.0f, 0.0f, (float)colorTexDesc.Width, (float)colorTexDesc.Height, 0.0f, 1.0f });
 			graphicContext->SetScissorRect(RHIRect{ 0, 0, (int)colorTexDesc.Width, (int)colorTexDesc.Height });
-			graphicContext->SetRenderTarget(colorRenderTarget, depthRenderTarget);
+			graphicContext->SetRenderTarget(colorRenderTarget);
 
 			graphicContext->SetRootSignature(pOpaqueAtmosphericScatteringSignature.get());
 			graphicContext->SetPipelineState(pOpaqueAtmosphericScatteringPSO.get());
@@ -983,7 +996,6 @@ namespace MoYu
 		});
 
 		passOutput.renderTargetColorHandle = rtColorHandle;
-		passOutput.renderTargetDepthHandle = rtDepthHandle;
 	}
 
 	void VolumetriLighting::UpdateVolumetricLightingUniform(const FogVolume& fog, HLSL::VolumetricLightingUniform& inoutVolumetricLightingUniform)

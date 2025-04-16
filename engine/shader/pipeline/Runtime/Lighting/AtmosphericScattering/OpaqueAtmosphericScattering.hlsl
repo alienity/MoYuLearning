@@ -96,6 +96,6 @@ FragOutput Frag(Varyings input)
         _FrameUniforms, _ShaderVariablesVolumetric,
         _VBufferLighting, sampler_LinearClamp, posInput, V, volColor, volOpacity);
 
-    return OutputFog(volColor, volOpacity);
+    return OutputFog(volColor, 1 - volOpacity);
 }
 

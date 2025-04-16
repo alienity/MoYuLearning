@@ -964,23 +964,23 @@ namespace MoYu
         VolumeCloudPass::DrawOutputParameters mVCOutputParams;
 
         mVCIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVCIntputParams.renderTargetColorHandle = mASOutputParams.renderTargetColorHandle;
-        mVCIntputParams.renderTargetDepthHandle  = mASOutputParams.renderTargetDepthHandle;
+        mVCIntputParams.renderTargetColorHandle = outColorHandle;
+        mVCIntputParams.renderTargetDepthHandle  = outDepthHandle;
         mVolumeCloudPass->update(graph, mVCIntputParams, mVCOutputParams);
 
         outColorHandle = mVCOutputParams.outColorHandle;
         //=================================================================================
 
         //=================================================================================
+        // Fog draw
         VolumetriLighting::VolumeFogDrawInputStruct mVolumeFogDrawInput;
         VolumetriLighting::VolumeFogDrawOutputStruct mVolumeFogDrawOutput;
+
         mVolumeFogDrawInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
         mVolumeFogDrawInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
         mVolumeFogDrawInput.vbufferLightingHandle = mVolumeLightOutput.vbufferLightingHandle;
         mVolumeFogDrawInput.depthMipMapHandle = mDepthPyramidOutput.averageDepthPyramidHandle;
-
-        mVolumeFogDrawOutput.renderTargetColorHandle = mVCOutputParams.outColorHandle;
-        mVolumeFogDrawOutput.renderTargetDepthHandle = mGBufferOutput.depthHandle;
+        mVolumeFogDrawOutput.renderTargetColorHandle = outColorHandle;
 
         mVolumeLightPass->RenderOpaqueFog(graph, mVolumeFogDrawInput, mVolumeFogDrawOutput);
 
