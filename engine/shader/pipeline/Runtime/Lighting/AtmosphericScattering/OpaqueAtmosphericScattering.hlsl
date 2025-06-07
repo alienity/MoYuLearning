@@ -84,6 +84,7 @@ FragOutput Frag(Varyings input)
     float4x4 _PixelCoordToViewDirWS = _ShaderVariablesVolumetric._VBufferCoordToViewDirWS;
     
     float2 positionSS = input.positionCS.xy;
+    // float3 V = normalize(mul(UNITY_MATRIX_I_VP(cameraUniform), float4((positionSS * 2 - 1), 0, 0)).xyz);
     float3 V          = GetSkyViewDirWS(positionSS, _PixelCoordToViewDirWS);
     float  depth      = LoadCameraDepth(_DepthTextureMS, positionSS);
 
