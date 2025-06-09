@@ -442,7 +442,7 @@ void BuildPatches(uint3 id : SV_DispatchThreadID, uint3 groupId: SV_GroupID, uin
     TerrainPatchBounds bounds = GetPatchBounds(InConsBuffer, patch);
     if(Cull(InConsBuffer, bounds, hizDepthMap))
     {
-        return;
+        // return;
     }
     SetLodTrans(patch, InConsBuffer, LodMap, nodeLoc, patchOffset);
     CulledPatchList.Append(patch);

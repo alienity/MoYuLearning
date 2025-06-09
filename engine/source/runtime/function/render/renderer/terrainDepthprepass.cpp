@@ -6,7 +6,6 @@
 
 namespace MoYu
 {
-
 	void TerrainDepthPrePass::initialize(const DrawPassInitInfo& init_info)
 	{
         depthDesc = init_info.depthTexDesc;

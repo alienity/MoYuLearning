@@ -128,6 +128,7 @@ namespace MoYu
         RHI::RgBufferDesc buildPatchArgsBufferDesc;
         
         bool iMinMaxHeightReady;
+        bool iNormalMapReady;
 
         RHI::RgTextureDesc colorTexDesc;
         RHI::RgTextureDesc depthTexDesc;
@@ -141,6 +142,8 @@ namespace MoYu
          */
         glm::float4 worldLODParams[MAX_TERRAIN_LOD + 1];
         int nodeIDOffsetLOD[MAX_TERRAIN_LOD + 1];
+
+        std::shared_ptr<RHI::D3D12Texture> pTerrainNormalMap;
 
         std::shared_ptr<RHI::D3D12Texture> pMinHeightMap; // RG32
         std::shared_ptr<RHI::D3D12Texture> pMaxHeightMap; // RG32
@@ -165,6 +168,10 @@ namespace MoYu
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> CulledDirPatchListBuffers; // For DirectionalLight
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> mTerrainDirConsBuffers; // For DirectionalLight
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> dirPatchCmdSigBuffers; // For DirectionalLight
+
+		Shader GenerateTerrainNormalMapCS;
+		std::shared_ptr<RHI::D3D12RootSignature> pGenerateTerrainNormalMapSignature;
+		std::shared_ptr<RHI::D3D12PipelineState> pGenerateTerrainNormalMapPSO;
 
         Shader InitQuadTreeCS;
         std::shared_ptr<RHI::D3D12RootSignature> pInitQuadTreeSignature;

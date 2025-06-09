@@ -301,28 +301,28 @@ void EvaluateAtmosphericScattering(
         // and the latter resides on the far plane, the computation will be numerically unstable.
         float distDelta = fogFragDist - expFogStart;
 
-        if (distDelta > 0)
-        {
-            // Apply the distant (fallback) fog.
-            float3 positionWS = GetCurrentViewPosition(frameUniform) - V * expFogStart;
-            float  startHeight = positionWS.y;
-            float  cosZenith = -V.y;
+        //if (distDelta > 0)
+        //{
+        //    // Apply the distant (fallback) fog.
+        //    float3 positionWS = GetCurrentViewPosition(frameUniform) - V * expFogStart;
+        //    float  startHeight = positionWS.y;
+        //    float  cosZenith = -V.y;
         
-            // For both homogeneous and exponential media,
-            // Integrate[Transmittance[x] * Scattering[x], {x, 0, t}] = Albedo * Opacity[t].
-            // Note that pulling the incoming radiance (which is affected by the fog) out of the
-            // integral is wrong, as it means that shadow rays are not volumetrically shadowed.
-            // This will result in fog looking overly bright.
+        //    // For both homogeneous and exponential media,
+        //    // Integrate[Transmittance[x] * Scattering[x], {x, 0, t}] = Albedo * Opacity[t].
+        //    // Note that pulling the incoming radiance (which is affected by the fog) out of the
+        //    // integral is wrong, as it means that shadow rays are not volumetrically shadowed.
+        //    // This will result in fog looking overly bright.
         
-            float3 volAlbedo = volumeLightUniform._HeightFogBaseScattering.xyz / volumeLightUniform._HeightFogBaseExtinction;
-            float  odFallback = OpticalDepthHeightFog(volumeLightUniform._HeightFogBaseExtinction, volumeLightUniform._HeightFogBaseHeight,
-                volumeLightUniform._HeightFogExponents, cosZenith, startHeight, distDelta);
-            float  trFallback = TransmittanceFromOpticalDepth(odFallback);
-            float  trCamera = 1 - volFog.a;
+        //    float3 volAlbedo = volumeLightUniform._HeightFogBaseScattering.xyz / volumeLightUniform._HeightFogBaseExtinction;
+        //    float  odFallback = OpticalDepthHeightFog(volumeLightUniform._HeightFogBaseExtinction, volumeLightUniform._HeightFogBaseHeight,
+        //        volumeLightUniform._HeightFogExponents, cosZenith, startHeight, distDelta);
+        //    float  trFallback = TransmittanceFromOpticalDepth(odFallback);
+        //    float  trCamera = 1 - volFog.a;
         
-            volFog.rgb += trCamera * _FogColor * GetCurrentExposureMultiplier(frameUniform) * volAlbedo * (1 - trFallback);
-            volFog.a = 1 - (trCamera * trFallback);
-        }
+        //    volFog.rgb += trCamera * _FogColor * GetCurrentExposureMultiplier(frameUniform) * volAlbedo * (1 - trFallback);
+        //    volFog.a = 1 - (trCamera * trFallback);
+        //}
 
         color = volFog.rgb; // Already pre-exposed
         opacity = volFog.a;

@@ -167,11 +167,13 @@ namespace MoYu
                 if (!isHeightmapSame || !mIsHeightmapInit)
                 {
                     SceneImage terrainSceneImage = sceneTerrainRenderer.m_scene_terrain_mesh.m_terrain_height_map;
-                    terrain_heightmap = renderResource->createTex2D(terrain_heightmap_scratch,
-                                                                     DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
-                                                                     terrainSceneImage.m_is_srgb,
-                                                                     terrainSceneImage.m_auto_mips,
-                                                                     false);
+                    DXGI_FORMAT heightmapFormat = terrain_heightmap_scratch->GetMetadata().format;
+					terrain_heightmap =
+						renderResource->createTex2D(terrain_heightmap_scratch,
+							heightmapFormat,
+							false,
+							terrainSceneImage.m_auto_mips,
+							false);
                 }
                 if (!isNormalmapSame || !mIsHeightmapInit)
                 {
@@ -191,7 +193,7 @@ namespace MoYu
         }
 
         internalTerrain.terrain_heightmap_scratch = terrain_heightmap_scratch;
-        internalTerrain.terrain_normalmap_scratch = terrain_normalmap_scratch;
+        //internalTerrain.terrain_normalmap_scratch = terrain_normalmap_scratch;
 
         internalTerrain.terrain_heightmap = terrain_heightmap;
         internalTerrain.terrain_normalmap = terrain_normalmap;

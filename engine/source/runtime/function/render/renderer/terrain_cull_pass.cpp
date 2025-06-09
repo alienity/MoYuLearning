@@ -53,6 +53,37 @@ namespace MoYu
 
         //--------------------------------------------------------------------------
         {
+			ShaderCompileOptions shaderCompileOpt = ShaderCompileOptions(L"GenerateNormalMap");
+
+            GenerateTerrainNormalMapCS = m_ShaderCompiler->CompileShader(
+				RHI_SHADER_TYPE::Compute, m_ShaderRootPath / "pipeline/Runtime/Tools/Terrain/TerrainGenNormalCS.hlsl", shaderCompileOpt);
+
+			RHI::RootSignatureDesc rootSigDesc =
+				RHI::RootSignatureDesc()
+				.Add32BitConstants<0, 0>(2)
+				.AddStaticSampler<10, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 8)
+				.AllowInputLayout()
+				.AllowResourceDescriptorHeapIndexing()
+				.AllowSampleDescriptorHeapIndexing();
+
+            pGenerateTerrainNormalMapSignature = std::make_shared<RHI::D3D12RootSignature>(m_Device, rootSigDesc);
+
+			struct PsoStream
+			{
+				PipelineStateStreamRootSignature RootSignature;
+				PipelineStateStreamCS            CS;
+			} psoStream;
+			psoStream.RootSignature = PipelineStateStreamRootSignature(pGenerateTerrainNormalMapSignature.get());
+			psoStream.CS = &GenerateTerrainNormalMapCS;
+			PipelineStateStreamDesc psoDesc = { sizeof(PsoStream), &psoStream };
+
+            pGenerateTerrainNormalMapPSO =
+				std::make_shared<RHI::D3D12PipelineState>(m_Device, L"GenerateTerrainNormalMapPSO", psoDesc);
+        }
+        //--------------------------------------------------------------------------
+
+        //--------------------------------------------------------------------------
+        {
             ShaderCompileOptions shaderCompileOpt = ShaderCompileOptions(L"TraverseQuadTree");
             shaderCompileOpt.SetDefine(L"TRAVERSE_QUAD_TREE", L"1");
 
@@ -151,12 +182,13 @@ namespace MoYu
 
         //--------------------------------------------------------------------------
 
+        iNormalMapReady = false;
         iMinMaxHeightReady = false;
     }
 
     void IndirectTerrainCullPass::prepareMeshData(std::shared_ptr<RenderResource> render_resource)
     {
-        if (pMinHeightMap == nullptr || pMaxHeightMap == nullptr)
+        if (pMinHeightMap == nullptr || pMaxHeightMap == nullptr || pTerrainNormalMap == nullptr)
         {
             InternalTerrainRenderer& internalTerrainRenderer = m_render_scene->m_terrain_renderers[0].internalTerrainRenderer;
 
@@ -188,6 +220,18 @@ namespace MoYu
                     L"TerrainMaxHeightmap",
                     D3D12_RESOURCE_STATE_COMMON,
                     std::nullopt);
+
+			pTerrainNormalMap = 
+                RHI::D3D12Texture::Create2D(m_Device->GetLinkedDevice(),
+				    heightmapDesc.Width,
+				    heightmapDesc.Height,
+				    1,
+				    heightmapDesc.Format,
+				    RHI::RHISurfaceCreateRandomWrite,
+				    1,
+				    L"TerrainNormalmap",
+				    D3D12_RESOURCE_STATE_COMMON,
+				    std::nullopt);
         }
 
         if (pLodMap == nullptr)
@@ -591,10 +635,10 @@ namespace MoYu
     {
         InternalTerrainRenderer& internalTerrainRenderer = m_render_scene->m_terrain_renderers[0].internalTerrainRenderer;
         std::shared_ptr<RHI::D3D12Texture> terrainHeightmap = internalTerrainRenderer.ref_terrain.terrain_heightmap;
-        std::shared_ptr<RHI::D3D12Texture> terrainNormalmap = internalTerrainRenderer.ref_terrain.terrain_normalmap;
+        //std::shared_ptr<RHI::D3D12Texture> terrainNormalmap = internalTerrainRenderer.ref_terrain.terrain_normalmap;
 
         RHI::RgResourceHandle terrainHeightmapHandle = GImport(graph, terrainHeightmap.get());
-        RHI::RgResourceHandle terrainNormalmapHandle = GImport(graph, terrainNormalmap.get());
+        RHI::RgResourceHandle terrainNormalmapHandle = GImport(graph, pTerrainNormalMap.get());
 
         RHI::RgResourceHandle terrainMinHeightHandle = GImport(graph, pMinHeightMap.get());
         RHI::RgResourceHandle terrainMaxHeightHandle = GImport(graph, pMaxHeightMap.get());
@@ -603,6 +647,39 @@ namespace MoYu
         RHI::RgResourceHandle terrainMatPropertiesHandle = GImport(graph, pTerrainMatPropertiesBuffer.get());
         
         const RHI::RgResourceHandle&& hizDepthBufferHandle = std::move(passInput.hizDepthBufferHandle);
+
+        if (!iNormalMapReady)
+        {
+            iNormalMapReady = true;
+
+            RHI::RenderPass& genNormalMapPass = graph.AddRenderPass("GenerateNormalMapPass");
+
+            genNormalMapPass.Read(terrainHeightmapHandle, true);
+            genNormalMapPass.Write(terrainNormalmapHandle, true);
+
+            genNormalMapPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
+                RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
+
+				pContext->TransitionBarrier(RegGetTex(terrainHeightmapHandle), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+				pContext->TransitionBarrier(RegGetTex(terrainNormalmapHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+				pContext->FlushResourceBarriers();
+
+                RHI::D3D12Texture* _SrcTexture = RegGetTex(terrainHeightmapHandle);
+                int DispatchX = _SrcTexture->GetWidth();
+                int DispatchY = _SrcTexture->GetHeight();
+
+                RHI::D3D12ShaderResourceView* HeightMapSRV = RegGetTex(terrainHeightmapHandle)->GetDefaultSRV().get();
+                RHI::D3D12UnorderedAccessView* NormalMapUAV = RegGetTex(terrainNormalmapHandle)->GetDefaultUAV().get();
+
+				pContext->SetRootSignature(pGenerateTerrainNormalMapSignature.get());
+				pContext->SetPipelineState(pGenerateTerrainNormalMapPSO.get());
+				pContext->SetConstant(0, 0, HeightMapSRV->GetIndex());
+				pContext->SetConstant(0, 1, NormalMapUAV->GetIndex());
+				pContext->Dispatch2D(DispatchX, DispatchY);
+
+            });
+
+        }
 
         if (!iMinMaxHeightReady)
         {
@@ -800,7 +877,7 @@ namespace MoYu
 
             pContext->SetConstantArray(0, sizeof(rootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
-            pContext->Dispatch2D(160, 160, 8, 8);
+            pContext->Dispatch2D(SECTOR_COUNT_WORLD, SECTOR_COUNT_WORLD);
         });
 
         //------------------------------------------------------------------------------------
