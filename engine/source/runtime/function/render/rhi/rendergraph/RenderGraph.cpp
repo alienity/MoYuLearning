@@ -570,10 +570,14 @@ namespace RHI
 			std::wstring_convert<convert_type, wchar_t> converter;
 
 			// Convert wstring to UTF-8 string
-			if (handle.Type == RgResourceType::Buffer)
-				_name = converter.to_bytes(Registry.GetD3D12Buffer(handle)->GetResourceName());
-			else if (handle.Type == RgResourceType::Texture)
-				_name = converter.to_bytes(Registry.GetD3D12Texture(handle)->GetResourceName());
+            if (handle.Type == RgResourceType::Buffer)
+            {
+                _name = converter.to_bytes(Registry.GetD3D12Buffer(handle)->GetResourceName());
+            }
+            else if (handle.Type == RgResourceType::Texture)
+            {
+                _name = converter.to_bytes(Registry.GetD3D12Texture(handle)->GetResourceName());
+            }
 
 			std::string_view nodeName = _name;
 
