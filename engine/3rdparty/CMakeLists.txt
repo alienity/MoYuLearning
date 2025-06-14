@@ -76,6 +76,11 @@ if(NOT TARGET tinyobjloader)
     set_target_properties(uninstall PROPERTIES FOLDER ${third_party_folder}/tinyobjloader)
 endif()
 
+if(NOT TARGET gvpp)
+    include(gvpp.cmake)
+	set_target_properties(gvpp PROPERTIES FOLDER ${third_party_folder}/gvpp)
+endif()
+
 if(NOT TARGET assimp)
     option(BUILD_SHARED_LIBS "" OFF)
     option(ASSIMP_BUILD_ZLIB "" ON)
