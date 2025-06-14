@@ -24,8 +24,9 @@ namespace Dgml
         XmlWriter::BeginElement(Stream, "Node");
         {
             XmlWriter::Attribute(Stream, "Id", Node.Id);
-            XmlWriter::Attribute(Stream, "Type", Node.Type);
             XmlWriter::Attribute(Stream, "Label", Node.Label);
+            XmlWriter::Attribute(Stream, "Category", Node.Category);
+            XmlWriter::Attribute(Stream, "Background", Node.Background);
         }
         XmlWriter::EndCloseElement(Stream);
     }
@@ -37,9 +38,21 @@ namespace Dgml
             XmlWriter::Attribute(Stream, "Source", Link.Source);
             XmlWriter::Attribute(Stream, "Target", Link.Target);
             XmlWriter::Attribute(Stream, "Label", Link.Label);
+            XmlWriter::Attribute(Stream, "Category", Link.Category);
         }
         XmlWriter::EndCloseElement(Stream);
     }
+
+	static void SerializeCategory(const Category& Category, std::ostream& Stream)
+	{
+		XmlWriter::BeginElement(Stream, "Category");
+		{
+			XmlWriter::Attribute(Stream, "Id", Category.Id);
+			XmlWriter::Attribute(Stream, "Label", Category.Label);
+			XmlWriter::Attribute(Stream, "Background", Category.Background);
+		}
+		XmlWriter::EndCloseElement(Stream);
+	}
 
     Graph::Graph(const std::string& Title, GraphDirection Direction /*= GraphDirection::Default*/) :
         Title(Title), Direction(Direction)
@@ -48,6 +61,8 @@ namespace Dgml
     Dgml::Node* Graph::AddNode() { return Nodes.emplace_back(std::make_unique<Node>()).get(); }
 
     Dgml::Link* Graph::AddLink() { return Links.emplace_back(std::make_unique<Link>()).get(); }
+
+    Dgml::Category* Graph::AddCategory() { return Categories.emplace_back(std::make_unique<Category>()).get(); }
 
     void Graph::Serialize(std::ostream& Stream) const
     {
@@ -85,6 +100,18 @@ namespace Dgml
             }
             XmlWriter::EndElement(Stream, "Links");
             // <Links />
+
+			// <Categories>
+			XmlWriter::BeginElement(Stream, "Categories");
+			XmlWriter::CloseElement(Stream);
+			{
+				for (const auto& Category : Categories)
+				{
+                    SerializeCategory(*Category, Stream);
+				}
+			}
+			XmlWriter::EndElement(Stream, "Categories");
+			// <Categories />
         }
         XmlWriter::EndElement(Stream, "DirectedGraph");
         // </DirectedGraph>

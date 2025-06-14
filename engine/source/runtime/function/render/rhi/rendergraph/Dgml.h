@@ -8,9 +8,9 @@ namespace Dgml
     struct Node
     {
         std::string Id;
-        std::string Type;
         std::string Label;
-        std::string BackgroundColor;
+        std::string Category;
+        std::string Background;
     };
 
     struct Link
@@ -18,6 +18,14 @@ namespace Dgml
         std::string Source;
         std::string Target;
         std::string Label;
+        std::string Category;
+    };
+
+    struct Category
+    {
+        std::string Id;
+        std::string Label;
+        std::string Background;
     };
 
     enum class GraphDirection
@@ -34,16 +42,17 @@ namespace Dgml
     public:
         explicit Graph(const std::string& Title, GraphDirection Direction = GraphDirection::Default);
 
-        Node* AddNode();
-
-        Link* AddLink();
+		Node* AddNode();
+		Link* AddLink();
+		Category* AddCategory();
 
         void Serialize(std::ostream& Stream) const;
 
     private:
-        std::string                        Title;
-        GraphDirection                     Direction;
-        std::vector<std::unique_ptr<Node>> Nodes;
-        std::vector<std::unique_ptr<Link>> Links;
+		std::string                            Title;
+		GraphDirection                         Direction;
+		std::vector<std::unique_ptr<Node>>     Nodes;
+        std::vector<std::unique_ptr<Link>>     Links;
+        std::vector<std::unique_ptr<Category>> Categories;
     };
 } // namespace Dgml

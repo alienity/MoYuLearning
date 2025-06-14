@@ -557,6 +557,15 @@ namespace RHI
 
 	void RenderGraph::ExportDgml(DgmlBuilder& Builder) const
 	{
+        const std::string catogeryResource = "Resource";
+        const std::string catogeryPass = "Pass";
+
+		const std::string catogeryResourceLabel = "Resource_Label";
+		const std::string catogeryPassLabel = "Pass_Label";
+
+        Builder.AddCategory(catogeryResource, catogeryResourceLabel, "White");
+        Builder.AddCategory(catogeryPass, catogeryPassLabel, "White");
+
 		for (int i = 0; i < InGraphResHandle.size(); i++)
 		{
 			auto handle = InGraphResHandle[i];
@@ -579,21 +588,25 @@ namespace RHI
                 _name = converter.to_bytes(Registry.GetD3D12Texture(handle)->GetResourceName());
             }
 
-			std::string_view nodeName = _name;
+			std::string_view resourceLanel = _name;
 
-			Builder.AddNode(_nodeId, "Node", nodeName);
+			Builder.AddNode(_nodeId, resourceLanel, catogeryResource, "Green");
 		}
 
 		for (int i = 0; i < DependencyLevels.size(); i++)
 		{
-			auto& renderPasses = DependencyLevels[i].RenderPasses;
+            const std::string catogeryLevel = (std::string)fmt::format("Level_{}", (int)(i));
+            const std::string catogeryLevelLabel = (std::string)fmt::format("Level_Label_{}", (int)(i));
+            Builder.AddCategory(catogeryLevel, catogeryLevelLabel, "White");
+            
+            auto& renderPasses = DependencyLevels[i].RenderPasses;
 			for (int j = 0; j < renderPasses.size(); j++)
 			{
 				std::string _passId = (std::string)fmt::format("Pass_{}", renderPasses[j]->PassIndex);
 				std::string_view passId = _passId;
-				std::string_view passName = renderPasses[j]->Name;
+				std::string_view passLabel = renderPasses[j]->Name;
 
-				Builder.AddNode(passId, "Pass", passName);
+				Builder.AddNode(passId, passLabel, catogeryPass, "Yellow");
 
 				auto& pReads = renderPasses[j]->Reads;
 				auto& pWrites = renderPasses[j]->Writes;
@@ -602,16 +615,17 @@ namespace RHI
 				{
 					std::string _nodeId = (std::string)fmt::format("Node_{}", (int)(pReads[m].rgHandle.Id));
 
-					Builder.AddLink(_nodeId, _passId, "");
+					Builder.AddLink(_nodeId, _passId, "Read", catogeryLevel);
 				}
 
 				for (int m = 0; m < pWrites.size(); m++)
 				{
 					std::string _nodeId = (std::string)fmt::format("Node_{}", (int)(pWrites[m].rgHandle.Id));
 
-					Builder.AddLink(_passId, _nodeId, "");
+					Builder.AddLink(_passId, _nodeId, "Write", catogeryLevel);
 				}
 			}
 		}
+
 	}
 } // namespace RHI
