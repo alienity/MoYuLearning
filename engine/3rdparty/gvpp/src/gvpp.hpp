@@ -36,9 +36,6 @@ namespace gvpp {
 		strtype indent;
 	};
 
-	template<class chartype> using printLineG = struct printLine<chartype>;
-
-
 	template<class chartype = char> class AbstractGraph;
 	template<class chartype = char> class Element;
 	template<class chartype = char> class Graph;
@@ -68,7 +65,6 @@ namespace gvpp {
 		friend class GraphT;
 		friend class SubGraphT;
 	public:
-		typedef chartype chartype_t;
 		AbstractGraph(strtype name) : name(name) {}
 		AbstractGraph(const AbstractGraph& g) = delete;
 		~AbstractGraph();
@@ -76,9 +72,9 @@ namespace gvpp {
 		strtype getName() const { return name; }
 
 		virtual const GvAttributesT& getAttributes(AttrType t) const { return getAttrsT(t); }
-		virtual strtype get(AttrType t, strtype att) const { return getAttrsT(t).at(att); }
-		virtual bool has(AttrType t, strtype att) const { return getAttrsT(t).find(att) != getAttrsT(t).end(); }
-		virtual AbstractGraphT& set(AttrType t, strtype att, strtype val) { getAttrsT(t)[att] = val; return *this; }
+		virtual strtype getAbstractGraphValue(AttrType t, strtype att) const { return getAttrsT(t).at(att); }
+		virtual bool hasAbstractGraphValue(AttrType t, strtype att) const { return getAttrsT(t).find(att) != getAttrsT(t).end(); }
+		virtual AbstractGraphT& setAbstractGraphValue(AttrType t, strtype att, strtype val) { getAttrsT(t)[att] = val; return *this; }
 
 		SubGraphT& addSubGraph(strtype name, bool cluster = false, strtype label = CWSTR(chartype, ""));
 		NodeT& addNode(strtype id, strtype lab = strtype(), bool forcenew = true);
@@ -109,9 +105,9 @@ namespace gvpp {
 		AbstractGraphT& getParent() const { return parent; }
 		virtual GraphT& getRootGraph() const { return parent.getRoot(); }
 		virtual const GvAttributesT& getAttributes() const { return getAttrs(); }
-		virtual strtype get(strtype att) const { return getAttrs().at(att); }
-		virtual bool has(strtype att) const { return getAttrs().find(att) != getAttrs().end(); }
-		virtual ElementT& set(strtype att, strtype val) { getAttrs()[att] = val; return *this; }
+		virtual strtype getElementValue(strtype att) const { return getAttrs().at(att); }
+		virtual bool hasElementValue(strtype att) const { return getAttrs().find(att) != getAttrs().end(); }
+		virtual ElementT& setElementValue(strtype att, strtype val) { getAttrs()[att] = val; return *this; }
 		strtype& operator[](const strtype& k) { return getAttrs()[k]; }
 		strtype& operator[](strtype&& k) { return getAttrs()[k]; }
 	protected:
@@ -128,7 +124,7 @@ namespace gvpp {
 		friend class AbstractGraphT;
 	public:
 		const strtype getId() const { return id; }
-		virtual Node& set(strtype att, strtype val) override { ElementT::set(att, val); return *this; }
+		virtual Node& set(strtype att, strtype val) { ElementT::setElementValue(att, val); return *this; }
 	protected:
 		void printTo(printLineT pl) const;
 	private:
@@ -149,7 +145,7 @@ namespace gvpp {
 		}
 		NodeT& getFrom() const { return std::get<0>(*this); }
 		NodeT& getTo() const { return std::get<1>(*this); }
-		virtual EdgeT& set(strtype att, strtype val) override { ElementT::set(att, val); return *this; }
+		virtual EdgeT& set(strtype att, strtype val) { ElementT::setElementValue(att, val); return *this; }
 	protected:
 		void printTo(printLineT pl) const;
 	};
@@ -161,17 +157,16 @@ namespace gvpp {
 		bool isCluster() const { return cluster; }
 		virtual bool isDirected() const override { return this->getParent().isDirected(); }
 		virtual const GvAttributesT& getAttributes(AttrType t) const override { return AbstractGraphT::getAttributes(t); }
-		virtual strtype get(AttrType t, strtype att) const override { return AbstractGraphT::get(t, att); }
-		virtual bool has(AttrType t, strtype att) const override { return this->getAttrsT(t).find(att) != this->getAttrsT(t).end(); }
-		virtual SubGraphT& set(AttrType t, strtype att, strtype val) override { AbstractGraphT::set(t, att, val); return *this; }
+		virtual strtype get(AttrType t, strtype att) const { return AbstractGraphT::getAbstractGraphValue(t, att); }
+		virtual bool has(AttrType t, strtype att) const { return this->getAttrsT(t).find(att) != this->getAttrsT(t).end(); }
+		virtual SubGraphT& set(AttrType t, strtype att, strtype val) { AbstractGraphT::setAbstractGraphValue(t, att, val); return *this; }
 
 		virtual const GvAttributesT& getAttributes() const override { return AbstractGraphT::getAttributes(AttrType::GRAPH); }
-		virtual strtype get(strtype att) const override { return AbstractGraphT::get(AttrType::GRAPH, att); }
-		virtual bool has(strtype att) const override { return AbstractGraphT::has(AttrType::GRAPH, att); }
+		virtual strtype get(strtype att) const { return AbstractGraphT::getAbstractGraphValue(AttrType::GRAPH, att); }
+		virtual bool has(strtype att) const { return AbstractGraphT::hasAbstractGraphValue(AttrType::GRAPH, att); }
 
-		//virtual SubGraphT& set(strtype att, strtype val) override { AbstractGraphT::set(AttrType::GRAPH, att, val); return *this; }
-		virtual ElementT& set(strtype att, strtype val) override { ElementT::set(att, val); return *this; }
-		virtual SubGraphT& setAttr(strtype att, strtype val) { AbstractGraphT::set(AttrType::GRAPH, att, val); return *this; }
+		virtual SubGraphT& set(strtype att, strtype val) { AbstractGraphT::setAbstractGraphValue(AttrType::GRAPH, att, val); return *this; }
+		virtual SubGraphT& setAttr(strtype att, strtype val) { AbstractGraphT::setAbstractGraphValue(AttrType::GRAPH, att, val); return *this; }
 	protected:
 		virtual GraphT& getRoot() override { return this->getRootGraph(); }
 		virtual GvAttributesT& getAttrs() override { return this->getAttrsT(AttrType::GRAPH); };
