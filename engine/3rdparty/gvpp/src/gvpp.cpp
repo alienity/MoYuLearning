@@ -202,43 +202,18 @@ namespace gvpp {
     }
 
     template<class chartype>
-    int renderToFile(GraphI &g, string layout, string format, string file) {
-        static const char *GUIFormats[] = {"x11", "xlib", "gtk"};
-        static const locale loc;
-        char *frmt = new char[format.length()+1];
-        // Convert to lowercase
-        for (size_t i = 0; i < format.length(); i ++)
-            frmt[i] = use_facet<ctype<chartype>>(loc).tolower(format[i]);
-        frmt[format.length()] = '\0';
-
-        bool isGUI = false;
-        for (const char* f : GUIFormats)
-            if (strcmp(f, frmt) == 0)
-                isGUI = true;
-
-        if (!isGUI) {
-            if (file.length() == 0) {
-                file = string("-ooutput.")+ format;
-            } else
-                file = "-o"+ file;
-        }
-        delete[] frmt;
+    int renderToFile(GraphI &g, std::string file) {
 
         basic_ostringstream<chartype> stream;
         stream << g;
 
         string buf = toCharString(stream.str());
 
-        auto cmd = string("dot ")+ file +" -T"+ format+ " -K"+ layout;
-        //FILE *fd = popen(cmd.c_str(), "w");
-        //fwrite(buf.c_str(), sizeof(chartype), buf.length(), fd);
-        //fflush(fd);
-        //return pclose(fd);
+		std::ofstream FileStream;
+		FileStream.open(file);
+        FileStream << buf;
+		FileStream.close();
 
-		std::cin >> buf;
-		std::ofstream out(cmd.c_str());
-		out << buf;
-		out.close();
 		return 1;
     }
 
@@ -249,7 +224,7 @@ namespace gvpp {
     template class Edge<char>;
     template class SubGraph<char>;
     template basic_ostream<char> &operator<< (basic_ostream<char> &os, const Graph<char> &g);
-    template int renderToFile (Graph<char> &g, string layout, string format, string file);
+    template int renderToFile (Graph<char> &g, std::string file);
 
     template class AbstractGraph<wchar_t>;
     template class Graph<wchar_t>;
@@ -258,5 +233,5 @@ namespace gvpp {
     template class Edge<wchar_t>;
     template class SubGraph<wchar_t>;
     template basic_ostream<wchar_t> &operator<< (basic_ostream<wchar_t> &os, const Graph<wchar_t> &g);
-    template int renderToFile (Graph<wchar_t> &g, string layout, string format, std::string file);
+    template int renderToFile (Graph<wchar_t> &g, std::string file);
 }

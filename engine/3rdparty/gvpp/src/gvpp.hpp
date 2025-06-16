@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <sstream>
 #include <tuple>
@@ -183,6 +185,11 @@ namespace gvpp {
 	public:
 		Graph(bool dir = true, strtype name = strtype()) : AbstractGraphT(name), directed(dir) {}
 		virtual bool isDirected() const override { return directed; }
+
+		virtual const GvAttributesT& get(AttrType t) const { return AbstractGraphT::getAttributes(t); }
+		virtual strtype get(AttrType t, strtype att) const { return AbstractGraphT::getAbstractGraphValue(t, att); }
+		virtual bool has(AttrType t, strtype att) const { return AbstractGraphT::hasAbstractGraphValue(t, att); }
+		virtual AbstractGraphT& set(AttrType t, strtype att, strtype val) { return AbstractGraphT::setAbstractGraphValue(t, att, val); }
 	protected:
 		virtual Graph& getRoot() override { return *this; }
 	private:
@@ -193,9 +200,7 @@ namespace gvpp {
 	template<class chartype>
 	ostreamtype& operator<<(ostreamtype&, const GraphT&);
 	template<class chartype>
-	int renderToFile(GraphT& g, std::string layout, std::string format, std::string file = "");
-	template<class chartype>
-	inline int renderToScreen(GraphT& g, std::string layout) { return renderToFile(g, layout, "x11"); }
+	int renderToFile(GraphT& g, std::string file);
 }
 
 #undef ElementT

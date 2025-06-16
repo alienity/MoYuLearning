@@ -12,6 +12,8 @@
 #include "runtime/function/render/rhi/rhi.h"
 #include "runtime/function/render/rhi/d3d12/d3d12_core.h"
 
+#include "gvpp.hpp"
+
 
 namespace RHI
 {
@@ -197,6 +199,8 @@ namespace RHI
         void Execute(D3D12CommandContext* Context);
 
         void ExportDgml(DgmlBuilder& Builder) const;
+
+        void ExportGraphViz(const std::filesystem::path& Path) const;
 
         [[nodiscard]] bool AllowRenderTarget(RgResourceHandle Resource) const noexcept;
         [[nodiscard]] bool AllowDepthStencil(RgResourceHandle Resource) const noexcept;

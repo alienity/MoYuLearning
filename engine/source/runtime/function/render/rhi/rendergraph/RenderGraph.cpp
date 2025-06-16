@@ -264,7 +264,7 @@ namespace RHI
 			if (RenderPass->Callback)
 			{
 				D3D12ScopedEvent(Context, RenderPass->Name);
-				RenderPass->Callback(RenderGraph->GetRegistry(), Context);
+				//RenderPass->Callback(RenderGraph->GetRegistry(), Context);
 			}
 		}
 	}
@@ -628,4 +628,31 @@ namespace RHI
 		}
 
 	}
+
+    // https://dreampuf.github.io/GraphvizOnline/
+    void RenderGraph::ExportGraphViz(const std::filesystem::path& path) const
+    {
+        gvpp::Graph<char> g(true, "test");
+        gvpp::Node<char>& n1 = g.addNode("n1", "Node 1");
+		gvpp::Node<char>& n2 = g.addNode("n2", "Node 2");
+		gvpp::SubGraph<char>& sg = g.addSubGraph("sg1", true);
+		gvpp::Node<char>& n3 = sg.addNode("n3", "Subnode 3");
+		gvpp::Node<char>& n4 = sg.addNode("n4", "Subnode 4");
+		g.addEdge(n1, n2);
+		sg.addEdge(n3, n4);
+		g.addEdge(n2, n3);
+
+		g.set(gvpp::AttrType::GRAPH, "ranksep", ".5");
+		g.set(gvpp::AttrType::EDGE, "style", "dashed");
+		g.set(gvpp::AttrType::NODE, "style", "filled");
+		g.set(gvpp::AttrType::NODE, "shape", "octagon");
+		g.set(gvpp::AttrType::NODE, "fillcolor", "lightgrey");
+
+		sg.set(gvpp::AttrType::GRAPH, "style", "filled");
+		sg.set(gvpp::AttrType::GRAPH, "fillcolor", "grey");
+		sg.set(gvpp::AttrType::NODE, "fillcolor", "lightblue");
+		sg.set(gvpp::AttrType::NODE, "shape", "oval");
+        gvpp::renderToFile<char>(g, path.string());
+
+    }
 } // namespace RHI
