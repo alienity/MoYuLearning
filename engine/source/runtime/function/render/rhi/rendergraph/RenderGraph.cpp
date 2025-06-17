@@ -264,7 +264,7 @@ namespace RHI
 			if (RenderPass->Callback)
 			{
 				D3D12ScopedEvent(Context, RenderPass->Name);
-				//RenderPass->Callback(RenderGraph->GetRegistry(), Context);
+				RenderPass->Callback(RenderGraph->GetRegistry(), Context);
 			}
 		}
 	}
