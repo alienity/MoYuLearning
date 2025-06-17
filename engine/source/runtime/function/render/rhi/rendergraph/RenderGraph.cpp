@@ -629,30 +629,107 @@ namespace RHI
 
 	}
 
+    std::string GetNodeName(RenderGraphRegistry& InRegistry, const RgResourceHandle& InHandle)
+    {
+		std::string _name;
+
+		// Setup converter
+		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+
+		// Convert wstring to UTF-8 string
+		if (InHandle.Type == RgResourceType::Buffer)
+		{
+			_name = converter.to_bytes(InRegistry.GetD3D12Buffer(InHandle)->GetResourceName());
+		}
+		else if (InHandle.Type == RgResourceType::Texture)
+		{
+			_name = converter.to_bytes(InRegistry.GetD3D12Texture(InHandle)->GetResourceName());
+		}
+
+        return _name;
+    }
+
     // https://dreampuf.github.io/GraphvizOnline/
     void RenderGraph::ExportGraphViz(const std::filesystem::path& path) const
     {
-        gvpp::Graph<char> g(true, "test");
-        gvpp::Node<char>& n1 = g.addNode("n1", "Node 1");
-		gvpp::Node<char>& n2 = g.addNode("n2", "Node 2");
-		gvpp::SubGraph<char>& sg = g.addSubGraph("sg1", true);
-		gvpp::Node<char>& n3 = sg.addNode("n3", "Subnode 3");
-		gvpp::Node<char>& n4 = sg.addNode("n4", "Subnode 4");
-		g.addEdge(n1, n2);
-		sg.addEdge(n3, n4);
-		g.addEdge(n2, n3);
+    	gvpp::Graph<char> gp(true, "FrameGraph");
+		for (int i = 0; i < InGraphResHandle.size(); i++)
+		{
+			auto& handle = InGraphResHandle[i];
 
-		g.set(gvpp::AttrType::GRAPH, "ranksep", ".5");
-		g.set(gvpp::AttrType::EDGE, "style", "dashed");
-		g.set(gvpp::AttrType::NODE, "style", "filled");
-		g.set(gvpp::AttrType::NODE, "shape", "octagon");
-		g.set(gvpp::AttrType::NODE, "fillcolor", "lightgrey");
+			std::string _name = GetNodeName(Registry, handle);
 
-		sg.set(gvpp::AttrType::GRAPH, "style", "filled");
-		sg.set(gvpp::AttrType::GRAPH, "fillcolor", "grey");
-		sg.set(gvpp::AttrType::NODE, "fillcolor", "lightblue");
-		sg.set(gvpp::AttrType::NODE, "shape", "oval");
-        gvpp::renderToFile<char>(g, path.string());
+            std::string _nodeId = (std::string)fmt::format("Node_{}_{}_{}_{}", (int)(handle.Id), (int)(handle.Version), (int)(handle.Type), (int)(handle.Flags));
 
+			auto& _node = gp.addNode(_nodeId, _name);
+            _node.set("fillcolor", "white");
+		}
+
+		for (int i = 0; i < DependencyLevels.size(); i++)
+		{
+			const std::string catogeryLevel = (std::string)fmt::format("Level_{}", (int)(i));
+			gvpp::SubGraph<char>& sg = gp.addSubGraph(catogeryLevel, true);
+
+			sg.set(gvpp::AttrType::GRAPH, "style", "filled");
+			sg.set(gvpp::AttrType::GRAPH, "fillcolor", "grey");
+			sg.set(gvpp::AttrType::NODE, "fillcolor", "lightblue");
+			sg.set(gvpp::AttrType::NODE, "shape", "oval");
+			
+			auto& renderPasses = DependencyLevels[i].RenderPasses;
+			for (int j = 0; j < renderPasses.size(); j++)
+			{
+                std::string _passName = std::string(renderPasses[j]->Name);
+				std::string _passId = (std::string)fmt::format("Pass_{}", renderPasses[j]->PassIndex);
+
+				auto& passNode = sg.addNode(_passId, _passName);
+
+				auto& pReads = renderPasses[j]->Reads;
+				auto& pWrites = renderPasses[j]->Writes;
+
+				for (int m = 0; m < pReads.size(); m++)
+				{
+                    auto& handle = pReads[m].rgHandle;
+                    std::string _nodeId = (std::string)fmt::format("Node_{}_{}_{}_{}", (int)(handle.Id), (int)(handle.Version), (int)(handle.Type), (int)(handle.Flags));
+
+                    if (gp.hasNode(_nodeId))
+                    {
+						auto& n1Node = gp.getNode(_nodeId);
+						sg.addEdge(n1Node, passNode, "Read");
+                    }
+                    else
+                    {
+                        std::string _name = GetNodeName(Registry, handle);
+						auto& n1Node = gp.addNode(_nodeId, _name);
+						sg.addEdge(n1Node, passNode, "Read");
+                    }
+				}
+
+				for (int m = 0; m < pWrites.size(); m++)
+				{
+					auto& handle = pWrites[m].rgHandle;
+					std::string _nodeId = (std::string)fmt::format("Node_{}_{}_{}_{}", (int)(handle.Id), (int)(handle.Version), (int)(handle.Type), (int)(handle.Flags));
+
+                    if (gp.hasNode(_nodeId))
+                    {
+                        auto& n2Node = gp.getNode(_nodeId);
+                        sg.addEdge(passNode, n2Node, "Write");
+                    }
+                    else
+                    {
+                        std::string _name = GetNodeName(Registry, handle);
+						auto& n2Node = gp.addNode(_nodeId, _name);
+						sg.addEdge(passNode, n2Node, "Write");
+                    }
+				}
+			}
+		}
+
+    	gp.set(gvpp::AttrType::GRAPH, "ranksep", ".5");
+    	gp.set(gvpp::AttrType::EDGE, "style", "dashed");
+    	gp.set(gvpp::AttrType::NODE, "style", "filled");
+    	gp.set(gvpp::AttrType::NODE, "shape", "octagon");
+    	gp.set(gvpp::AttrType::NODE, "fillcolor", "lightgrey");
+    	
+    	gvpp::renderToFile<char>(gp, path.string());
     }
 } // namespace RHI
