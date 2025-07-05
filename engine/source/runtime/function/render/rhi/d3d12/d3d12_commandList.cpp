@@ -1,6 +1,7 @@
 #include "d3d12_commandList.h"
 #include "d3d12_linkedDevice.h"
 #include "d3d12_resource.h"
+#include <codecvt>
 
 namespace RHI
 {
@@ -108,6 +109,15 @@ namespace RHI
                 {
                     if (SubresourceState != State)
                     {
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                        using convert_type = std::codecvt_utf8<wchar_t>;
+                        std::wstring_convert<convert_type, wchar_t> converter;
+                        std::string ResourceName = converter.to_bytes(Resource->GetResourceName());
+                        std::string SourceState = GetResourceStateNameFromState(SubresourceState);
+                        std::string TargetState = GetResourceStateNameFromState(State);
+                        std::string CachedStr = fmt::format("Resource {} Subresource {} State From {} to {}", ResourceName, i, SourceState, TargetState);
+                        StateTransitionCacheList.push_back(CachedStr);
+#endif
                         AddTransition(Resource, SubresourceState, State, i);
                     }
 
@@ -120,6 +130,15 @@ namespace RHI
                 D3D12_RESOURCE_STATES StateKnown = ResourceState.GetSubresourceState(Subresource);
                 if (StateKnown != State)
                 {
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    using convert_type = std::codecvt_utf8<wchar_t>;
+                    std::wstring_convert<convert_type, wchar_t> converter;
+                    std::string ResourceName = converter.to_bytes(Resource->GetResourceName());
+                    std::string SourceState = GetResourceStateNameFromState(StateKnown);
+                    std::string TargetState = GetResourceStateNameFromState(State);
+                    std::string CachedStr = fmt::format("Resource {} Subresource {} State From {} to {}", ResourceName, Subresource, SourceState, TargetState);
+                    StateTransitionCacheList.push_back(CachedStr);
+#endif
                     AddTransition(Resource, StateKnown, State, Subresource);
                 }
             }
@@ -143,6 +162,16 @@ namespace RHI
     {
         if (NumResourceBarriers > 0)
         {
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            for (int i = 0; i < StateTransitionCacheList.size(); i++)
+            {
+                LOG_INFO(StateTransitionCacheList[i]);
+            }
+            StateTransitionCacheList.clear();
+            
+            LOG_INFO("=============== Resource Transition Flush ===============");
+#endif
+
             GraphicsCommandList->ResourceBarrier(NumResourceBarriers, ResourceBarriers);
             NumResourceBarriers = 0;
         }
@@ -183,6 +212,14 @@ namespace RHI
                     {
                         ResourceBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
                             Resource->GetResource(), StateBefore, StateAfter, subIdx));
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                        using convert_type = std::codecvt_utf8<wchar_t>;
+                        std::wstring_convert<convert_type, wchar_t> converter;
+                        std::string ResourceName = converter.to_bytes(Resource->GetResourceName());
+                        std::string SourceState = GetResourceStateNameFromState(StateBefore);
+                        std::string TargetState = GetResourceStateNameFromState(StateAfter);
+                        LOG_INFO("Resource {} Subresource {} State From {} to {}", ResourceName, subIdx, SourceState, TargetState);
+#endif
                     }
 
                     // Get the command list resource state associate with this resource
@@ -207,6 +244,14 @@ namespace RHI
                 {
                     ResourceBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
                         Resource->GetResource(), StateBefore, StateAfter, Subresource));
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    using convert_type = std::codecvt_utf8<wchar_t>;
+                    std::wstring_convert<convert_type, wchar_t> converter;
+                    std::string ResourceName = converter.to_bytes(Resource->GetResourceName());
+                    std::string SourceState = GetResourceStateNameFromState(StateBefore);
+                    std::string TargetState = GetResourceStateNameFromState(StateAfter);
+                    LOG_INFO("Resource {} Subresource {} State From {} to {}", ResourceName, Subresource, SourceState, TargetState);
+#endif
                 }
 
                 // Get the command list resource state associate with this resource
@@ -254,5 +299,48 @@ namespace RHI
         Add(CD3DX12_RESOURCE_BARRIER::UAV(Resource ? Resource->GetResource() : nullptr));
     }
 
+    std::string GetResourceStateNameFromState(D3D12_RESOURCE_STATES State)
+    {
+        static const std::map<D3D12_RESOURCE_STATES, std::string> StateMap = {
+            {D3D12_RESOURCE_STATE_COMMON,                     "COMMON"},
+            {D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, "VERTEX_AND_CONSTANT_BUFFER"},
+            {D3D12_RESOURCE_STATE_INDEX_BUFFER,               "INDEX_BUFFER"},
+            {D3D12_RESOURCE_STATE_RENDER_TARGET,              "RENDER_TARGET"},
+            {D3D12_RESOURCE_STATE_UNORDERED_ACCESS,           "UNORDERED_ACCESS"},
+            {D3D12_RESOURCE_STATE_DEPTH_WRITE,                "DEPTH_WRITE"},
+            {D3D12_RESOURCE_STATE_DEPTH_READ,                 "DEPTH_READ"},
+            {D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,  "NON_PIXEL_SHADER_RESOURCE"},
+            {D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,      "PIXEL_SHADER_RESOURCE"},
+            {D3D12_RESOURCE_STATE_STREAM_OUT,                 "STREAM_OUT"},
+            {D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,          "INDIRECT_ARGUMENT"},
+            {D3D12_RESOURCE_STATE_COPY_DEST,                  "COPY_DEST"},
+            {D3D12_RESOURCE_STATE_COPY_SOURCE,                "COPY_SOURCE"},
+            {D3D12_RESOURCE_STATE_RESOLVE_DEST,               "RESOLVE_DEST"},
+            {D3D12_RESOURCE_STATE_RESOLVE_SOURCE,             "RESOLVE_SOURCE"},
+            {D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, "RAYTRACING_ACCELERATION_STRUCTURE"},
+            {D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE,        "SHADING_RATE_SOURCE"},
+            {D3D12_RESOURCE_STATE_VIDEO_DECODE_READ,          "VIDEO_DECODE_READ"},
+            {D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE,         "VIDEO_DECODE_WRITE"},
+            {D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ,         "VIDEO_PROCESS_READ"},
+            {D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE,        "VIDEO_PROCESS_WRITE"},
+            {D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,          "VIDEO_ENCODE_READ"},
+            {D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,         "VIDEO_ENCODE_WRITE"},
+            {D3D12_RESOURCE_STATE_PRESENT,                    "PRESENT"},
+            {D3D12_RESOURCE_STATE_PREDICATION,                "PREDICATION"},
+            {D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,        "ALL_SHADER_RESOURCE"},
+            {D3D12_RESOURCE_STATE_GENERIC_READ,               "GENERIC_READ"}
+        };
+
+
+        std::string result = "UNDEFINED";
+        auto SearchRes = StateMap.find(State);
+        if (SearchRes != StateMap.end())
+        {
+            result = SearchRes->second;
+        }
+
+        return result;
+    }
+    
 }
 

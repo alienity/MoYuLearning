@@ -129,6 +129,12 @@ namespace RHI
         D3D12_RESOURCE_BARRIER    ResourceBarriers[NumBatches] = {};
         UINT                      NumResourceBarriers          = 0;
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+        std::vector<std::string> StateTransitionCacheList;
+#endif
+
         D3D12CommandListState CommandListState = D3D12CommandListState::Closed;
     };
+
+    std::string GetResourceStateNameFromState(D3D12_RESOURCE_STATES State);
 } // namespace RHI

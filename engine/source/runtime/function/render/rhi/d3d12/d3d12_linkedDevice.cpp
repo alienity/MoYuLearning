@@ -182,6 +182,7 @@ namespace RHI
     void D3D12LinkedDevice::OnEndFrame()
     {
         m_Profiler->OnEndFrame();
+        LOG_INFO("=============== Frame {} ===============", fmt::format("{}", m_FrameIndex));
     }
 
     D3D12_RESOURCE_ALLOCATION_INFO D3D12LinkedDevice::GetResourceAllocationInfo(const D3D12_RESOURCE_DESC& Desc) const

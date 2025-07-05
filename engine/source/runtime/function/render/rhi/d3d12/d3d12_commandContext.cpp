@@ -141,6 +141,9 @@ namespace RHI
         //m_CpuLinearAllocator.Version(SyncHandle);
         m_GraphicsMemory->Commit(SyncHandle);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+        LOG_INFO("=============== ÕÍ≥…CommandContext÷¥–– ===============");
+#endif
         return SyncHandle;
     }
 
