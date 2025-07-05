@@ -78,8 +78,8 @@ void GenerateNormalMap(uint3 id : SV_DispatchThreadID)
     // 将法线向量从[-1,1]转换到[0,1]
     float3 normal;
     normal.x = nx * 0.5 + 0.5;
-    normal.y = nz * 0.5 + 0.5;
-    normal.z = ny * 0.5 + 0.5;
+    normal.y = ny * 0.5 + 0.5;
+    normal.z = nz * 0.5 + 0.5;
     
     RWNormalmapTexture[id.xy] = float4(normal.xyz, 0);
 }

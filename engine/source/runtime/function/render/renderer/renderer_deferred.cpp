@@ -12,6 +12,9 @@
 #include "runtime/function/render/terrain_render_helper.h"
 #include "runtime/function/render/renderer/volume_lighting_helper.h"
 
+#include "gvpp.hpp"
+
+
 namespace MoYu
 {
     DeferredRenderer::DeferredRenderer(RendererInitParams& renderInitParams) :
@@ -1060,9 +1063,13 @@ namespace MoYu
                                        true);
         }
 
-        ////DgmlBuilder Builder("Render Graph");
-        ////graph.ExportDgml(Builder);
-        ////Builder.SaveAs(std::filesystem::current_path() / "RenderGraph.dgml");
+#ifdef _DEBUG
+		//DgmlBuilder Builder("Render Graph", Dgml::GraphDirection::TopToBottom);
+		//graph.ExportDgml(Builder);
+		//Builder.SaveAs(std::filesystem::current_path() / "RenderGraph.dgml");
+
+        //graph.ExportGraphViz("RenderGraph.dot");
+#endif
     }
 
     void DeferredRenderer::PreRender(double deltaTime)
