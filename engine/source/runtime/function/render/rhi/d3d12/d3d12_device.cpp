@@ -335,13 +335,13 @@ namespace RHI
 
         if (CVar_Dred)
         {
-            Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings> DredSettings;
+            Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> DredSettings;
             if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DredSettings))))
             {
-                LOG_INFO("DRED Enabled");
-                // Turn on auto-breadcrumbs and page fault reporting.
-                DredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-                DredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+				LOG_INFO("DRED Enabled");
+				// Turn on auto-breadcrumbs and page fault reporting.
+				DredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+				DredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
             }
         }
         else

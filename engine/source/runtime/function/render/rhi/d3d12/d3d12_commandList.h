@@ -6,9 +6,9 @@ namespace RHI
 {
     enum D3D12CommandListState
     {
-        Closed,    // Ã»ÓÐ±»Â¼ÖÆ£¬ÇÒÎ´µÈ´ýÖ´ÐÐ
-        Recording, // ÕýÔÚÂ¼ÖÆ
-        Pending,   // µÈ´ýÖ´ÐÐ
+        Closed,    // Ã»ï¿½Ð±ï¿½Â¼ï¿½Æ£ï¿½ï¿½ï¿½Î´ï¿½È´ï¿½Ö´ï¿½ï¿½
+        Recording, // ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½
+        Pending,   // ï¿½È´ï¿½Ö´ï¿½ï¿½
     };
 
     // https://www.youtube.com/watch?v=nmB2XMasz2o, Resource state tracking
@@ -25,9 +25,11 @@ namespace RHI
         D3D12ResourceStateTracker() noexcept = default;
 
         std::vector<PendingResourceBarrier>& GetPendingResourceBarriers();
+        void ClearPendingResourceBarrier();
 
         CResourceState& GetResourceState(D3D12Resource* Resource);
-
+        void SetResourceState(D3D12Resource* Resource, const CResourceState ResourceState);
+        
         void Reset();
 
         void Add(const PendingResourceBarrier& PendingResourceBarrier);
@@ -128,6 +130,9 @@ namespace RHI
         D3D12ResourceStateTracker ResourceStateTracker;
         D3D12_RESOURCE_BARRIER    ResourceBarriers[NumBatches] = {};
         UINT                      NumResourceBarriers          = 0;
+
+        D3D12_RESOURCE_BARRIER PendingResourceBarriers[NumBatches] = {};
+        uint32_t NumPendingResourceBarriers = 0;
 
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         std::vector<std::string> StateTransitionCacheList;

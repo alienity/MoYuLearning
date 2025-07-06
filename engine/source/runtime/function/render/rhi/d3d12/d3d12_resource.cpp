@@ -468,15 +468,15 @@ namespace RHI
             RHIBufferTarget counterBufferTarget = bufferTarget | RHIBufferTarget::RHIBufferTargetRaw;
             counterBufferTarget &= ~RHIBufferTarget::RHIBufferTargetCounter;
 
-            pBufferD3D12->p_CounterBufferD3D12 = Create(Parent,
-                                                        counterBufferTarget,
-                                                        1,
-                                                        sizeof(UINT32),
-                                                        name + L"_Counter",
-                                                        RHIBufferMode::RHIBufferModeImmutable,
-                                                        D3D12_RESOURCE_STATE_GENERIC_READ,
-                                                        nullptr,
-                                                        0);
+			pBufferD3D12->p_CounterBufferD3D12 = Create(Parent,
+				counterBufferTarget,
+				1,
+				sizeof(UINT32),
+				name + L"_Counter",
+				RHIBufferMode::RHIBufferModeImmutable,
+				D3D12_RESOURCE_STATE_COMMON,
+				nullptr,
+				0);
         }
         else
         {

@@ -142,7 +142,7 @@ namespace RHI
         m_GraphicsMemory->Commit(SyncHandle);
 
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
-        LOG_INFO("=============== Íê³ÉCommandContextÖ´ÐÐ ===============");
+        LOG_INFO("=============== D3D12CommandContext Execute ===============");
 #endif
         return SyncHandle;
     }
@@ -707,14 +707,18 @@ namespace RHI
 
     void D3D12GraphicsContext::SetBufferSRV(UINT RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset)
     {
-        ASSERT((BufferSRV->GetResourceState().GetSubresourceState(0) &
-                (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)) != 0);
+        //ASSERT((BufferSRV->GetResourceState().GetSubresourceState(0) &
+        //        (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)) != 0);
+        ASSERT((m_CommandListHandle.GetAllTrackedResourceState(BufferSRV).GetSubresourceState(0) & 
+            (D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)) != 0);
+        
         m_CommandListHandle->SetGraphicsRootShaderResourceView(RootIndex, BufferSRV->GetGpuVirtualAddress(0) + Offset);
     }
 
     void D3D12GraphicsContext::SetBufferUAV(UINT RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset)
     {
-        ASSERT((BufferUAV->GetResourceState().GetSubresourceState(0) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != 0);
+        //ASSERT((BufferUAV->GetResourceState().GetSubresourceState(0) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != 0);
+        ASSERT((m_CommandListHandle.GetAllTrackedResourceState(BufferUAV).GetSubresourceState(0) & (D3D12_RESOURCE_STATE_UNORDERED_ACCESS)) != 0);
         m_CommandListHandle->SetGraphicsRootUnorderedAccessView(RootIndex, BufferUAV->GetGpuVirtualAddress(0) + Offset);
     }
 
@@ -964,12 +968,14 @@ namespace RHI
     void D3D12ComputeContext::SetBufferSRV(UINT RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset)
     {
         //ASSERT((BufferSRV->GetResourceState().GetSubresourceState(0) & D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) != 0);
+        ASSERT((m_CommandListHandle.GetAllTrackedResourceState(BufferSRV).GetSubresourceState(0) & (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)) != 0);
         m_CommandListHandle->SetComputeRootShaderResourceView(RootIndex, BufferSRV->GetGpuVirtualAddress(0) + Offset);
     }
 
     void D3D12ComputeContext::SetBufferUAV(UINT RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset)
     {
         //ASSERT((BufferUAV->GetResourceState().GetSubresourceState(0) & D3D12_RESOURCE_STATE_UNORDERED_ACCESS) != 0);
+        ASSERT((m_CommandListHandle.GetAllTrackedResourceState(BufferUAV).GetSubresourceState(0) & (D3D12_RESOURCE_STATE_UNORDERED_ACCESS)) != 0);
         m_CommandListHandle->SetComputeRootUnorderedAccessView(RootIndex, BufferUAV->GetGpuVirtualAddress(0) + Offset);
     }
 

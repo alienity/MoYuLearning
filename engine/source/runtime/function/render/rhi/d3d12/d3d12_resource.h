@@ -222,7 +222,7 @@ namespace RHI
                                                    UINT32             elementSize,
                                                    const std::wstring name     = L"Buffer",
                                                    RHIBufferMode mapplableMode = RHIBufferMode::RHIBufferModeImmutable,
-                                                   D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                   D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
                                                    BYTE*                 initialData = nullptr,
                                                    UINT                  dataLen     = 0);
 

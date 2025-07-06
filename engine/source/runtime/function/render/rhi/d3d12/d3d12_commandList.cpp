@@ -1,6 +1,7 @@
 #include "d3d12_commandList.h"
 #include "d3d12_linkedDevice.h"
 #include "d3d12_resource.h"
+#include "runtime/core/math/moyu_math2.h"
 #include <codecvt>
 
 namespace RHI
@@ -8,6 +9,11 @@ namespace RHI
     std::vector<PendingResourceBarrier>& D3D12ResourceStateTracker::GetPendingResourceBarriers()
     {
         return PendingResourceBarriers;
+    }
+
+    void D3D12ResourceStateTracker::ClearPendingResourceBarrier()
+    {
+        PendingResourceBarriers.clear();
     }
 
 	CResourceState& D3D12ResourceStateTracker::GetResourceState(D3D12Resource* Resource)
@@ -19,6 +25,11 @@ namespace RHI
             ResourceState = CResourceState(Resource->GetNumSubresources(), D3D12_RESOURCE_STATE_UNKNOWN);
         }
         return ResourceState;
+    }
+
+    void D3D12ResourceStateTracker::SetResourceState(D3D12Resource* Resource, const CResourceState ResourceState)
+    {
+        ResourceStates[Resource->GetResource()] = ResourceState;
     }
 
     void D3D12ResourceStateTracker::Reset()
@@ -160,6 +171,23 @@ namespace RHI
 
     void D3D12CommandListHandle::FlushResourceBarriers()
     {
+        std::vector<D3D12_RESOURCE_BARRIER> PendingResourceBarriersVector = ResolveResourceBarriers();
+        
+        int PendingBatchNum = glm::ceil(PendingResourceBarriersVector.size() / NumBatches);
+        for (int i = 0; i < PendingBatchNum; i++)
+        {
+            int is = i * NumBatches;
+            int ie = glm::fmin((i + 1) * NumBatches, PendingResourceBarriersVector.size());
+            int t = 0;
+            for (int j = is; j < ie; j++)
+            {
+                PendingResourceBarriers[t++] = PendingResourceBarriersVector[j];
+            }
+            NumPendingResourceBarriers = ie - is;
+            GraphicsCommandList->ResourceBarrier(NumPendingResourceBarriers, PendingResourceBarriers);
+        }
+        ResourceStateTracker.ClearPendingResourceBarrier();
+        
         if (NumResourceBarriers > 0)
         {
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
@@ -203,6 +231,7 @@ namespace RHI
             if ((Subresource == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES) && !ResourceState.IsUniform())
             {
                 int subresourceNumber = Resource->GetNumSubresources();
+                CResourceState CacheState(subresourceNumber, State);
                 for (int subIdx = 0; subIdx < subresourceNumber; subIdx++)
                 {
                     D3D12_RESOURCE_STATES StateBefore = ResourceState.GetSubresourceState(subIdx);
@@ -234,12 +263,13 @@ namespace RHI
                         ResourceState.SetSubresourceState(subIdx, StatePrevious);
                     }
                 }
+                ResourceStateTracker.SetResourceState(Resource, CacheState);
             }
             else
             {
                 D3D12_RESOURCE_STATES StateBefore = ResourceState.GetSubresourceState(Subresource);
                 D3D12_RESOURCE_STATES StateAfter  = State != D3D12_RESOURCE_STATE_UNKNOWN ? State : StateBefore;
-
+                
                 if (StateBefore != StateAfter)
                 {
                     ResourceBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
@@ -266,6 +296,9 @@ namespace RHI
                     ResourceState.SetSubresourceState(Subresource, StatePrevious);
                 }
             }
+            CResourceState& CacheState = ResourceStateTracker.GetResourceState(Resource);
+            CacheState.SetSubresourceState(Subresource, State);
+            ResourceStateTracker.SetResourceState(Resource, CacheState);
         }
 
         return ResourceBarriers;

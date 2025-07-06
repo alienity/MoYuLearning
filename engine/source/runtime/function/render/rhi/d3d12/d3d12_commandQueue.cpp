@@ -67,6 +67,10 @@ namespace RHI
             CommandLists[NumCommandLists++] = CommandListHandle->GetCommandList();
         }
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+        LOG_INFO("=============== D3D12CommandQueue ExecuteCommandLists {} ===============", CommandListHandles.size());
+#endif
+
         m_CommandQueue->ExecuteCommandLists(NumCommandLists, CommandLists);
         UINT64 FenceValue = Signal();
         m_SyncHandle      = D3D12SyncHandle(&m_Fence, FenceValue);

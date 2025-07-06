@@ -119,20 +119,19 @@ namespace MoYu
                                          vertex_count,
                                          sizeof(T),
                                          L"MeshVertexBuffer",
-                                         RHI::RHIBufferModeImmutable,
-                                         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                                         RHI::RHIBufferModeImmutable);
             {
                 startUploadBatch();
                 {
-                    D3D12_RESOURCE_STATES buf_ori_state =
-                        p_mesh_vertex_buffer->GetResourceState().GetSubresourceState(0);
-                    m_ResourceUpload->Transition(p_mesh_vertex_buffer->GetResource(),
-                                                 buf_ori_state,
-                                                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                    m_ResourceUpload->Upload(p_mesh_vertex_buffer->GetResource(), 0, inefficient_staging_buffer);
-                    m_ResourceUpload->Transition(p_mesh_vertex_buffer->GetResource(),
-                                                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
-                                                 buf_ori_state);
+					D3D12_RESOURCE_STATES buf_ori_state =
+						p_mesh_vertex_buffer->GetResourceState().GetSubresourceState(0);
+					m_ResourceUpload->Transition(p_mesh_vertex_buffer->GetResource(),
+						buf_ori_state,
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+					m_ResourceUpload->Upload(p_mesh_vertex_buffer->GetResource(), 0, inefficient_staging_buffer);
+					m_ResourceUpload->Transition(p_mesh_vertex_buffer->GetResource(),
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
                 }
                 endUploadBatch();
             }
@@ -154,20 +153,19 @@ namespace MoYu
                                          index_count,
                                          sizeof(T),
                                          L"MeshIndexBuffer",
-                                         RHI::RHIBufferModeImmutable,
-                                         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_INDEX_BUFFER);
+                                         RHI::RHIBufferModeImmutable);
             {
                 startUploadBatch();
                 {
-                    D3D12_RESOURCE_STATES buf_ori_state =
-                        p_mesh_index_buffer->GetResourceState().GetSubresourceState(0);
-                    m_ResourceUpload->Transition(p_mesh_index_buffer->GetResource(),
-                                                 buf_ori_state,
-                                                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                    m_ResourceUpload->Upload(p_mesh_index_buffer->GetResource(), 0, inefficient_staging_buffer);
-                    m_ResourceUpload->Transition(p_mesh_index_buffer->GetResource(),
-                                                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
-                                                 buf_ori_state);
+					D3D12_RESOURCE_STATES buf_ori_state =
+						p_mesh_index_buffer->GetResourceState().GetSubresourceState(0);
+					m_ResourceUpload->Transition(p_mesh_index_buffer->GetResource(),
+						buf_ori_state,
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+					m_ResourceUpload->Upload(p_mesh_index_buffer->GetResource(), 0, inefficient_staging_buffer);
+					m_ResourceUpload->Transition(p_mesh_index_buffer->GetResource(),
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
+						D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_INDEX_BUFFER);
                 }
                 endUploadBatch();
             }
