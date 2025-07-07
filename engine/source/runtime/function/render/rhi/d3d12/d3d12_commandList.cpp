@@ -32,13 +32,28 @@ namespace RHI
         ResourceStates[Resource->GetResource()] = ResourceState;
     }
 
+    std::vector<CachedResourceBarrier>& D3D12ResourceStateTracker::GetCachedResourceBarriers()
+    {
+        return CachedResourceBarrierVector;
+    }
+
+    void D3D12ResourceStateTracker::ClearCachedResourceBarriers()
+    {
+        CachedResourceBarrierVector.clear();
+    }
+
+    void D3D12ResourceStateTracker::AddCachedResourceBarrier(const CachedResourceBarrier& CachedResourceBarrier)
+    {
+        CachedResourceBarrierVector.push_back(CachedResourceBarrier);
+    }
+    
     void D3D12ResourceStateTracker::Reset()
     {
         ResourceStates.clear();
         PendingResourceBarriers.clear();
     }
 
-    void D3D12ResourceStateTracker::Add(const PendingResourceBarrier& PendingResourceBarrier)
+    void D3D12ResourceStateTracker::AddPendingBarrier(const PendingResourceBarrier& PendingResourceBarrier)
     {
         PendingResourceBarriers.push_back(PendingResourceBarrier);
     }
@@ -105,7 +120,7 @@ namespace RHI
         // First use on the command list
         if (ResourceState.IsUnknown(Subresource))
         {
-            ResourceStateTracker.Add(PendingResourceBarrier {Resource, State, Subresource});
+            ResourceStateTracker.AddPendingBarrier(PendingResourceBarrier {Resource, State, Subresource});
         }
         // Known state within the command list
         else
@@ -187,7 +202,16 @@ namespace RHI
             GraphicsCommandList->ResourceBarrier(NumPendingResourceBarriers, PendingResourceBarriers);
         }
         ResourceStateTracker.ClearPendingResourceBarrier();
-        
+
+        std::vector<CachedResourceBarrier>& CachedResourceBarriers = ResourceStateTracker.GetCachedResourceBarriers();
+        for (int i = 0; i < CachedResourceBarriers.size(); i++)
+        {
+            CachedResourceBarrier& CacheBarrier = CachedResourceBarriers[i];
+            CResourceState& ResourceState = CacheBarrier.Resource->GetResourceState();
+            ResourceState.SetSubresourceState(CacheBarrier.Subresource, CacheBarrier.State);
+        }
+        CachedResourceBarriers.clear();
+
         if (NumResourceBarriers > 0)
         {
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
@@ -319,6 +343,7 @@ namespace RHI
                                                D3D12_RESOURCE_STATES StateAfter,
                                                UINT Subresource /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
     {
+        ResourceStateTracker.AddCachedResourceBarrier(CachedResourceBarrier{ Resource, StateAfter, Subresource });
         Add(CD3DX12_RESOURCE_BARRIER::Transition(Resource->GetResource(), StateBefore, StateAfter, Subresource));
     }
 

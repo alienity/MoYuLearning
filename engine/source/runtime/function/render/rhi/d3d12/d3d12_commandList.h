@@ -19,6 +19,8 @@ namespace RHI
         UINT                  Subresource;
     };
 
+    typedef PendingResourceBarrier CachedResourceBarrier;
+
     class D3D12ResourceStateTracker
     {
     public:
@@ -26,17 +28,24 @@ namespace RHI
 
         std::vector<PendingResourceBarrier>& GetPendingResourceBarriers();
         void ClearPendingResourceBarrier();
-
+        void AddPendingBarrier(const PendingResourceBarrier& PendingResourceBarrier);
+        
         CResourceState& GetResourceState(D3D12Resource* Resource);
         void SetResourceState(D3D12Resource* Resource, const CResourceState ResourceState);
+
+        std::vector<CachedResourceBarrier>& GetCachedResourceBarriers();
+        void ClearCachedResourceBarriers();
+        void AddCachedResourceBarrier(const CachedResourceBarrier& CachedResourceBarrier);
         
         void Reset();
-
-        void Add(const PendingResourceBarrier& PendingResourceBarrier);
 
     private:
         //robin_hood::unordered_map<D3D12Resource*, CResourceState> ResourceStates;
         robin_hood::unordered_map<ID3D12Resource*, CResourceState> ResourceStates;
+
+
+        // cached resource state for global resource
+        std::vector<CachedResourceBarrier> CachedResourceBarrierVector;
 
         // Pending resource transitions are committed to a separate commandlist before this commandlist
         // is executed on the command queue. This guarantees that resources will
