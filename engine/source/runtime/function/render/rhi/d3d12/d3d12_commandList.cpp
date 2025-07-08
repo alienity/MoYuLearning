@@ -188,7 +188,7 @@ namespace RHI
     {
         std::vector<D3D12_RESOURCE_BARRIER> PendingResourceBarriersVector = ResolveResourceBarriers();
         
-        int PendingBatchNum = glm::ceil(PendingResourceBarriersVector.size() / NumBatches);
+        int PendingBatchNum = glm::ceil(PendingResourceBarriersVector.size() / (float)NumBatches);
         for (int i = 0; i < PendingBatchNum; i++)
         {
             int is = i * NumBatches;

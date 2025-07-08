@@ -158,7 +158,7 @@ namespace RHI
     D3D12PipelineState::D3D12PipelineState(D3D12Device*                   Parent,
                                            std::wstring                   Name,
                                            const PipelineStateStreamDesc& Desc) :
-        D3D12DeviceChild(Parent)
+        D3D12DeviceChild(Parent), Name(Name)
     {
         D3D12PipelineParserCallbacks Parser;
         RHIParsePipelineStream(Desc, &Parser);
@@ -169,7 +169,7 @@ namespace RHI
     D3D12PipelineState::D3D12PipelineState(D3D12Device*                       Parent,
                                            std::wstring                       Name,
                                            D3D12_GRAPHICS_PIPELINE_STATE_DESC Desc) :
-        D3D12DeviceChild(Parent)
+        D3D12DeviceChild(Parent), Name(Name)
     {
         PipelineState = Compile<D3D12_GRAPHICS_PIPELINE_STATE_DESC>(Parent, Name, Desc);
     }
@@ -185,7 +185,7 @@ namespace RHI
     D3D12PipelineState::D3D12PipelineState(D3D12Device*                      Parent,
                                            std::wstring                      Name,
                                            D3D12_COMPUTE_PIPELINE_STATE_DESC Desc) :
-        D3D12DeviceChild(Parent)
+        D3D12DeviceChild(Parent), Name(Name)
     {
         PipelineState = Compile<D3D12_COMPUTE_PIPELINE_STATE_DESC>(Parent, Name, Desc);
     }
@@ -201,6 +201,11 @@ namespace RHI
         return PipelineState.Get();
     }
 
+    const std::wstring D3D12PipelineState::GetName() const
+    {
+        return Name;
+    }
+    
     Microsoft::WRL::ComPtr<ID3D12PipelineState> D3D12PipelineState::Create(D3D12Device*                 Device,
                                                                            std::wstring                 Name,
                                                                            RHI_PIPELINE_STATE_TYPE      Type,

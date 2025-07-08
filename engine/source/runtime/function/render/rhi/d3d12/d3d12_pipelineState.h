@@ -86,6 +86,8 @@ namespace RHI
 
         [[nodiscard]] ID3D12PipelineState* GetApiHandle() const noexcept;
 
+        const std::wstring GetName() const;
+        
     private:
         static Microsoft::WRL::ComPtr<ID3D12PipelineState> Create(D3D12Device*                 Device,
                                                                   std::wstring                 Name,
@@ -98,6 +100,8 @@ namespace RHI
 
         static void StorePipeline(D3D12Device* Device, const std::wstring& Name, ID3D12PipelineState* PipelineState);
 
+    protected:
+        std::wstring Name;
     private:
         mutable Microsoft::WRL::ComPtr<ID3D12PipelineState> PipelineState;
         //mutable AsyncTask<Microsoft::WRL::ComPtr<ID3D12PipelineState>> CompilationWork;
