@@ -1087,7 +1087,7 @@ namespace MoYu
 
     std::shared_ptr<RHI::D3D12Texture> DeferredRenderer::GetCurrentFrameColorPyramid()
     {
-        int curIndex = pDevice->GetLinkedDevice()->m_FrameIndex;
+        int curIndex = pDevice->GetLinkedDevice()->m_FrameIndex % 2;
         return p_ColorPyramidRTs[curIndex];
     }
 
