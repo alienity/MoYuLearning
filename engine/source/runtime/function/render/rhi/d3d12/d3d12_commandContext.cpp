@@ -6,6 +6,7 @@
 #include "d3d12_graphicsCommon.h"
 #include "d3d12_graphicsMemory.h"
 #include "d3d12_resourceUploadBatch.h"
+#include "function/render/utility/HDUtils.h"
 
 #include "runtime/core/base/utility.h"
 #include "runtime/core/base/macro.h"
@@ -154,6 +155,8 @@ namespace RHI
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST);
         FlushResourceBarriers();
         m_CommandListHandle->CopyResource(Dest->GetResource(), Src->GetResource());
+
+        LOG_INFO("CopyBuffer from {} to {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), MoYu::HDUtils::ws2s(Dest->GetResourceName()));
     }
 
     void D3D12CommandContext::CopyBufferRegion(D3D12Buffer* Dest, UINT64 DestOffset, D3D12Buffer* Src, UINT64 SrcOffset, UINT64 NumBytes)
@@ -163,6 +166,8 @@ namespace RHI
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST);
         FlushResourceBarriers();
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, Src->GetResource(), SrcOffset, NumBytes);
+
+        LOG_INFO("CopyBufferRegion from {} offset {} to {} offset {} numbytes {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), SrcOffset, MoYu::HDUtils::ws2s(Dest->GetResourceName()), DestOffset, NumBytes);
     }
 
     void D3D12CommandContext::CopySubresource(D3D12Texture* Dest, UINT DestSubIndex, D3D12Texture* Src, UINT SrcSubIndex)
@@ -171,6 +176,8 @@ namespace RHI
         D3D12_TEXTURE_COPY_LOCATION DestLocation = {Dest->GetResource(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, DestSubIndex};
         D3D12_TEXTURE_COPY_LOCATION SrcLocation = {Src->GetResource(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, SrcSubIndex};
         m_CommandListHandle->CopyTextureRegion(&DestLocation, 0, 0, 0, &SrcLocation, nullptr);
+
+        LOG_INFO("CopySubresource from {} subindex {} to {} subindex {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), SrcSubIndex, MoYu::HDUtils::ws2s(Dest->GetResourceName()), DestSubIndex);
     }
 
     void D3D12CommandContext::CopyTextureRegion(D3D12Texture* Dest, UINT x, UINT y, UINT z, D3D12Texture* Source, RECT& Rect)
@@ -190,12 +197,17 @@ namespace RHI
         box.bottom    = Rect.bottom;
 
         m_CommandListHandle->CopyTextureRegion(&destLoc, x, y, z, &srcLoc, &box);
+
+        LOG_INFO("CopyTextureRegion from {} rect(left, right, top, down) ({}, {}, {}, {}) to {} (DstX, DstY, DstZ) ({}, {}, {})",
+            MoYu::HDUtils::ws2s(Source->GetResourceName()), Rect.left, Rect.right, Rect.top, Rect.bottom,
+            MoYu::HDUtils::ws2s(Dest->GetResourceName()), x, y, z);
     }
 
     void D3D12CommandContext::ResetCounter(D3D12Buffer* CounterResource, UINT64 CounterOffset, UINT Value /*= 0*/)
     {
         FillBuffer(CounterResource, 0, Value, sizeof(UINT));
         //TransitionBarrier(CounterResource, D3D12_RESOURCE_STATE_GENERIC_READ);
+        LOG_INFO("ResetCounter {} Value {}", MoYu::HDUtils::ws2s(CounterResource->GetResourceName()), Value);
     }
 
     GraphicsResource D3D12CommandContext::ReserveUploadMemory(UINT64 SizeInBytes, UINT Alignment)
@@ -220,6 +232,8 @@ namespace RHI
         SIMDMemCopy(TempSpace.Memory(), BufferData, MoYu::DivideByMultiple(NumBytes, 16));
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, true);
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, TempSpace.Resource(), TempSpace.ResourceOffset(), NumBytes);
+
+        LOG_INFO("WriteBuffer {}", MoYu::HDUtils::ws2s(Dest->GetResourceName()));
     }
 
     void D3D12CommandContext::FillBuffer(D3D12Buffer* Dest, UINT64 DestOffset, DWParam Value, UINT64 NumBytes)
@@ -229,6 +243,8 @@ namespace RHI
         SIMDMemFill(TempSpace.Memory(), VectorValue, MoYu::DivideByMultiple(NumBytes, 16));
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, true);
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, TempSpace.Resource(), TempSpace.ResourceOffset(), NumBytes);
+
+        LOG_INFO("FillBuffer {}", MoYu::HDUtils::ws2s(Dest->GetResourceName()));
     }
 
     void D3D12CommandContext::TransitionBarrier(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource, bool FlushImmediate)

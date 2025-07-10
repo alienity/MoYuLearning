@@ -609,7 +609,7 @@ namespace MoYu
     }
 
     //-------------------------------------------------------------------------------------------
-    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createDynamicBuffer(void* buffer_data, uint32_t buffer_size, uint32_t buffer_stride)
+    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createDynamicBuffer(void* buffer_data, uint32_t buffer_size, uint32_t buffer_stride, D3D12_RESOURCE_STATES initState)
     {
         assert(buffer_size % buffer_stride == 0);
         UINT numelement = buffer_size / buffer_stride;
@@ -619,7 +619,8 @@ namespace MoYu
                                      numelement,
                                      buffer_stride,
                                      L"DynamicBuffer",
-                                     RHI::RHIBufferModeDynamic);
+                                     RHI::RHIBufferModeDynamic,
+                                     initState);
 
         if (buffer_data != nullptr)
         {
@@ -629,12 +630,12 @@ namespace MoYu
         return dynamicBuffer;
     }
 
-    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createDynamicBuffer(std::shared_ptr<MoYu::MoYuScratchBuffer>& buffer_data)
+    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createDynamicBuffer(std::shared_ptr<MoYu::MoYuScratchBuffer>& buffer_data, D3D12_RESOURCE_STATES initState)
     {
-        return createDynamicBuffer(buffer_data->GetBufferPointer(), buffer_data->GetBufferSize(), buffer_data->GetBufferSize());
+        return createDynamicBuffer(buffer_data->GetBufferPointer(), buffer_data->GetBufferSize(), buffer_data->GetBufferSize(), initState);
     }
     
-    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createStaticBuffer(void* buffer_data, uint32_t buffer_size, uint32_t buffer_stride, bool raw, bool batch)
+    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createStaticBuffer(void* buffer_data, uint32_t buffer_size, uint32_t buffer_stride, bool raw, bool batch, D3D12_RESOURCE_STATES initState)
     {
         assert(buffer_size % buffer_stride == 0);
 
@@ -652,7 +653,7 @@ namespace MoYu
                                      buffer_stride,
                                      L"StaticBuffer",
                                      RHI::RHIBufferModeImmutable,
-                                     D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                                     initState);
 
         D3D12_RESOURCE_STATES tex2d_ori_state = staticBuffer->GetResourceState().GetSubresourceState(0);
 
@@ -669,9 +670,9 @@ namespace MoYu
         return staticBuffer;
     }
 
-    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createStaticBuffer(std::shared_ptr<MoYu::MoYuScratchBuffer>& buffer_data, bool raw, bool batch)
+    std::shared_ptr<RHI::D3D12Buffer> RenderResource::createStaticBuffer(std::shared_ptr<MoYu::MoYuScratchBuffer>& buffer_data, bool raw, bool batch, D3D12_RESOURCE_STATES initState)
     {
-        return createStaticBuffer(buffer_data->GetBufferPointer(), buffer_data->GetBufferSize(), buffer_data->GetBufferSize(), raw, batch);
+        return createStaticBuffer(buffer_data->GetBufferPointer(), buffer_data->GetBufferSize(), buffer_data->GetBufferSize(), raw, batch, initState);
     }
 
     std::shared_ptr<RHI::D3D12Texture> RenderResource::createTex2D(uint32_t width, uint32_t height, void* pixels, DXGI_FORMAT format, bool is_srgb, bool genMips, bool batch)

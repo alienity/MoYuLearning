@@ -333,15 +333,21 @@ namespace RHI
             }
         }
 
+        HRESULT hr = S_OK;
         if (CVar_Dred)
         {
             Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> DredSettings;
-            if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DredSettings))))
+            hr = D3D12GetDebugInterface(IID_PPV_ARGS(&DredSettings));
+            if (SUCCEEDED(hr))
             {
 				LOG_INFO("DRED Enabled");
 				// Turn on auto-breadcrumbs and page fault reporting.
 				DredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 				DredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            }
+            else
+            {
+                LOG_WARN("DRED not available: HRESULT=0x{:08X}", hr);
             }
         }
         else
@@ -350,7 +356,12 @@ namespace RHI
         }
 
         // Obtain the DXGI factory
-        VERIFY_D3D12_API(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_Factory6)));
+        hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_Factory6));
+        if (FAILED(hr))
+        {
+            LOG_ERROR("CreateDXGIFactory2 failed: HRESULT=0x{:08X}", hr);
+            return nullptr;
+        }
 
         // Temporary workaround because SetStablePowerState() is crashing
         D3D12EnableExperimentalFeatures(0, nullptr, nullptr, nullptr);
