@@ -122,27 +122,39 @@ namespace MoYu
                 }
 
                 //--------------------------------------------------
-                // Éú³ÉAverageDepthPyramid
+                // ï¿½ï¿½ï¿½ï¿½AverageDepthPyramid
                 //--------------------------------------------------
                 {
                     RHI::D3D12Texture* _SrcTexture = RegGetTex(averageDepthPyramidHandle);
                     generateMipmapForDepthPyramid(pContext, _SrcTexture, DepthMipGenerateMode::AverageType);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("GenerateDepthPyramidPass(Average)");
+#endif
                 }
 
                 //--------------------------------------------------
-                // Éú³ÉMinDepthPyramid
+                // ï¿½ï¿½ï¿½ï¿½MinDepthPyramid
                 //--------------------------------------------------
                 {
                     RHI::D3D12Texture* _SrcTexture = RegGetTex(minDepthPyramidHandle);
                     generateMipmapForDepthPyramid(pContext, _SrcTexture, DepthMipGenerateMode::MinType);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("GenerateDepthPyramidPass(Min)");
+#endif
                 }
 
                 //--------------------------------------------------
-                // Éú³ÉMaxDepthPyramid
+                // ï¿½ï¿½ï¿½ï¿½MaxDepthPyramid
                 //--------------------------------------------------
                 {
                     RHI::D3D12Texture* _SrcTexture = RegGetTex(maxDepthPyramidHandle);
                     generateMipmapForDepthPyramid(pContext, _SrcTexture, DepthMipGenerateMode::MaxType);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("GenerateDepthPyramidPass(Max)");
+#endif
                 }
             });
 

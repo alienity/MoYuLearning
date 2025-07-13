@@ -237,6 +237,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorDesc.Width, colorDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("TemporalAntiAliasing");
+#endif
         });
 
         passOutput.aaOutHandle = aaOutputHandle;

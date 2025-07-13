@@ -75,8 +75,7 @@ namespace MoYu
 				1,
 				MoYu::AlignUp(sizeof(HLSL::ShaderVariablesVolumetric), 256),
 				L"ShaderVariablesVolumetricCB",
-				RHI::RHIBufferModeDynamic,
-				D3D12_RESOURCE_STATE_GENERIC_READ);
+				RHI::RHIBufferModeDynamic);
 		}
 
 		m_CurrentVBufferParams = ComputeVolumetricBufferParameters(
@@ -161,8 +160,7 @@ namespace MoYu
 				MAX_VOLUMETRIC_FOG_COUNT,
 				sizeof(HLSL::LocalVolumetricFogDatas),
 				L"UploadVolumesDataBuffer",
-				RHI::RHIBufferModeDynamic,
-				D3D12_RESOURCE_STATE_GENERIC_READ);
+				RHI::RHIBufferModeDynamic);
 		}
 
 		if (pVolumesDataBuffer == nullptr)
@@ -173,8 +171,7 @@ namespace MoYu
 				MAX_VOLUMETRIC_FOG_COUNT,
 				sizeof(HLSL::LocalVolumetricFogDatas),
 				L"VolumesDataBuffer",
-				RHI::RHIBufferModeImmutable,
-				D3D12_RESOURCE_STATE_GENERIC_READ);
+				RHI::RHIBufferModeImmutable);
 		}
 
 		// prepare global variables
@@ -277,8 +274,7 @@ namespace MoYu
 					MAX_VOLUMETRIC_FOG_COUNT,
 					sizeof(VolumetricGlobalIndirectArgsStruct),
 					L"VolumetricGlobalIndirectArgsBuffer",
-					RHI::RHIBufferModeImmutable,
-					D3D12_RESOURCE_STATE_GENERIC_READ);
+					RHI::RHIBufferModeImmutable);
 			}
 
 			if (pVolumetricMaterialDataBuffer == nullptr)
@@ -289,8 +285,7 @@ namespace MoYu
 					MAX_VOLUMETRIC_FOG_COUNT,
 					sizeof(HLSL::VolumetricMaterialRenderingData),
 					L"VolumetricMaterialData",
-					RHI::RHIBufferModeImmutable,
-					D3D12_RESOURCE_STATE_GENERIC_READ);
+					RHI::RHIBufferModeImmutable);
 			}
 
 		}
@@ -789,6 +784,10 @@ namespace MoYu
 
 			pContext->Dispatch(dispatchX, dispatchY, 1);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("Generate Max Z Pass");
+#endif
+
 			// Downsample to 16x16
 
 			pContext->TransitionBarrier(RegGetTex(maxZ8xBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -817,6 +816,10 @@ namespace MoYu
 
 			pContext->Dispatch(dispatchX, dispatchY, 1);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("Downsample to 16x16 Pass");
+#endif
+
 			// Dilate max Z
 
 			pContext->TransitionBarrier(RegGetTex(maxZBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
@@ -834,6 +837,10 @@ namespace MoYu
 			pContext->SetDynamicDescriptor(2, 0, RegGetTex(dilatedMaxZBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
 
 			pContext->Dispatch(dispatchX, dispatchY, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("Dilate max Z Pass");
+#endif
 		});
 
 		passOutput.maxZ8xBufferHandle = maxZ8xBufferHandle;
@@ -876,6 +883,10 @@ namespace MoYu
 
 			// The shader defines GROUP_SIZE_1D = 8.
 			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.x + 7) / 8, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("ClearandHeightFogVoxelizationPass");
+#endif
 		});
 
 		passOutput.vbufferDensityHandle = mVBufferDensityHandle;
@@ -938,6 +949,9 @@ namespace MoYu
 			// The shader defines GROUP_SIZE_1D = 8.
 			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.y + 7) / 8, 1);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("VolumetricLightingPass");
+#endif
 
 			// VolumetricLightingFiltering
 			int sliceCount = fogData.volumetricCB._VBufferSliceCount;
@@ -949,6 +963,10 @@ namespace MoYu
 			pContext->SetDynamicDescriptor(1, 0, RegGetTex(mLightBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
 
 			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.y + 7) / 8, sliceCount);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("VolumetricLightingFilteringPass");
+#endif
 		});
 
 		passOutput.vbufferLightingHandle = mLightBufferHandle;
@@ -993,6 +1011,10 @@ namespace MoYu
 			graphicContext->SetDynamicDescriptor(2, 1, RegGetTex(depthMipMapHandle)->GetDefaultSRV(1)->GetCpuHandle());
 
 			graphicContext->Draw(3);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("OpaqueAtmosphericScatteringPass");
+#endif
 		});
 
 		passOutput.renderTargetColorHandle = rtColorHandle;
@@ -1088,6 +1110,10 @@ namespace MoYu
 			pCopyContext->FlushResourceBarriers();
 
 			pCopyContext->CopyBuffer(RegGetBuf(volumesDataBufferHandle), RegGetBuf(uploadVolumesDataBufferHandle));
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("ResetVolumeDataPass");
+#endif
 		});
 
 		RHI::RenderPass& cullingPass = graph.AddRenderPass("VolumesCullingPass");
@@ -1115,6 +1141,10 @@ namespace MoYu
 			pContext->SetDynamicDescriptor(3, 0, RegGetBuf(indirectFogIndexBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
 
 			pContext->Dispatch1D(volumeCounts, 128);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+			LOG_INFO("VolumesCullingPass");
+#endif
 		});
 
 		RHI::RgResourceHandle sortDispatchArgsHandle = graph.Create<RHI::D3D12Buffer>(sortDispatchArgsBufferDesc);
@@ -1134,6 +1164,10 @@ namespace MoYu
 				RHI::D3D12Buffer* sortDispatchArgsPtr = RegGetBuf(sortDispatchArgsHandle);
 
 				bitonicSort(pAsyncCompute, bufferPtr, bufferCouterPtr, sortDispatchArgsPtr, false, false);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+				LOG_INFO("VolumeBitonicSortPass");
+#endif
 			});
 		}
 
@@ -1170,6 +1204,10 @@ namespace MoYu
 					pCompute->SetBufferUAV(1, RegGetBuf(sortDispatchArgsHandle));
 
 					pCompute->Dispatch(1, 1, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+					LOG_INFO("GrabVolume IndirectCull Pass");
+#endif
 				}
 
 				{
@@ -1199,6 +1237,10 @@ namespace MoYu
 					pCompute->SetDynamicDescriptor(3, 1, RegGetBuf(volumetricMaterialDataBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
 
 					pCompute->DispatchIndirect(RegGetBuf(sortDispatchArgsHandle), 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+					LOG_INFO("GrabVolume IndirectGrab Pass");
+#endif
 
 					//// Transition to indirect argument state
 					//pCompute->TransitionBarrier(indirectSortBufferPtr, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
@@ -1262,6 +1304,10 @@ namespace MoYu
 					MAX_VOLUMETRIC_FOG_COUNT,
 					RegGetBufCounter(indirectFogIndexBufferHandle),
 					0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+				LOG_INFO("VolumeDrawPass");
+#endif
 			});
 		}
 		passOutput.vBufferDensityHandle = mVBufferDensityHandle;

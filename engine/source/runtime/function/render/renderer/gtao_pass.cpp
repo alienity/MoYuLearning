@@ -234,6 +234,10 @@ namespace MoYu
             uint32_t dispatchHeight = depthTexDesc.Height;
 
             pContext->Dispatch((dispatchWidth + 16 - 1) / 16, (dispatchHeight + 16 - 1) / 16, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("GTAOPrefilterPass");
+#endif
         });
         
         //====================================================================================================
@@ -284,6 +288,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(gtaoConstantBuffer) / sizeof(uint32_t), &gtaoConstantBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("GTAOMainPass");
+#endif
         });
          
         //====================================================================================================
@@ -324,6 +332,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(gtaoConstantBuffer) / sizeof(uint32_t), &gtaoConstantBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("GTAODenoisePass");
+#endif
         });
         
         passOutput.workingViewDepthHandle = workingViewDepthHandle;

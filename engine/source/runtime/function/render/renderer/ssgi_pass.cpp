@@ -247,6 +247,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("SSTraceGIPass");
+#endif
         });
         
 
@@ -294,6 +298,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("SSReprojectGIPass");
+#endif
         });
 
         RHI::RgResourceHandle denoisedOutHandle = mIndirectDiffuseHandle;

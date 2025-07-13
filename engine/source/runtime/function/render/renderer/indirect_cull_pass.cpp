@@ -5,6 +5,7 @@
 #include "runtime/core/math/moyu_math2.h"
 #include "runtime/function/render/rhi/d3d12/d3d12_graphicsCommon.h"
 #include "runtime/function/render/renderer/pass_helper.h"
+#include "runtime/function/render/utility/HDUtils.h"
 
 #include "fmt/core.h"
 #include <cassert>
@@ -18,7 +19,7 @@ namespace MoYu
                              elementSize, \
                              bufferName, \
                              RHI::RHIBufferModeImmutable, \
-                             D3D12_RESOURCE_STATE_GENERIC_READ)
+                             D3D12_RESOURCE_STATE_COMMON)
 
 #define CreateUploadBuffer(numElement, elementSize, bufferName) \
     RHI::D3D12Buffer::Create(m_Device->GetLinkedDevice(), \
@@ -479,43 +480,37 @@ namespace MoYu
         RHI::RgResourceHandle grabDispatchArgsHandle = graph.Create<RHI::D3D12Buffer>(grabDispatchArgsBufferDesc);
 
         // import buffers
-        cullOutput.perframeBufferHandle = GImport(graph, pFrameUniformBuffer.get());
-        cullOutput.renderDataPerDrawHandle = GImport(graph, pRenderDataPerDrawBuffer.get());
-        cullOutput.propertiesPerMaterialHandle = GImport(graph, pPropertiesPerMaterialBuffer.get());
+        RHI::RgResourceHandle perframeBufferHandle = GImport(graph, pFrameUniformBuffer.get());
+        RHI::RgResourceHandle renderDataPerDrawHandle = GImport(graph, pRenderDataPerDrawBuffer.get());
+        RHI::RgResourceHandle propertiesPerMaterialHandle = GImport(graph, pPropertiesPerMaterialBuffer.get());
 
-        cullOutput.opaqueDrawHandle = DrawCallCommandBufferHandle {
+        DrawCallCommandBufferHandle opaqueDrawHandle = DrawCallCommandBufferHandle {
             GImport(graph, commandBufferForOpaqueDraw.p_IndirectIndexCommandBuffer.get()),
             GImport(graph, commandBufferForOpaqueDraw.p_IndirectSortCommandBuffer.get())};
 
-        cullOutput.transparentDrawHandle = DrawCallCommandBufferHandle {
+        DrawCallCommandBufferHandle transparentDrawHandle = DrawCallCommandBufferHandle {
             GImport(graph, commandBufferForTransparentDraw.p_IndirectIndexCommandBuffer.get()),
             GImport(graph, commandBufferForTransparentDraw.p_IndirectSortCommandBuffer.get())};
 
+        std::vector<DrawCallCommandBufferHandle> directionShadowmapHandles;
         for (size_t i = 0; i < dirShadowmapCommandBuffers.m_DrawCallCommandBuffer.size(); i++)
         {
             DrawCallCommandBufferHandle bufferHandle = {
                 GImport(graph, dirShadowmapCommandBuffers.m_DrawCallCommandBuffer[i].p_IndirectIndexCommandBuffer.get()),
                 GImport(graph, dirShadowmapCommandBuffers.m_DrawCallCommandBuffer[i].p_IndirectSortCommandBuffer.get())};
-            cullOutput.directionShadowmapHandles.push_back(bufferHandle);
+            directionShadowmapHandles.push_back(bufferHandle);
         }
 
+        std::vector<DrawCallCommandBufferHandle> spotShadowmapHandles;
         for (size_t i = 0; i < spotShadowmapCommandBuffer.size(); i++)
         {
             DrawCallCommandBufferHandle bufferHandle = {
                 GImport(graph, spotShadowmapCommandBuffer[i].m_DrawCallCommandBuffer.p_IndirectIndexCommandBuffer.get()),
                 GImport(graph, spotShadowmapCommandBuffer[i].m_DrawCallCommandBuffer.p_IndirectSortCommandBuffer.get())};
-            cullOutput.spotShadowmapHandles.push_back(bufferHandle);
+            spotShadowmapHandles.push_back(bufferHandle);
         }
 
         // reset pass
-        auto mPerframeBufferHandle = cullOutput.perframeBufferHandle;
-        auto mRenderDataPerDrawHandle = cullOutput.renderDataPerDrawHandle;
-        auto mPropertiesPerMaterialHandle = cullOutput.propertiesPerMaterialHandle;
-        auto mOpaqueDrawHandle = cullOutput.opaqueDrawHandle;
-        auto mTransparentDrawHandle = cullOutput.transparentDrawHandle;
-        auto mDirShadowmapHandles(cullOutput.directionShadowmapHandles);
-        auto mSpotShadowmapHandles(cullOutput.spotShadowmapHandles);
-
         {
             RHI::RenderPass& resetPass = graph.AddRenderPass("ResetPass");
 
@@ -523,79 +518,100 @@ namespace MoYu
             resetPass.Read(uploadPropertiesPerMaterialHandle, true);
             resetPass.Read(uploadRenderDataPerDrawHandle, true);
 
-            resetPass.Write(cullOutput.perframeBufferHandle, true);
-            resetPass.Write(cullOutput.propertiesPerMaterialHandle, true);
-            resetPass.Write(cullOutput.renderDataPerDrawHandle, true);
-            resetPass.Write(cullOutput.opaqueDrawHandle.indirectIndexBufferHandle, true);
-            resetPass.Write(cullOutput.opaqueDrawHandle.indirectSortBufferHandle, true);
-            resetPass.Write(cullOutput.transparentDrawHandle.indirectIndexBufferHandle, true);
-            resetPass.Write(cullOutput.transparentDrawHandle.indirectSortBufferHandle, true);
+            resetPass.Write(perframeBufferHandle, true);
+            resetPass.Write(propertiesPerMaterialHandle, true);
+            resetPass.Write(renderDataPerDrawHandle, true);
+            resetPass.Write(opaqueDrawHandle.indirectIndexBufferHandle, true);
+            resetPass.Write(opaqueDrawHandle.indirectSortBufferHandle, true);
+            resetPass.Write(transparentDrawHandle.indirectIndexBufferHandle, true);
+            resetPass.Write(transparentDrawHandle.indirectSortBufferHandle, true);
             
-            for (size_t i = 0; i < cullOutput.directionShadowmapHandles.size(); i++)
+            for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
             {
-                resetPass.Write(cullOutput.directionShadowmapHandles[i].indirectIndexBufferHandle, true);
-                resetPass.Write(cullOutput.directionShadowmapHandles[i].indirectSortBufferHandle, true);
+                resetPass.Write(directionShadowmapHandles[i].indirectIndexBufferHandle, true);
+                resetPass.Write(directionShadowmapHandles[i].indirectSortBufferHandle, true);
             }
-            for (size_t i = 0; i < cullOutput.spotShadowmapHandles.size(); i++)
+            for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
             {
-                resetPass.Write(cullOutput.spotShadowmapHandles[i].indirectIndexBufferHandle, true);
-                resetPass.Write(cullOutput.spotShadowmapHandles[i].indirectSortBufferHandle, true);
+                resetPass.Write(spotShadowmapHandles[i].indirectIndexBufferHandle, true);
+                resetPass.Write(spotShadowmapHandles[i].indirectSortBufferHandle, true);
             }
 
             resetPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                 RHI::D3D12ComputeContext* pCopyContext = context->GetComputeContext();
 
-                pCopyContext->TransitionBarrier(RegGetBufCounter(mOpaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                pCopyContext->TransitionBarrier(RegGetBufCounter(mOpaqueDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                pCopyContext->TransitionBarrier(RegGetBufCounter(mTransparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                pCopyContext->TransitionBarrier(RegGetBufCounter(mTransparentDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                for (size_t i = 0; i < mDirShadowmapHandles.size(); i++)
+                // Transition to copy dest
+                pCopyContext->TransitionBarrier(RegGetBufCounter(opaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(opaqueDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(transparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(transparentDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
                 {
-                    pCopyContext->TransitionBarrier(RegGetBufCounter(mDirShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                    pCopyContext->TransitionBarrier(RegGetBufCounter(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
                 }
-                for (size_t i = 0; i < mSpotShadowmapHandles.size(); i++)
+                for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
                 {
-                    pCopyContext->TransitionBarrier(RegGetBufCounter(mSpotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                    pCopyContext->TransitionBarrier(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
                 }
-                pCopyContext->TransitionBarrier(RegGetBuf(mPerframeBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                pCopyContext->TransitionBarrier(RegGetBuf(mPropertiesPerMaterialHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-                pCopyContext->TransitionBarrier(RegGetBuf(mRenderDataPerDrawHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
                 pCopyContext->FlushResourceBarriers();
 
-                pCopyContext->ResetCounter(RegGetBufCounter(mOpaqueDrawHandle.indirectIndexBufferHandle));
-                pCopyContext->ResetCounter(RegGetBufCounter(mOpaqueDrawHandle.indirectSortBufferHandle));
-                pCopyContext->ResetCounter(RegGetBufCounter(mTransparentDrawHandle.indirectIndexBufferHandle));
-                pCopyContext->ResetCounter(RegGetBufCounter(mTransparentDrawHandle.indirectSortBufferHandle));
+                // Reset counters
+                pCopyContext->ResetCounter(RegGetBufCounter(opaqueDrawHandle.indirectIndexBufferHandle));
+                pCopyContext->ResetCounter(RegGetBufCounter(opaqueDrawHandle.indirectSortBufferHandle));
+                pCopyContext->ResetCounter(RegGetBufCounter(transparentDrawHandle.indirectIndexBufferHandle));
+                pCopyContext->ResetCounter(RegGetBufCounter(transparentDrawHandle.indirectSortBufferHandle));
 
-                for (size_t i = 0; i < mDirShadowmapHandles.size(); i++)
+                for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
                 {
-                    pCopyContext->ResetCounter(RegGetBufCounter(mDirShadowmapHandles[i].indirectSortBufferHandle));
+                    pCopyContext->ResetCounter(RegGetBufCounter(directionShadowmapHandles[i].indirectSortBufferHandle));
                 }
 
-                for (size_t i = 0; i < mSpotShadowmapHandles.size(); i++)
+                for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
                 {
-                    pCopyContext->ResetCounter(RegGetBufCounter(mSpotShadowmapHandles[i].indirectSortBufferHandle));
+                    pCopyContext->ResetCounter(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle));
                 }
 
-                pCopyContext->CopyBuffer(RegGetBuf(mPerframeBufferHandle), RegGetBuf(uploadFrameUniformHandle));
-                pCopyContext->CopyBuffer(RegGetBuf(mPropertiesPerMaterialHandle), RegGetBuf(uploadPropertiesPerMaterialHandle));
-                pCopyContext->CopyBuffer(RegGetBuf(mRenderDataPerDrawHandle), RegGetBuf(uploadRenderDataPerDrawHandle));
-
-                // transition buffer state
+                // Transition to common
+                pCopyContext->TransitionBarrier(RegGetBufCounter(opaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(opaqueDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(transparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                pCopyContext->TransitionBarrier(RegGetBufCounter(transparentDrawHandle.indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
                 {
-                    pCopyContext->TransitionBarrier(RegGetBuf(mPerframeBufferHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
-                    pCopyContext->TransitionBarrier(RegGetBuf(mPropertiesPerMaterialHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
-                    pCopyContext->TransitionBarrier(RegGetBuf(mRenderDataPerDrawHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
+                    pCopyContext->TransitionBarrier(RegGetBufCounter(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                }
+                for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
+                {
+                    pCopyContext->TransitionBarrier(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                }
 
-                    // transition vertex and index buffer state
+                pCopyContext->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                pCopyContext->FlushResourceBarriers();
+
+				// Copy UploadBuffer to GPUBuffer
+                pCopyContext->CopyBuffer(RegGetBuf(perframeBufferHandle), RegGetBuf(uploadFrameUniformHandle));
+                pCopyContext->CopyBuffer(RegGetBuf(propertiesPerMaterialHandle), RegGetBuf(uploadPropertiesPerMaterialHandle));
+                pCopyContext->CopyBuffer(RegGetBuf(renderDataPerDrawHandle), RegGetBuf(uploadRenderDataPerDrawHandle));
+
+                // Transition to generic read
+                {
+                    pCopyContext->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
+                    pCopyContext->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
+                    pCopyContext->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATE_GENERIC_READ);
+
+                    // Transition vertex and index buffer state
                     std::vector<CachedMeshRenderer>& _mesh_renderers = m_render_scene->m_mesh_renderers;
                     uint32_t numMeshes = _mesh_renderers.size();
                     for (size_t i = 0; i < numMeshes; i++)
                     {
                         InternalMeshRenderer& temp_mesh_renderer = _mesh_renderers[i].internalMeshRenderer;
                         InternalMesh& temp_ref_mesh = temp_mesh_renderer.ref_mesh;
-                        pCopyContext->TransitionBarrier(temp_ref_mesh.index_buffer.index_buffer.get(), D3D12_RESOURCE_STATE_COMMON);
-                        pCopyContext->TransitionBarrier(temp_ref_mesh.vertex_buffer.vertex_buffer.get(), D3D12_RESOURCE_STATE_COMMON);
+                        pCopyContext->TransitionBarrier(temp_ref_mesh.index_buffer.index_buffer.get(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
+                        pCopyContext->TransitionBarrier(temp_ref_mesh.vertex_buffer.vertex_buffer.get(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
                     }
                 }
                 pCopyContext->FlushResourceBarriers();
@@ -623,23 +639,23 @@ namespace MoYu
             {
                 RHI::RenderPass& cullingPass = graph.AddRenderPass("OpaqueTransCullingPass");
 
-                cullingPass.Read(cullOutput.perframeBufferHandle, true);
-                cullingPass.Read(cullOutput.renderDataPerDrawHandle, true);
-                cullingPass.Read(cullOutput.propertiesPerMaterialHandle, true);
+                cullingPass.Read(perframeBufferHandle, true);
+                cullingPass.Read(renderDataPerDrawHandle, true);
+                cullingPass.Read(propertiesPerMaterialHandle, true);
 
-                cullingPass.Write(cullOutput.opaqueDrawHandle.indirectIndexBufferHandle, true);
-                cullingPass.Write(cullOutput.transparentDrawHandle.indirectIndexBufferHandle, true);
+                cullingPass.Write(opaqueDrawHandle.indirectIndexBufferHandle, true);
+                cullingPass.Write(transparentDrawHandle.indirectIndexBufferHandle, true);
 
                 cullingPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                     RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mPerframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mRenderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mPropertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mOpaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mOpaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mTransparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mTransparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(opaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(opaqueDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(transparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(transparentDrawHandle.indirectIndexBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                     pAsyncCompute->FlushResourceBarriers();
 
                     pAsyncCompute->SetRootSignature(RootSignatures::pIndirectCullForSort.get());
@@ -655,70 +671,82 @@ namespace MoYu
                     };
 
                     RootIndexBuffer rootIndexBuffer =
-                        RootIndexBuffer {RegGetBufDefCBVIdx(mPerframeBufferHandle),
-                                         RegGetBufDefSRVIdx(mRenderDataPerDrawHandle),
-                                         RegGetBufDefSRVIdx(mPropertiesPerMaterialHandle),
-                                         RegGetBufDefUAVIdx(mOpaqueDrawHandle.indirectIndexBufferHandle),
-                                         RegGetBufDefUAVIdx(mTransparentDrawHandle.indirectIndexBufferHandle)};
+                        RootIndexBuffer {RegGetBufDefCBVIdx(perframeBufferHandle),
+                                         RegGetBufDefSRVIdx(renderDataPerDrawHandle),
+                                         RegGetBufDefSRVIdx(propertiesPerMaterialHandle),
+                                         RegGetBufDefUAVIdx(opaqueDrawHandle.indirectIndexBufferHandle),
+                                         RegGetBufDefUAVIdx(transparentDrawHandle.indirectIndexBufferHandle)};
 
                     pAsyncCompute->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
                     pAsyncCompute->Dispatch1D(numMeshes, 128);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("OpaqueTransCullingPass");
+#endif
                 });
             }
 
             {
                 RHI::RenderPass& opaqueSortPass = graph.AddRenderPass("OpaqueBitonicSortPass");
 
-                opaqueSortPass.Read(cullOutput.opaqueDrawHandle.indirectIndexBufferHandle, true);
+                opaqueSortPass.Read(opaqueDrawHandle.indirectIndexBufferHandle, true);
 
                 opaqueSortPass.Write(sortDispatchArgsHandle, true);
-                opaqueSortPass.Write(cullOutput.opaqueDrawHandle.indirectIndexBufferHandle, true);
+                opaqueSortPass.Write(opaqueDrawHandle.indirectIndexBufferHandle, true);
 
                 opaqueSortPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                     RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                    RHI::D3D12Buffer* bufferPtr           = RegGetBuf(mOpaqueDrawHandle.indirectIndexBufferHandle);
+                    RHI::D3D12Buffer* bufferPtr           = RegGetBuf(opaqueDrawHandle.indirectIndexBufferHandle);
                     RHI::D3D12Buffer* bufferCouterPtr     = bufferPtr->GetCounterBuffer().get();
                     RHI::D3D12Buffer* sortDispatchArgsPtr = RegGetBuf(sortDispatchArgsHandle);
 
                     bitonicSort(pAsyncCompute, bufferPtr, bufferCouterPtr, sortDispatchArgsPtr, false, true);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("OpaqueBitonicSortPass");
+#endif
                 });
             }
 
             {
                 RHI::RenderPass& transSortPass = graph.AddRenderPass("TransparentBitonicSortPass");
 
-                transSortPass.Read(cullOutput.transparentDrawHandle.indirectIndexBufferHandle, true);
+                transSortPass.Read(transparentDrawHandle.indirectIndexBufferHandle, true);
 
                 transSortPass.Write(sortDispatchArgsHandle, true);
-                transSortPass.Write(cullOutput.transparentDrawHandle.indirectIndexBufferHandle, true);
+                transSortPass.Write(transparentDrawHandle.indirectIndexBufferHandle, true);
 
                 transSortPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                     RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                    RHI::D3D12Buffer* bufferPtr           = RegGetBuf(mTransparentDrawHandle.indirectIndexBufferHandle);
+                    RHI::D3D12Buffer* bufferPtr           = RegGetBuf(transparentDrawHandle.indirectIndexBufferHandle);
                     RHI::D3D12Buffer* bufferCouterPtr     = bufferPtr->GetCounterBuffer().get();
                     RHI::D3D12Buffer* sortDispatchArgsPtr = RegGetBuf(sortDispatchArgsHandle);
 
                     bitonicSort(pAsyncCompute, bufferPtr, bufferCouterPtr, sortDispatchArgsPtr, false, false);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("TransparentBitonicSortPass");
+#endif
                 });
             }
 
             {
                 RHI::RenderPass& grabOpaquePass = graph.AddRenderPass("GrabOpaquePass");
 
-                grabOpaquePass.Read(cullOutput.renderDataPerDrawHandle, true);
-                grabOpaquePass.Read(cullOutput.opaqueDrawHandle.indirectIndexBufferHandle, true);
+                grabOpaquePass.Read(renderDataPerDrawHandle, true);
+                grabOpaquePass.Read(opaqueDrawHandle.indirectIndexBufferHandle, true);
 
                 grabOpaquePass.Write(grabDispatchArgsHandle, true);
-                grabOpaquePass.Write(cullOutput.opaqueDrawHandle.indirectSortBufferHandle, true);
+                grabOpaquePass.Write(opaqueDrawHandle.indirectSortBufferHandle, true);
 
                 grabOpaquePass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                     RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                    RHI::D3D12Buffer* renderDataPerDrawPtr   = RegGetBuf(mRenderDataPerDrawHandle);
-                    RHI::D3D12Buffer* indirectIndexBufferPtr = RegGetBuf(mOpaqueDrawHandle.indirectIndexBufferHandle);
-                    RHI::D3D12Buffer* indirectSortBufferPtr  = RegGetBuf(mOpaqueDrawHandle.indirectSortBufferHandle);
+                    RHI::D3D12Buffer* renderDataPerDrawPtr   = RegGetBuf(renderDataPerDrawHandle);
+                    RHI::D3D12Buffer* indirectIndexBufferPtr = RegGetBuf(opaqueDrawHandle.indirectIndexBufferHandle);
+                    RHI::D3D12Buffer* indirectSortBufferPtr  = RegGetBuf(opaqueDrawHandle.indirectSortBufferHandle);
                     RHI::D3D12Buffer* grabDispatchArgsPtr    = RegGetBuf(grabDispatchArgsHandle);
 
                     grabObject(pAsyncCompute,
@@ -726,24 +754,28 @@ namespace MoYu
                         indirectIndexBufferPtr,
                         indirectSortBufferPtr,
                         grabDispatchArgsPtr);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("GrabOpaquePass");
+#endif
                 });
             }
 
             {
                 RHI::RenderPass& grabTransPass = graph.AddRenderPass("GrabTransPass");
 
-                grabTransPass.Read(cullOutput.renderDataPerDrawHandle, true);
-                grabTransPass.Read(cullOutput.transparentDrawHandle.indirectIndexBufferHandle, true);
+                grabTransPass.Read(renderDataPerDrawHandle, true);
+                grabTransPass.Read(transparentDrawHandle.indirectIndexBufferHandle, true);
 
                 grabTransPass.Write(grabDispatchArgsHandle, true);
-                grabTransPass.Write(cullOutput.transparentDrawHandle.indirectSortBufferHandle, true);
+                grabTransPass.Write(transparentDrawHandle.indirectSortBufferHandle, true);
 
                 grabTransPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                     RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                    RHI::D3D12Buffer* renderDataPerDrawPtr = RegGetBuf(mRenderDataPerDrawHandle);
-                    RHI::D3D12Buffer* indirectIndexBufferPtr = RegGetBuf(mTransparentDrawHandle.indirectIndexBufferHandle);
-                    RHI::D3D12Buffer* indirectSortBufferPtr = RegGetBuf(mTransparentDrawHandle.indirectSortBufferHandle);
+                    RHI::D3D12Buffer* renderDataPerDrawPtr = RegGetBuf(renderDataPerDrawHandle);
+                    RHI::D3D12Buffer* indirectIndexBufferPtr = RegGetBuf(transparentDrawHandle.indirectIndexBufferHandle);
+                    RHI::D3D12Buffer* indirectSortBufferPtr = RegGetBuf(transparentDrawHandle.indirectSortBufferHandle);
                     RHI::D3D12Buffer* grabDispatchArgsPtr = RegGetBuf(grabDispatchArgsHandle);
 
                     grabObject(pAsyncCompute,
@@ -751,54 +783,62 @@ namespace MoYu
                         indirectIndexBufferPtr,
                         indirectSortBufferPtr,
                         grabDispatchArgsPtr);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("GrabTransPass");
+#endif
                 });
             }
         }
 
-        if (mDirShadowmapHandles.size() != 0 && numMeshes > 0)
+        if (directionShadowmapHandles.size() != 0 && numMeshes > 0)
         {
             RHI::RenderPass& dirLightShadowCullPass = graph.AddRenderPass("DirectionLightShadowCullPass");
 
-            dirLightShadowCullPass.Read(cullOutput.perframeBufferHandle, true);
-            dirLightShadowCullPass.Read(cullOutput.renderDataPerDrawHandle, true);
-            dirLightShadowCullPass.Read(cullOutput.propertiesPerMaterialHandle, true);
+            dirLightShadowCullPass.Read(perframeBufferHandle, true);
+            dirLightShadowCullPass.Read(renderDataPerDrawHandle, true);
+            dirLightShadowCullPass.Read(propertiesPerMaterialHandle, true);
 
-            for (size_t i = 0; i < cullOutput.directionShadowmapHandles.size(); i++)
+            for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
             {
-                dirLightShadowCullPass.Write(cullOutput.directionShadowmapHandles[i].indirectSortBufferHandle, true);
+                dirLightShadowCullPass.Write(directionShadowmapHandles[i].indirectSortBufferHandle, true);
             }
 
             dirLightShadowCullPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                 RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mPerframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mRenderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mPropertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                for (size_t i = 0; i < mDirShadowmapHandles.size(); i++)
+                pAsyncCompute->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                pAsyncCompute->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                pAsyncCompute->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                for (size_t i = 0; i < directionShadowmapHandles.size(); i++)
                 {
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mDirShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                     //pAsyncCompute->InsertUAVBarrier(RegGetBuf(mDirShadowmapHandles[i].indirectSortBufferHandle));
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mDirShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                     //pAsyncCompute->InsertUAVBarrier(RegGetBufCounter(mDirShadowmapHandles[i].indirectSortBufferHandle));
                 }
                 pAsyncCompute->FlushResourceBarriers();
 
-                for (int i = 0; i < mDirShadowmapHandles.size(); i++)
+                for (int i = 0; i < directionShadowmapHandles.size(); i++)
                 {
                     pAsyncCompute->SetPipelineState(PipelineStates::pIndirectCullDirectionShadowmap.get());
                     pAsyncCompute->SetRootSignature(RootSignatures::pIndirectCullDirectionShadowmap.get());
 
 
                     pAsyncCompute->SetConstant(0, 0, RHI::DWParam(i));
-                    pAsyncCompute->SetConstantBuffer(1, RegGetBuf(mPerframeBufferHandle)->GetGpuVirtualAddress());
-                    pAsyncCompute->SetBufferSRV(2, RegGetBuf(mRenderDataPerDrawHandle));
-                    pAsyncCompute->SetBufferSRV(3, RegGetBuf(mPropertiesPerMaterialHandle));
-                    pAsyncCompute->SetDescriptorTable(4, RegGetBuf(mDirShadowmapHandles[i].indirectSortBufferHandle)->GetDefaultUAV()->GetGpuHandle());
+                    pAsyncCompute->SetConstantBuffer(1, RegGetBuf(perframeBufferHandle)->GetGpuVirtualAddress());
+                    pAsyncCompute->SetBufferSRV(2, RegGetBuf(renderDataPerDrawHandle));
+                    pAsyncCompute->SetBufferSRV(3, RegGetBuf(propertiesPerMaterialHandle));
+                    pAsyncCompute->SetDescriptorTable(4, RegGetBuf(directionShadowmapHandles[i].indirectSortBufferHandle)->GetDefaultUAV()->GetGpuHandle());
                 
                     pAsyncCompute->Dispatch1D(numMeshes, 128);
 
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mDirShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mDirShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("DirectionLightShadowCullPass {}", i);
+#endif
+
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(directionShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
                     pAsyncCompute->FlushResourceBarriers();
                 }
             });
@@ -808,51 +848,63 @@ namespace MoYu
         {
             RHI::RenderPass& spotLightShadowCullPass = graph.AddRenderPass("SpotLightShadowCullPass");
 
-            spotLightShadowCullPass.Read(cullOutput.perframeBufferHandle, true);
-            spotLightShadowCullPass.Read(cullOutput.renderDataPerDrawHandle, true);
-            spotLightShadowCullPass.Read(cullOutput.propertiesPerMaterialHandle, true);
+            spotLightShadowCullPass.Read(perframeBufferHandle, true);
+            spotLightShadowCullPass.Read(renderDataPerDrawHandle, true);
+            spotLightShadowCullPass.Read(propertiesPerMaterialHandle, true);
 
             std::vector<uint32_t> _spotlightIndex;
-            for (size_t i = 0; i < cullOutput.spotShadowmapHandles.size(); i++)
+            for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
             {
-                spotLightShadowCullPass.Write(cullOutput.spotShadowmapHandles[i].indirectSortBufferHandle, true);
+                spotLightShadowCullPass.Write(spotShadowmapHandles[i].indirectSortBufferHandle, true);
                 _spotlightIndex.push_back(spotShadowmapCommandBuffer[i].m_lightIndex);
             }
 
             spotLightShadowCullPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
                 RHI::D3D12ComputeContext* pAsyncCompute = context->GetComputeContext();
 
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mPerframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mRenderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                pAsyncCompute->TransitionBarrier(RegGetBuf(mPropertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-                for (size_t i = 0; i < mSpotShadowmapHandles.size(); i++)
+                pAsyncCompute->TransitionBarrier(RegGetBuf(perframeBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                pAsyncCompute->TransitionBarrier(RegGetBuf(renderDataPerDrawHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                pAsyncCompute->TransitionBarrier(RegGetBuf(propertiesPerMaterialHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
                 {
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mSpotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                    //pAsyncCompute->InsertUAVBarrier(RegGetBuf(mSpotShadowmapHandles[i].indirectSortBufferHandle));
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mSpotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-                    //pAsyncCompute->InsertUAVBarrier(RegGetBufCounter(mSpotShadowmapHandles[i].indirectSortBufferHandle));
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    //pAsyncCompute->InsertUAVBarrier(RegGetBuf(spotShadowmapHandles[i].indirectSortBufferHandle));
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+                    //pAsyncCompute->InsertUAVBarrier(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle));
                 }
                 pAsyncCompute->FlushResourceBarriers();
 
-                for (size_t i = 0; i < mSpotShadowmapHandles.size(); i++)
+                for (size_t i = 0; i < spotShadowmapHandles.size(); i++)
                 {
                     pAsyncCompute->SetPipelineState(PipelineStates::pIndirectCullSpotShadowmap.get());
                     pAsyncCompute->SetRootSignature(RootSignatures::pIndirectCullSpotShadowmap.get());
 
                     pAsyncCompute->SetConstant(0, 0, _spotlightIndex[i]);
-                    pAsyncCompute->SetConstantBuffer(1, RegGetBuf(mPerframeBufferHandle)->GetGpuVirtualAddress());
-                    pAsyncCompute->SetBufferSRV(2, RegGetBuf(mRenderDataPerDrawHandle));
-                    pAsyncCompute->SetBufferSRV(3, RegGetBuf(mPropertiesPerMaterialHandle));
-                    pAsyncCompute->SetDescriptorTable(4, RegGetBuf(mSpotShadowmapHandles[i].indirectSortBufferHandle)->GetDefaultUAV()->GetGpuHandle());
+                    pAsyncCompute->SetConstantBuffer(1, RegGetBuf(perframeBufferHandle)->GetGpuVirtualAddress());
+                    pAsyncCompute->SetBufferSRV(2, RegGetBuf(renderDataPerDrawHandle));
+                    pAsyncCompute->SetBufferSRV(3, RegGetBuf(propertiesPerMaterialHandle));
+                    pAsyncCompute->SetDescriptorTable(4, RegGetBuf(spotShadowmapHandles[i].indirectSortBufferHandle)->GetDefaultUAV()->GetGpuHandle());
 
                     pAsyncCompute->Dispatch1D(numMeshes, 128);
 
-                    pAsyncCompute->TransitionBarrier(RegGetBuf(mSpotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
-                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(mSpotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("SpotLightShadowCullPass {}", i);
+#endif
+
+                    pAsyncCompute->TransitionBarrier(RegGetBuf(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+                    pAsyncCompute->TransitionBarrier(RegGetBufCounter(spotShadowmapHandles[i].indirectSortBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
                     pAsyncCompute->FlushResourceBarriers();
                 }
             });
         }
+
+        cullOutput.perframeBufferHandle = perframeBufferHandle;
+        cullOutput.renderDataPerDrawHandle = renderDataPerDrawHandle;
+        cullOutput.propertiesPerMaterialHandle = propertiesPerMaterialHandle;
+        cullOutput.opaqueDrawHandle = opaqueDrawHandle;
+        cullOutput.transparentDrawHandle = transparentDrawHandle;
+        cullOutput.directionShadowmapHandles = directionShadowmapHandles;
+        cullOutput.spotShadowmapHandles = spotShadowmapHandles;
     }
 
     void IndirectCullPass::destroy()

@@ -10,7 +10,7 @@
 // D3D12.DRED
 // Enable device removed extended data\n
 // DRED delivers automatic breadcrumbs as well as GPU page fault reporting\n
-static bool CVar_Dred = true;
+static bool CVar_Dred = false;
 
 // D3D12.AsyncPsoCompile
 // Enables asynchronous pipeline state object compilation

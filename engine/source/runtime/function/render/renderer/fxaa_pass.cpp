@@ -120,6 +120,10 @@ namespace MoYu
             computeContext->SetPipelineState(pFXAAToLuminancePSO.get());
             computeContext->SetConstants(0, pSceneColorSRV->GetIndex(), tmpColorUAV->GetIndex());
             computeContext->Dispatch2D(pInputSceneColor->GetWidth(), pInputSceneColor->GetHeight(), 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("FXAAToLuminance Pass");
+#endif
         });
 
         RHI::RenderPass& fxaapass = graph.AddRenderPass("FXAA");
@@ -167,6 +171,9 @@ namespace MoYu
             computeContext->SetConstantArray(0, 5, &m_LuminanceInput);
             computeContext->Dispatch2D(pInputSceneColor->GetWidth(), pInputSceneColor->GetHeight(), 8);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("FXAA Pass");
+#endif
         });
     }
 

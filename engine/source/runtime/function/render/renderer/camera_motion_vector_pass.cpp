@@ -114,6 +114,10 @@ namespace MoYu
             graphicContext->SetConstant(0, 1, registry->GetD3D12Texture(depthPyramidHandle)->GetDefaultSRV()->GetIndex());
 
             graphicContext->Draw(3);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("CameraMotionVectorPass");
+#endif
         });
 
         passOutput.motionVectorHandle = motionVectorHandle;

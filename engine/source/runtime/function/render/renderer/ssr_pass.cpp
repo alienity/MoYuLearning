@@ -338,6 +338,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(SSRHitPointTextureDesc.Width, SSRHitPointTextureDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ScreenSpaceReflectionsTracingPass");
+#endif
         });
 
         RHI::RenderPass& ssrReprojectPass = graph.AddRenderPass("ScreenSpaceReflectionsReprojectionPass");
@@ -385,6 +389,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ScreenSpaceReflectionsReprojectionPass");
+#endif
         });
 
         RHI::RenderPass& ssrAccumPass = graph.AddRenderPass("ScreenSpaceAccumulationPass");
@@ -433,6 +441,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ScreenSpaceAccumulationPass");
+#endif
         });
 
         passOutput.ssrOutHandle = ssrLightingTextureHandle;
@@ -448,7 +460,7 @@ namespace MoYu
 
     std::shared_ptr<RHI::D3D12Texture> SSRPass::getSsrAccum(bool needPrev)
     {
-        int frameIndex = m_Device->GetLinkedDevice()->m_FrameIndex;
+        int frameIndex = m_Device->GetLinkedDevice()->m_FrameIndex % 2;
         if (needPrev)
         {
             frameIndex = (frameIndex + 1) % 2;

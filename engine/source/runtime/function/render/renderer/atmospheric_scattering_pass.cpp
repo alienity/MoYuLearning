@@ -357,6 +357,10 @@ namespace MoYu
             uint32_t dispatchHeight = AtmosphereScattering::TRANSMITTANCE_TEXTURE_HEIGHT;
 
             pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ASComputeTransmittancePass");
+#endif      
         });
 
         // Compute the direct irradiance, store it in delta_irradiance_texture and,
@@ -402,6 +406,10 @@ namespace MoYu
             uint32_t dispatchHeight = AtmosphereScattering::IRRADIANCE_TEXTURE_HEIGHT;
 
             pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ASComputeDirectIrradiancePass");
+#endif
         });
 
         // Compute the rayleigh and mie single scattering, store them in
@@ -452,6 +460,10 @@ namespace MoYu
             uint32_t dispatchDepth = AtmosphereScattering::SCATTERING_TEXTURE_DEPTH;
 
             pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, (dispatchDepth + 8 - 1) / 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ASComputeSingleScatteringPass");
+#endif
         });
         
         //RHI::RgResourceHandle deltaMultipleScattering3DHandle = deltaRayleighScattering3DHandle;
@@ -521,6 +533,10 @@ namespace MoYu
                     uint32_t dispatchDepth = AtmosphereScattering::SCATTERING_TEXTURE_DEPTH;
 
                     pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, (dispatchDepth + 8 - 1) / 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("ASComputeScatteringDensityPass {}", scattering_order);
+#endif
                 });
             }
 
@@ -578,6 +594,8 @@ namespace MoYu
                     uint32_t dispatchHeight = AtmosphereScattering::IRRADIANCE_TEXTURE_HEIGHT;
 
                     pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, 1);
+
+                    LOG_INFO("ASComputeIndirectIrradiancePass");
                 });
             }
 
@@ -634,6 +652,8 @@ namespace MoYu
                     uint32_t dispatchDepth = AtmosphereScattering::SCATTERING_TEXTURE_DEPTH;
 
                     pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, (dispatchDepth + 8 - 1) / 8);
+
+                    LOG_INFO("ASComputeMultipleScatteringPass");
                 });
 
             }
@@ -719,6 +739,10 @@ namespace MoYu
             graphicContext->SetConstantArray(0, sizeof(mCB) / sizeof(int), &mCB);
 
             graphicContext->Draw(3);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("AtmosphericSkyProceduralPass");
+#endif
         });
         
         passOutput.renderTargetColorHandle = renderTargetColorHandle;

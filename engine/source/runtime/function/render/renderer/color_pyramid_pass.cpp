@@ -47,11 +47,15 @@ namespace MoYu
             }
 
             //--------------------------------------------------
-            // Éú³ÉColorPyramid
+            // ï¿½ï¿½ï¿½ï¿½ColorPyramid
             //--------------------------------------------------
             {
                 RHI::D3D12Texture* _SrcTexture = RegGetTex(colorPyramidHandle);
                 generateColorPyramid(pContext, _SrcTexture);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("ColorPramidPass");
+#endif
             }
         });
 

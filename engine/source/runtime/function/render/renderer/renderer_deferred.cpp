@@ -548,41 +548,41 @@ namespace MoYu
     {
         ////IndirectCullPass::IndirectCullOutput indirectCullOutput;
         ////mIndirectCullPass->cullMeshs(context, &renderGraphRegistry, indirectCullOutput);
-
+        
         RHI::RenderGraph graph(renderGraphAllocator, renderGraphRegistry);
         // backbuffer output
         RHI::D3D12Texture* pBackBufferResource = pSwapChain->GetCurrentBackBufferResource();
         RHI::RgResourceHandle backBufColorHandle = graph.Import(pBackBufferResource);
         // game view output
         RHI::RgResourceHandle renderTargetColorHandle = graph.Import(p_RenderTargetTex.get());
-
+        
         // last frame color buffer
         RHI::RgResourceHandle curFrameColorRTHandle = graph.Import(GetCurrentFrameColorPyramid().get());
         // current frame color buffer
         RHI::RgResourceHandle lastFrameColorRTHandle = graph.Import(GetLastFrameColorPyramid().get());
-
+        
         /**/
         //=================================================================================
         IndirectCullPass::IndirectCullOutput indirectCullOutput;
         mIndirectCullPass->update(graph, indirectCullOutput);
         //=================================================================================
-
+        
         //=================================================================================
         RHI::RgResourceHandle lastFrameMinDepthPyramidHandle = mDepthPyramidPass->GetDepthPyramidHandle(graph, DepthMipGenerateMode::MinType, true);
-
+        
         IndirectTerrainCullPass::TerrainCullInput terrainCullInput;
         IndirectTerrainCullPass::TerrainCullOutput terrainCullOutput;
         terrainCullInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
         terrainCullInput.hizDepthBufferHandle = lastFrameMinDepthPyramidHandle;
-
+        
         mTerrainCullPass->update(graph, std::move(terrainCullInput), terrainCullOutput);
         //=================================================================================
-
+        
         //=================================================================================
         // indirect draw shadow
         IndirectShadowPass::ShadowInputParameters mShadowmapIntputParams;
         IndirectShadowPass::ShadowOutputParameters mShadowmapOutputParams;
-
+        
         mShadowmapIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
         mShadowmapIntputParams.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
         mShadowmapIntputParams.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
@@ -599,459 +599,459 @@ namespace MoYu
         mIndirectShadowPass->update(graph, std::move(mShadowmapIntputParams), mShadowmapOutputParams);
         //=================================================================================
 
-        //=================================================================================
-        // indirect terrain draw shadow
-        IndirectTerrainShadowPass::ShadowInputParameters mTerrainShadowmapIntputParams;
-        IndirectTerrainShadowPass::ShadowOutputParameters mTerrainShadowmapOutputParams;
-
-        mTerrainShadowmapIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mTerrainShadowmapIntputParams.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
-        mTerrainShadowmapIntputParams.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
-        mTerrainShadowmapIntputParams.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
-        mTerrainShadowmapIntputParams.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
-        mTerrainShadowmapIntputParams.dirConsBufferHandles = terrainCullOutput.dirConsBufferHandles;
-        mTerrainShadowmapIntputParams.dirVisPatchListHandles = terrainCullOutput.dirVisPatchListHandles;
-        mTerrainShadowmapIntputParams.dirVisCmdSigBufferHandles = terrainCullOutput.dirVisCmdSigBufferHandles;
-
-        mTerrainShadowmapOutputParams.directionalCascadeShadowmapHandle = mShadowmapOutputParams.directionalCascadeShadowmapHandle;
-
-        mIndirectTerrainShadowPass->update(graph, std::move(mTerrainShadowmapIntputParams), mTerrainShadowmapOutputParams);
-        //=================================================================================
-
-        //=================================================================================
-        // shadowmap output
-        RHI::RgResourceHandle directionalCascadeShadowmapHandle = mShadowmapOutputParams.directionalCascadeShadowmapHandle;
-        std::vector<RHI::RgResourceHandle> spotShadowmapHandle = mShadowmapOutputParams.spotShadowmapHandle;
-        //=================================================================================
-
-        //=================================================================================
-        // depth prepass
-        DepthPrePass::DrawInputParameters mDepthPrePassInput;
-        DepthPrePass::DrawOutput mDepthPrepassOutput;
-
-        mDepthPrePassInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mDepthPrePassInput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
-        mDepthPrePassInput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
-        mDepthPrePassInput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
-
-        mDepthPrePass->update(graph, mDepthPrePassInput, mDepthPrepassOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // terrain depth prepass
-        TerrainDepthPrePass::DrawInputParameters mTerrainDepthPrePassInput;
-        TerrainDepthPrePass::DrawOutput mTerrainDepthPrepassOutput;
-
-        mTerrainDepthPrePassInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mTerrainDepthPrePassInput.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
-        mTerrainDepthPrePassInput.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
-        mTerrainDepthPrePassInput.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
-        mTerrainDepthPrePassInput.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
-        mTerrainDepthPrePassInput.culledPatchListBufferHandle = terrainCullOutput.mainCamVisPatchListHandle;
-        mTerrainDepthPrePassInput.mainCamVisCmdSigHandle = terrainCullOutput.mainCamVisCmdSigBufferHandle;
-
-        mTerrainDepthPrepassOutput.depthBufferHandle = mDepthPrepassOutput.depthBufferHandle;
-
-        mTerrainDepthPrePass->update(graph, mTerrainDepthPrePassInput, mTerrainDepthPrepassOutput);
-
-        //=================================================================================
-
-        //=================================================================================
-        // indirect gbuffer
-        IndirectGBufferPass::DrawInputParameters mGBufferIntput;
-        GBufferOutput mGBufferOutput;
-
-        mGBufferIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mGBufferIntput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
-        mGBufferIntput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
-        mGBufferIntput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
-        mGBufferOutput.depthHandle = mTerrainDepthPrepassOutput.depthBufferHandle;
-
-        mIndirectGBufferPass->update(graph, mGBufferIntput, mGBufferOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // indirect terrain gbuffer
-        IndirectTerrainGBufferPass::DrawInputParameters mTerrainGBufferIntput;
-        mTerrainGBufferIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mTerrainGBufferIntput.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
-        mTerrainGBufferIntput.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
-        mTerrainGBufferIntput.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
-        mTerrainGBufferIntput.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
-        mTerrainGBufferIntput.culledPatchListBufferHandle = terrainCullOutput.mainCamVisPatchListHandle;
-        mTerrainGBufferIntput.mainCamVisCmdSigHandle = terrainCullOutput.mainCamVisCmdSigBufferHandle;
-
-        mIndirectTerrainGBufferPass->update(graph, mTerrainGBufferIntput, mGBufferOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // indirect motion vector
-        IndirectMotionVectorPass::DrawInputParameters mMotionVectorIntput;
-        IndirectMotionVectorPass::DrawOutputParameters mMotionVectorOutput;
-        mMotionVectorIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mMotionVectorIntput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
-        mMotionVectorIntput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
-        mMotionVectorIntput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
-        mMotionVectorIntput.depthBufferHandle = mGBufferOutput.depthHandle;
-
-        mIndirectMotionVectorPass->update(graph, mMotionVectorIntput, mMotionVectorOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // depth pyramid
-        DepthPyramidPass::DrawInputParameters mDepthPyramidInput;
-        DepthPyramidPass::DrawOutputParameters mDepthPyramidOutput;
-        mDepthPyramidInput.depthHandle = mGBufferOutput.depthHandle;
-        mDepthPyramidInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-
-        mDepthPyramidPass->update(graph, mDepthPyramidInput, mDepthPyramidOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // camera motion vector
-        CameraMotionVectorPass::DrawInputParameters mCameraMotionVectorIntput;
-        CameraMotionVectorPass::DrawOutputParameters mCameraMotionVectorOutput;
-        mCameraMotionVectorIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mCameraMotionVectorIntput.depthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
-        mCameraMotionVectorOutput.motionVectorHandle = mMotionVectorOutput.motionVectorHandle;
-
-        mCameraMotionVectorPass->update(graph, mCameraMotionVectorIntput, mCameraMotionVectorOutput);
-        //=================================================================================
-
-        /*
-        //=================================================================================
-        IndirectTerrainCullPass::DepthCullIndexInput _input2 = {};
-        _input2.minDepthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
-        _input2.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        IndirectTerrainCullPass::DrawCallCommandBufferHandle _output2 = {};
-
-        mTerrainCullPass->cullByCurrentFrameDepth(graph, _input2, _output2);
-        //=================================================================================
-        
-        //=================================================================================
-        // indirect terrain gbuffer for pass 2
-        IndirectTerrainGBufferPass::DrawInputParameters mTerrainGBufferIntput2;
-        mTerrainGBufferIntput2.perframeBufferHandle  = indirectCullOutput.perframeBufferHandle;
-        mTerrainGBufferIntput2.terrainPatchNodeHandle = terrainCullOutput.terrainPatchNodeBufferHandle;
-        mTerrainGBufferIntput2.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
-        mTerrainGBufferIntput2.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
-
-        mTerrainGBufferIntput2.drawIndexAndSigHandle  = {_output2.commandSigBufferHandle, _output2.indirectIndexBufferHandle};
-        for (int i = 0; i < terrainCullOutput.directionShadowmapHandles.size(); i++)
-        {
-            auto& _indexAndSigHandle = terrainCullOutput.directionShadowmapHandles[i];
-            mTerrainGBufferIntput2.dirShadowIndexAndSigHandle.push_back({_indexAndSigHandle.commandSigBufferHandle, _indexAndSigHandle.indirectIndexBufferHandle});
-        }
-
-        mIndirectTerrainGBufferPass->update(graph, mTerrainGBufferIntput2, mGBufferOutput);
-        //=================================================================================
-        */
-        /*
-        //=================================================================================
-        // depth pyramid2
-        DepthPyramidPass::DrawInputParameters mDepthPyramidInput2;
-        DepthPyramidPass::DrawOutputParameters mDepthPyramidOutput2;
-        mDepthPyramidInput2.depthHandle          = mGBufferOutput.depthHandle;
-        mDepthPyramidInput2.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-
-        mDepthPyramidPass->update(graph, mDepthPyramidInput2, mDepthPyramidOutput2);
-        //=================================================================================
-        */
-
-
-        //=================================================================================
-        // VolumeCloud Shadow draw
-        VolumeCloudPass::ShadowInputParameters  mVCSIntputParams;
-        VolumeCloudPass::ShadowOutputParameters mVCSOutputParams;
-
-        mVCSIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVolumeCloudPass->updateShadow(graph, mVCSIntputParams, mVCSOutputParams);
-        //=================================================================================
-
-        //=================================================================================
-        VolumetriLighting::VolumeCullingPassInputStruct mVolumeCullingInput;
-        VolumetriLighting::VolumeCullingPassOutputStruct mVolumeCullingOutput;
-        mVolumeCullingInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVolumeLightPass->prepareForVolumes(graph, mVolumeCullingInput, mVolumeCullingOutput);
-
-        // volume light
-        VolumetriLighting::GenMaxZInputStruct mGenMaxZInputStruct;
-        VolumetriLighting::GenMaxZOutputStruct mGenMaxZOutputStruct;
-        mGenMaxZInputStruct.depthHandle = mGBufferOutput.depthHandle;
-        mGenMaxZInputStruct.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVolumeLightPass->GenerateMaxZForVolumetricPass(graph, mGenMaxZInputStruct, mGenMaxZOutputStruct);
-
-        //VolumetriLighting::ClearPassInputStruct mVolumeVoxelInput;
-        //VolumetriLighting::ClearPassOutputStruct mVolumeVoxelOutput;
-        //mVolumeVoxelInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        //mVolumeVoxelInput.vBufferDensityHandle = mVolumeCullingOutput.vBufferDensityHandle;
-        //mVolumeVoxelInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
-        //mVolumeLightPass->FogVolumeAndVFXVoxelizationPass(graph, mVolumeVoxelInput, mVolumeVoxelOutput);
-
-        VolumetriLighting::VolumeLightPassInputStruct mVolumeLightInput;
-        VolumetriLighting::VolumeLightPassOutputStruct mVolumeLightOutput;
-        mVolumeLightInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVolumeLightInput.vbufferDensityHandle = mVolumeCullingOutput.vBufferDensityHandle;
-        mVolumeLightInput.depthBufferHandle = mGBufferOutput.depthHandle;
-        mVolumeLightInput.dilatedMaxZBufferHandle = mGenMaxZOutputStruct.dilatedMaxZBufferHandle;
-        mVolumeLightInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
-        mVolumeLightInput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
-        mVolumeLightInput.spotShadowmapHandles = spotShadowmapHandle;
-        mVolumeLightPass->VolumetricLightingPass(graph, mVolumeLightInput, mVolumeLightOutput);
-
-        //=================================================================================
-
-        ///*
-        ////=================================================================================
-        //// ambient occlusion
-        //AOPass::DrawInputParameters mAOIntput;
-        //AOPass::DrawOutputParameters mAOOutput;
-
-        //mAOIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        //mAOIntput.worldNormalHandle    = mGBufferOutput.worldNormalHandle;
-        //mAOIntput.depthHandle          = mGBufferOutput.depthHandle;
-        //mAOPass->update(graph, mAOIntput, mAOOutput);
-        ////=================================================================================
-        //*/
-        //=================================================================================
-        // ambient occlusion
-        GTAOPass::DrawInputParameters mGTAOIntput;
-        GTAOPass::DrawOutputParameters mGTAOOutput;
-
-        mGTAOIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mGTAOIntput.packedNormalHandle = mGBufferOutput.gbuffer1Handle;
-        mGTAOIntput.depthHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
-        mGTAOPass->update(graph, mGTAOIntput, mGTAOOutput);
-        //=================================================================================
-
-        //=================================================================================
-        // HistoryValidityPass
-        TemporalFilter::HistoryValidityPassData mHistoryValidityPassData;
-        mHistoryValidityPassData.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mHistoryValidityPassData.cameraMotionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
-        mHistoryValidityPassData.depthTextureHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
-        mHistoryValidityPassData.historyDepthTextureHandle = lastFrameMinDepthPyramidHandle;
-        mHistoryValidityPassData.normalBufferHandle = mGBufferOutput.gbuffer1Handle;
-        mHistoryValidityPassData.historyNormalTextureHandle = mIndirectGBufferPass->getLastFrameNormalHandle();
-
-        mTemporalFilter->HistoryValidity(graph, mHistoryValidityPassData);
-        //=================================================================================
-
-        //=================================================================================
-        // screenspace global illumination
-        SSGIPass::DrawInputParameters mSSGIIntput;
-        SSGIPass::DrawOutputParameters mSSGIOutput;
-
-        mSSGIIntput.validationBufferHandle = mHistoryValidityPassData.validationBufferHandle;
-        mSSGIIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mSSGIIntput.colorPyramidHandle = lastFrameColorRTHandle;
-        mSSGIIntput.depthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
-        mSSGIIntput.lastDepthPyramidHandle = lastFrameMinDepthPyramidHandle;
-        mSSGIIntput.normalBufferHandle = mGBufferOutput.gbuffer1Handle;
-        mSSGIIntput.cameraMotionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
-        mSSGIPass->update(graph, mSSGIIntput, mSSGIOutput, mTemporalFilter, mDiffuseFilter);
-        //=================================================================================
-
-        //=================================================================================
-        // ssr
-        SSRPass::DrawInputParameters mSSRInput;
-        SSRPass::DrawOutputParameters mSSROutput;
-        mSSRInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mSSRInput.worldNormalHandle = mGBufferOutput.gbuffer1Handle;
-        mSSRInput.colorPyramidHandle = lastFrameColorRTHandle;
-        mSSRInput.depthTextureHandle = mDepthPyramidOutput.maxDepthPtyramidHandle;
-        mSSRInput.motionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
-        mSSRPass->update(graph, mSSRInput, mSSROutput);
-        //=================================================================================
-
-        //=================================================================================
-        // light loop pass
-        IndirectLightLoopPass::DrawInputParameters mLightLoopIntput;
-        IndirectLightLoopPass::DrawOutputParameters mLightLoopOutput;
-
-        mLightLoopIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mLightLoopIntput.gbuffer0Handle = mGBufferOutput.gbuffer0Handle;
-        mLightLoopIntput.gbuffer1Handle = mGBufferOutput.gbuffer1Handle;
-        mLightLoopIntput.gbuffer2Handle = mGBufferOutput.gbuffer2Handle;
-        mLightLoopIntput.gbuffer3Handle = mGBufferOutput.gbuffer3Handle;
-        mLightLoopIntput.ssgiHandle = mSSGIOutput.ssgiOutHandle;
-        mLightLoopIntput.ssrHandle = mSSROutput.ssrOutHandle;
-        mLightLoopIntput.gbufferDepthHandle = mGBufferOutput.depthHandle;
-        mLightLoopIntput.mAOHandle = mGTAOOutput.outputAOHandle;
-        mLightLoopIntput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
-        mLightLoopIntput.spotShadowmapHandles = spotShadowmapHandle;
-        mIndirectLightLoopPass->update(graph, mLightLoopIntput, mLightLoopOutput);
-        //=================================================================================
-
-        ////=================================================================================
-        //// subsurface scattering pass
-        //SubsurfaceScatteringPass::DrawInputParameters mSubsurfaceScatteringInput;
-        //SubsurfaceScatteringPass::DrawOutputParameters mSubsurfaceScatteringOutput;
-
-        //mSubsurfaceScatteringInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        //mSubsurfaceScatteringInput.renderTargetDepthHandle = mDepthPyramidOutput.maxDepthPtyramidHandle;
-        //mSubsurfaceScatteringInput.irradianceSourceHandle = mLightLoopOutput.sssDiffuseHandle;
-        //mSubsurfaceScatteringInput.specularSourceHandle = mLightLoopOutput.colorHandle;
-        //mSubsurfaceScatteringInput.sssBufferTexHandle = mGBufferOutput.albedoHandle;
-        //mSubsurfaceScatteringInput.volumeLight3DHandle = mVolumeLightOutput.volumeLightHandle;
-
-        //mSubsurfaceScatteringPass->update(graph, mSubsurfaceScatteringInput, mSubsurfaceScatteringOutput);
-        ////=================================================================================
-
-        RHI::RgResourceHandle outColorHandle = mLightLoopOutput.specularLightinghandle;
-        RHI::RgResourceHandle outDepthHandle = mGBufferOutput.depthHandle;
-
-        //=================================================================================
-        // color pyramid
-        ColorPyramidPass::DrawInputParameters mColorPyramidInput;
-        ColorPyramidPass::DrawOutputParameters mColorPyramidOutput;
-        mColorPyramidInput.colorHandle = outColorHandle;
-        mColorPyramidInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mColorPyramidOutput.colorPyramidHandle = curFrameColorRTHandle;
-        mColorPyramidPass->update(graph, mColorPyramidInput, mColorPyramidOutput);
-        
-        outColorHandle = mColorPyramidOutput.colorHandle;
-        //=================================================================================
-
-
-        /*
-        //=================================================================================
-        // indirect opaque draw
-        IndirectDrawPass::DrawInputParameters  mDrawIntputParams;
-        IndirectDrawPass::DrawOutputParameters mDrawOutputParams;
-
-        mDrawIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mDrawIntputParams.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
-        mDrawIntputParams.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
-        mDrawIntputParams.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
-        mDrawIntputParams.directionalShadowmapTexHandles = directionalShadowmapHandles;
-        for (size_t i = 0; i < spotShadowmapHandle.size(); i++)
-        {
-            mDrawIntputParams.spotShadowmapTexHandles.push_back(spotShadowmapHandle[i]);
-        }
-        mIndirectOpaqueDrawPass->update(graph, mDrawIntputParams, mDrawOutputParams);
-        //=================================================================================
-        */
-
-        ///*
-        ////=================================================================================
-        //// skybox draw
-        //SkyBoxPass::DrawInputParameters  mSkyboxIntputParams;
-        //SkyBoxPass::DrawOutputParameters mSkyboxOutputParams;
-
-        //mSkyboxIntputParams.perframeBufferHandle    = indirectCullOutput.perframeBufferHandle;
-        //mSkyboxOutputParams.renderTargetColorHandle = outColorHandle;
-        //mSkyboxOutputParams.renderTargetDepthHandle = mGBufferOutput.depthHandle;
-        ////mSkyboxOutputParams.renderTargetColorHandle = mDrawOutputParams.renderTargetColorHandle;
-        ////mSkyboxOutputParams.renderTargetDepthHandle = mDrawOutputParams.renderTargetDepthHandle;
-        //mSkyBoxPass->update(graph, mSkyboxIntputParams, mSkyboxOutputParams);
-        ////=================================================================================
-        //*/
-        //=================================================================================
-        // AtmosphericScattering draw
-        AtmosphericScatteringPass::DrawInputParameters mASIntputParams;
-        AtmosphericScatteringPass::DrawOutputParameters mASOutputParams;
-
-        mASIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mASOutputParams.renderTargetColorHandle = outColorHandle;
-        mASOutputParams.renderTargetDepthHandle = outDepthHandle;
-        mAtmosphericScatteringPass->update(graph, mASIntputParams, mASOutputParams);
-
-        outColorHandle = mASOutputParams.renderTargetColorHandle;
-        outDepthHandle = mASOutputParams.renderTargetDepthHandle;
-        //=================================================================================
-
-        //=================================================================================
-        // VolumeCloud draw
-        VolumeCloudPass::DrawInputParameters  mVCIntputParams;
-        VolumeCloudPass::DrawOutputParameters mVCOutputParams;
-
-        mVCIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVCIntputParams.renderTargetColorHandle = outColorHandle;
-        mVCIntputParams.renderTargetDepthHandle  = outDepthHandle;
-        mVolumeCloudPass->update(graph, mVCIntputParams, mVCOutputParams);
-
-        outColorHandle = mVCOutputParams.outColorHandle;
-        //=================================================================================
-
-        //=================================================================================
-        // Fog draw
-        VolumetriLighting::VolumeFogDrawInputStruct mVolumeFogDrawInput;
-        VolumetriLighting::VolumeFogDrawOutputStruct mVolumeFogDrawOutput;
-
-        mVolumeFogDrawInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mVolumeFogDrawInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
-        mVolumeFogDrawInput.vbufferLightingHandle = mVolumeLightOutput.vbufferLightingHandle;
-        mVolumeFogDrawInput.depthMipMapHandle = mDepthPyramidOutput.averageDepthPyramidHandle;
-        mVolumeFogDrawOutput.renderTargetColorHandle = outColorHandle;
-
-        mVolumeLightPass->RenderOpaqueFog(graph, mVolumeFogDrawInput, mVolumeFogDrawOutput);
-
-        outColorHandle = mVolumeFogDrawOutput.renderTargetColorHandle;
-        //=================================================================================
-
-
-        //=================================================================================
-        // indirect transparent draw
-        IndirectDrawTransparentPass::DrawInputParameters mDrawTransIntputParams;
-        IndirectDrawTransparentPass::DrawOutputParameters mDrawTransOutputParams;
-
-        mDrawTransIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mDrawTransIntputParams.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
-        mDrawTransIntputParams.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
-        mDrawTransIntputParams.transparentDrawHandle = indirectCullOutput.transparentDrawHandle.indirectSortBufferHandle;
-        mDrawTransIntputParams.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
-        mDrawTransIntputParams.spotShadowmapTexHandles = spotShadowmapHandle;
-        mDrawTransOutputParams.renderTargetColorHandle = outColorHandle;
-        mDrawTransOutputParams.renderTargetDepthHandle = outDepthHandle;
-        mIndirectTransparentDrawPass->update(graph, mDrawTransIntputParams, mDrawTransOutputParams);
-
-        outColorHandle = mDrawTransOutputParams.renderTargetColorHandle;
-        outDepthHandle = mDrawTransOutputParams.renderTargetDepthHandle;
-        //=================================================================================
-
-
-        //=================================================================================
-        // postprocess rendertarget
-        PostprocessPasses::PostprocessInputParameters mPostprocessIntputParams;
-        PostprocessPasses::PostprocessOutputParameters mPostprocessOutputParams;
-
-        mPostprocessIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
-        mPostprocessIntputParams.motionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
-        mPostprocessIntputParams.inputSceneColorHandle = mDrawTransOutputParams.renderTargetColorHandle;
-        mPostprocessIntputParams.inputSceneDepthHandle = mDrawTransOutputParams.renderTargetDepthHandle;
-        mPostprocessPasses->update(graph, mPostprocessIntputParams, mPostprocessOutputParams);
-
-        outColorHandle = mPostprocessOutputParams.outputColorHandle;
-        //=================================================================================
-
-        //=================================================================================
-        // display
-        DisplayPass::DisplayInputParameters mDisplayIntputParams;
-        DisplayPass::DisplayOutputParameters mDisplayOutputParams;
-
-        //mDisplayIntputParams.inputRTColorHandle = mTerrainShadowmapOutputParams.directionalShadowmapHandles[3];
-        //mDisplayIntputParams.inputRTColorHandle = mSSGIOutput.ssgiOutHandle;
-        //mDisplayIntputParams.inputRTColorHandle = mSSROutput.ssrOutHandle;
-        mDisplayIntputParams.inputRTColorHandle = outColorHandle;
-        mDisplayOutputParams.renderTargetColorHandle = renderTargetColorHandle;
-        //mDisplayOutputParams.renderTargetColorHandle = backBufColorHandle;
-        mDisplayPass->update(graph, mDisplayIntputParams, mDisplayOutputParams);
-        //=================================================================================
-
-        //=================================================================================
-        if (mUIPass != nullptr)
-        {
-            UIPass::UIInputParameters mUIIntputParams;
-            UIPass::UIOutputParameters mUIOutputParams;
-
-            //mUIIntputParams.renderTargetColorHandle = renderTargetColorHandle;
-            mUIIntputParams.renderTargetColorHandle = mDisplayOutputParams.renderTargetColorHandle;
-            mUIOutputParams.backBufColorHandle = backBufColorHandle;
-
-            mUIPass->update(graph, mUIIntputParams, mUIOutputParams);
-        }
-        //=================================================================================
+         //=================================================================================
+         // indirect terrain draw shadow
+         IndirectTerrainShadowPass::ShadowInputParameters mTerrainShadowmapIntputParams;
+         IndirectTerrainShadowPass::ShadowOutputParameters mTerrainShadowmapOutputParams;
+
+         mTerrainShadowmapIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mTerrainShadowmapIntputParams.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
+         mTerrainShadowmapIntputParams.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
+         mTerrainShadowmapIntputParams.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
+         mTerrainShadowmapIntputParams.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
+         mTerrainShadowmapIntputParams.dirConsBufferHandles = terrainCullOutput.dirConsBufferHandles;
+         mTerrainShadowmapIntputParams.dirVisPatchListHandles = terrainCullOutput.dirVisPatchListHandles;
+         mTerrainShadowmapIntputParams.dirVisCmdSigBufferHandles = terrainCullOutput.dirVisCmdSigBufferHandles;
+
+         mTerrainShadowmapOutputParams.directionalCascadeShadowmapHandle = mShadowmapOutputParams.directionalCascadeShadowmapHandle;
+
+         mIndirectTerrainShadowPass->update(graph, std::move(mTerrainShadowmapIntputParams), mTerrainShadowmapOutputParams);
+         //=================================================================================
+
+         //=================================================================================
+         // shadowmap output
+         RHI::RgResourceHandle directionalCascadeShadowmapHandle = mShadowmapOutputParams.directionalCascadeShadowmapHandle;
+         std::vector<RHI::RgResourceHandle> spotShadowmapHandle = mShadowmapOutputParams.spotShadowmapHandle;
+         //=================================================================================
+
+         //=================================================================================
+         // depth prepass
+         DepthPrePass::DrawInputParameters mDepthPrePassInput;
+         DepthPrePass::DrawOutput mDepthPrepassOutput;
+
+         mDepthPrePassInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mDepthPrePassInput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
+         mDepthPrePassInput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
+         mDepthPrePassInput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
+
+         mDepthPrePass->update(graph, mDepthPrePassInput, mDepthPrepassOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // terrain depth prepass
+         TerrainDepthPrePass::DrawInputParameters mTerrainDepthPrePassInput;
+         TerrainDepthPrePass::DrawOutput mTerrainDepthPrepassOutput;
+
+         mTerrainDepthPrePassInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mTerrainDepthPrePassInput.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
+         mTerrainDepthPrePassInput.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
+         mTerrainDepthPrePassInput.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
+         mTerrainDepthPrePassInput.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
+         mTerrainDepthPrePassInput.culledPatchListBufferHandle = terrainCullOutput.mainCamVisPatchListHandle;
+         mTerrainDepthPrePassInput.mainCamVisCmdSigHandle = terrainCullOutput.mainCamVisCmdSigBufferHandle;
+
+         mTerrainDepthPrepassOutput.depthBufferHandle = mDepthPrepassOutput.depthBufferHandle;
+
+         mTerrainDepthPrePass->update(graph, mTerrainDepthPrePassInput, mTerrainDepthPrepassOutput);
+
+         //=================================================================================
+
+         //=================================================================================
+         // indirect gbuffer
+         IndirectGBufferPass::DrawInputParameters mGBufferIntput;
+         GBufferOutput mGBufferOutput;
+
+         mGBufferIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mGBufferIntput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
+         mGBufferIntput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
+         mGBufferIntput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
+         mGBufferOutput.depthHandle = mTerrainDepthPrepassOutput.depthBufferHandle;
+
+         mIndirectGBufferPass->update(graph, mGBufferIntput, mGBufferOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // indirect terrain gbuffer
+         IndirectTerrainGBufferPass::DrawInputParameters mTerrainGBufferIntput;
+         mTerrainGBufferIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mTerrainGBufferIntput.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
+         mTerrainGBufferIntput.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
+         mTerrainGBufferIntput.terrainMatPropertyHandle = terrainCullOutput.terrainMatPropertyHandle;
+         mTerrainGBufferIntput.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
+         mTerrainGBufferIntput.culledPatchListBufferHandle = terrainCullOutput.mainCamVisPatchListHandle;
+         mTerrainGBufferIntput.mainCamVisCmdSigHandle = terrainCullOutput.mainCamVisCmdSigBufferHandle;
+
+         mIndirectTerrainGBufferPass->update(graph, mTerrainGBufferIntput, mGBufferOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // indirect motion vector
+         IndirectMotionVectorPass::DrawInputParameters mMotionVectorIntput;
+         IndirectMotionVectorPass::DrawOutputParameters mMotionVectorOutput;
+         mMotionVectorIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mMotionVectorIntput.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
+         mMotionVectorIntput.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
+         mMotionVectorIntput.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
+         mMotionVectorIntput.depthBufferHandle = mGBufferOutput.depthHandle;
+
+         mIndirectMotionVectorPass->update(graph, mMotionVectorIntput, mMotionVectorOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // depth pyramid
+         DepthPyramidPass::DrawInputParameters mDepthPyramidInput;
+         DepthPyramidPass::DrawOutputParameters mDepthPyramidOutput;
+         mDepthPyramidInput.depthHandle = mGBufferOutput.depthHandle;
+         mDepthPyramidInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+
+         mDepthPyramidPass->update(graph, mDepthPyramidInput, mDepthPyramidOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // camera motion vector
+         CameraMotionVectorPass::DrawInputParameters mCameraMotionVectorIntput;
+         CameraMotionVectorPass::DrawOutputParameters mCameraMotionVectorOutput;
+         mCameraMotionVectorIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mCameraMotionVectorIntput.depthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
+         mCameraMotionVectorOutput.motionVectorHandle = mMotionVectorOutput.motionVectorHandle;
+
+         mCameraMotionVectorPass->update(graph, mCameraMotionVectorIntput, mCameraMotionVectorOutput);
+         //=================================================================================
+
+         /*
+         //=================================================================================
+         IndirectTerrainCullPass::DepthCullIndexInput _input2 = {};
+         _input2.minDepthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
+         _input2.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         IndirectTerrainCullPass::DrawCallCommandBufferHandle _output2 = {};
+
+         mTerrainCullPass->cullByCurrentFrameDepth(graph, _input2, _output2);
+         //=================================================================================
+         
+         //=================================================================================
+         // indirect terrain gbuffer for pass 2
+         IndirectTerrainGBufferPass::DrawInputParameters mTerrainGBufferIntput2;
+         mTerrainGBufferIntput2.perframeBufferHandle  = indirectCullOutput.perframeBufferHandle;
+         mTerrainGBufferIntput2.terrainPatchNodeHandle = terrainCullOutput.terrainPatchNodeBufferHandle;
+         mTerrainGBufferIntput2.terrainHeightmapHandle = terrainCullOutput.terrainHeightmapHandle;
+         mTerrainGBufferIntput2.terrainNormalmapHandle = terrainCullOutput.terrainNormalmapHandle;
+
+         mTerrainGBufferIntput2.drawIndexAndSigHandle  = {_output2.commandSigBufferHandle, _output2.indirectIndexBufferHandle};
+         for (int i = 0; i < terrainCullOutput.directionShadowmapHandles.size(); i++)
+         {
+             auto& _indexAndSigHandle = terrainCullOutput.directionShadowmapHandles[i];
+             mTerrainGBufferIntput2.dirShadowIndexAndSigHandle.push_back({_indexAndSigHandle.commandSigBufferHandle, _indexAndSigHandle.indirectIndexBufferHandle});
+         }
+
+         mIndirectTerrainGBufferPass->update(graph, mTerrainGBufferIntput2, mGBufferOutput);
+         //=================================================================================
+         */
+         /*
+         //=================================================================================
+         // depth pyramid2
+         DepthPyramidPass::DrawInputParameters mDepthPyramidInput2;
+         DepthPyramidPass::DrawOutputParameters mDepthPyramidOutput2;
+         mDepthPyramidInput2.depthHandle          = mGBufferOutput.depthHandle;
+         mDepthPyramidInput2.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+
+         mDepthPyramidPass->update(graph, mDepthPyramidInput2, mDepthPyramidOutput2);
+         //=================================================================================
+         */
+
+
+         //=================================================================================
+         // VolumeCloud Shadow draw
+         VolumeCloudPass::ShadowInputParameters  mVCSIntputParams;
+         VolumeCloudPass::ShadowOutputParameters mVCSOutputParams;
+
+         mVCSIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVolumeCloudPass->updateShadow(graph, mVCSIntputParams, mVCSOutputParams);
+         //=================================================================================
+
+         //=================================================================================
+         VolumetriLighting::VolumeCullingPassInputStruct mVolumeCullingInput;
+         VolumetriLighting::VolumeCullingPassOutputStruct mVolumeCullingOutput;
+         mVolumeCullingInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVolumeLightPass->prepareForVolumes(graph, mVolumeCullingInput, mVolumeCullingOutput);
+
+         // volume light
+         VolumetriLighting::GenMaxZInputStruct mGenMaxZInputStruct;
+         VolumetriLighting::GenMaxZOutputStruct mGenMaxZOutputStruct;
+         mGenMaxZInputStruct.depthHandle = mGBufferOutput.depthHandle;
+         mGenMaxZInputStruct.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVolumeLightPass->GenerateMaxZForVolumetricPass(graph, mGenMaxZInputStruct, mGenMaxZOutputStruct);
+
+         //VolumetriLighting::ClearPassInputStruct mVolumeVoxelInput;
+         //VolumetriLighting::ClearPassOutputStruct mVolumeVoxelOutput;
+         //mVolumeVoxelInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         //mVolumeVoxelInput.vBufferDensityHandle = mVolumeCullingOutput.vBufferDensityHandle;
+         //mVolumeVoxelInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
+         //mVolumeLightPass->FogVolumeAndVFXVoxelizationPass(graph, mVolumeVoxelInput, mVolumeVoxelOutput);
+
+         VolumetriLighting::VolumeLightPassInputStruct mVolumeLightInput;
+         VolumetriLighting::VolumeLightPassOutputStruct mVolumeLightOutput;
+         mVolumeLightInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVolumeLightInput.vbufferDensityHandle = mVolumeCullingOutput.vBufferDensityHandle;
+         mVolumeLightInput.depthBufferHandle = mGBufferOutput.depthHandle;
+         mVolumeLightInput.dilatedMaxZBufferHandle = mGenMaxZOutputStruct.dilatedMaxZBufferHandle;
+         mVolumeLightInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
+         mVolumeLightInput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
+         mVolumeLightInput.spotShadowmapHandles = spotShadowmapHandle;
+         mVolumeLightPass->VolumetricLightingPass(graph, mVolumeLightInput, mVolumeLightOutput);
+
+         //=================================================================================
+
+         ///*
+         ////=================================================================================
+         //// ambient occlusion
+         //AOPass::DrawInputParameters mAOIntput;
+         //AOPass::DrawOutputParameters mAOOutput;
+
+         //mAOIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         //mAOIntput.worldNormalHandle    = mGBufferOutput.worldNormalHandle;
+         //mAOIntput.depthHandle          = mGBufferOutput.depthHandle;
+         //mAOPass->update(graph, mAOIntput, mAOOutput);
+         ////=================================================================================
+         //*/
+         //=================================================================================
+         // ambient occlusion
+         GTAOPass::DrawInputParameters mGTAOIntput;
+         GTAOPass::DrawOutputParameters mGTAOOutput;
+
+         mGTAOIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mGTAOIntput.packedNormalHandle = mGBufferOutput.gbuffer1Handle;
+         mGTAOIntput.depthHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
+         mGTAOPass->update(graph, mGTAOIntput, mGTAOOutput);
+         //=================================================================================
+
+         //=================================================================================
+         // HistoryValidityPass
+         TemporalFilter::HistoryValidityPassData mHistoryValidityPassData;
+         mHistoryValidityPassData.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mHistoryValidityPassData.cameraMotionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
+         mHistoryValidityPassData.depthTextureHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
+         mHistoryValidityPassData.historyDepthTextureHandle = lastFrameMinDepthPyramidHandle;
+         mHistoryValidityPassData.normalBufferHandle = mGBufferOutput.gbuffer1Handle;
+         mHistoryValidityPassData.historyNormalTextureHandle = mIndirectGBufferPass->getLastFrameNormalHandle();
+
+         mTemporalFilter->HistoryValidity(graph, mHistoryValidityPassData);
+         //=================================================================================
+
+         //=================================================================================
+         // screenspace global illumination
+         SSGIPass::DrawInputParameters mSSGIIntput;
+         SSGIPass::DrawOutputParameters mSSGIOutput;
+
+         mSSGIIntput.validationBufferHandle = mHistoryValidityPassData.validationBufferHandle;
+         mSSGIIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mSSGIIntput.colorPyramidHandle = lastFrameColorRTHandle;
+         mSSGIIntput.depthPyramidHandle = mDepthPyramidOutput.minDepthPtyramidHandle;
+         mSSGIIntput.lastDepthPyramidHandle = lastFrameMinDepthPyramidHandle;
+         mSSGIIntput.normalBufferHandle = mGBufferOutput.gbuffer1Handle;
+         mSSGIIntput.cameraMotionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
+         mSSGIPass->update(graph, mSSGIIntput, mSSGIOutput, mTemporalFilter, mDiffuseFilter);
+         //=================================================================================
+
+         //=================================================================================
+         // ssr
+         SSRPass::DrawInputParameters mSSRInput;
+         SSRPass::DrawOutputParameters mSSROutput;
+         mSSRInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mSSRInput.worldNormalHandle = mGBufferOutput.gbuffer1Handle;
+         mSSRInput.colorPyramidHandle = lastFrameColorRTHandle;
+         mSSRInput.depthTextureHandle = mDepthPyramidOutput.maxDepthPtyramidHandle;
+         mSSRInput.motionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
+         mSSRPass->update(graph, mSSRInput, mSSROutput);
+         //=================================================================================
+
+         //=================================================================================
+         // light loop pass
+         IndirectLightLoopPass::DrawInputParameters mLightLoopIntput;
+         IndirectLightLoopPass::DrawOutputParameters mLightLoopOutput;
+
+         mLightLoopIntput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mLightLoopIntput.gbuffer0Handle = mGBufferOutput.gbuffer0Handle;
+         mLightLoopIntput.gbuffer1Handle = mGBufferOutput.gbuffer1Handle;
+         mLightLoopIntput.gbuffer2Handle = mGBufferOutput.gbuffer2Handle;
+         mLightLoopIntput.gbuffer3Handle = mGBufferOutput.gbuffer3Handle;
+         mLightLoopIntput.ssgiHandle = mSSGIOutput.ssgiOutHandle;
+         mLightLoopIntput.ssrHandle = mSSROutput.ssrOutHandle;
+         mLightLoopIntput.gbufferDepthHandle = mGBufferOutput.depthHandle;
+         mLightLoopIntput.mAOHandle = mGTAOOutput.outputAOHandle;
+         mLightLoopIntput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
+         mLightLoopIntput.spotShadowmapHandles = spotShadowmapHandle;
+         mIndirectLightLoopPass->update(graph, mLightLoopIntput, mLightLoopOutput);
+         //=================================================================================
+
+         ////=================================================================================
+         //// subsurface scattering pass
+         //SubsurfaceScatteringPass::DrawInputParameters mSubsurfaceScatteringInput;
+         //SubsurfaceScatteringPass::DrawOutputParameters mSubsurfaceScatteringOutput;
+
+         //mSubsurfaceScatteringInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         //mSubsurfaceScatteringInput.renderTargetDepthHandle = mDepthPyramidOutput.maxDepthPtyramidHandle;
+         //mSubsurfaceScatteringInput.irradianceSourceHandle = mLightLoopOutput.sssDiffuseHandle;
+         //mSubsurfaceScatteringInput.specularSourceHandle = mLightLoopOutput.colorHandle;
+         //mSubsurfaceScatteringInput.sssBufferTexHandle = mGBufferOutput.albedoHandle;
+         //mSubsurfaceScatteringInput.volumeLight3DHandle = mVolumeLightOutput.volumeLightHandle;
+
+         //mSubsurfaceScatteringPass->update(graph, mSubsurfaceScatteringInput, mSubsurfaceScatteringOutput);
+         ////=================================================================================
+
+         RHI::RgResourceHandle outColorHandle = mLightLoopOutput.specularLightinghandle;
+         RHI::RgResourceHandle outDepthHandle = mGBufferOutput.depthHandle;
+
+         //=================================================================================
+         // color pyramid
+         ColorPyramidPass::DrawInputParameters mColorPyramidInput;
+         ColorPyramidPass::DrawOutputParameters mColorPyramidOutput;
+         mColorPyramidInput.colorHandle = outColorHandle;
+         mColorPyramidInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mColorPyramidOutput.colorPyramidHandle = curFrameColorRTHandle;
+         mColorPyramidPass->update(graph, mColorPyramidInput, mColorPyramidOutput);
+         
+         outColorHandle = mColorPyramidOutput.colorHandle;
+         //=================================================================================
+
+
+         /*
+         //=================================================================================
+         // indirect opaque draw
+         IndirectDrawPass::DrawInputParameters  mDrawIntputParams;
+         IndirectDrawPass::DrawOutputParameters mDrawOutputParams;
+
+         mDrawIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mDrawIntputParams.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
+         mDrawIntputParams.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
+         mDrawIntputParams.opaqueDrawHandle = indirectCullOutput.opaqueDrawHandle.indirectSortBufferHandle;
+         mDrawIntputParams.directionalShadowmapTexHandles = directionalShadowmapHandles;
+         for (size_t i = 0; i < spotShadowmapHandle.size(); i++)
+         {
+             mDrawIntputParams.spotShadowmapTexHandles.push_back(spotShadowmapHandle[i]);
+         }
+         mIndirectOpaqueDrawPass->update(graph, mDrawIntputParams, mDrawOutputParams);
+         //=================================================================================
+         */
+
+         ///*
+         ////=================================================================================
+         //// skybox draw
+         //SkyBoxPass::DrawInputParameters  mSkyboxIntputParams;
+         //SkyBoxPass::DrawOutputParameters mSkyboxOutputParams;
+
+         //mSkyboxIntputParams.perframeBufferHandle    = indirectCullOutput.perframeBufferHandle;
+         //mSkyboxOutputParams.renderTargetColorHandle = outColorHandle;
+         //mSkyboxOutputParams.renderTargetDepthHandle = mGBufferOutput.depthHandle;
+         ////mSkyboxOutputParams.renderTargetColorHandle = mDrawOutputParams.renderTargetColorHandle;
+         ////mSkyboxOutputParams.renderTargetDepthHandle = mDrawOutputParams.renderTargetDepthHandle;
+         //mSkyBoxPass->update(graph, mSkyboxIntputParams, mSkyboxOutputParams);
+         ////=================================================================================
+         //*/
+         //=================================================================================
+         // AtmosphericScattering draw
+         AtmosphericScatteringPass::DrawInputParameters mASIntputParams;
+         AtmosphericScatteringPass::DrawOutputParameters mASOutputParams;
+
+         mASIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mASOutputParams.renderTargetColorHandle = outColorHandle;
+         mASOutputParams.renderTargetDepthHandle = outDepthHandle;
+         mAtmosphericScatteringPass->update(graph, mASIntputParams, mASOutputParams);
+
+         outColorHandle = mASOutputParams.renderTargetColorHandle;
+         outDepthHandle = mASOutputParams.renderTargetDepthHandle;
+         //=================================================================================
+
+         //=================================================================================
+         // VolumeCloud draw
+         VolumeCloudPass::DrawInputParameters  mVCIntputParams;
+         VolumeCloudPass::DrawOutputParameters mVCOutputParams;
+
+         mVCIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVCIntputParams.renderTargetColorHandle = outColorHandle;
+         mVCIntputParams.renderTargetDepthHandle  = outDepthHandle;
+         mVolumeCloudPass->update(graph, mVCIntputParams, mVCOutputParams);
+
+         outColorHandle = mVCOutputParams.outColorHandle;
+         //=================================================================================
+
+         //=================================================================================
+         // Fog draw
+         VolumetriLighting::VolumeFogDrawInputStruct mVolumeFogDrawInput;
+         VolumetriLighting::VolumeFogDrawOutputStruct mVolumeFogDrawOutput;
+
+         mVolumeFogDrawInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mVolumeFogDrawInput.shaderVariablesVolumetricHandle = mVolumeCullingOutput.shaderVariablesVolumetricHandle;
+         mVolumeFogDrawInput.vbufferLightingHandle = mVolumeLightOutput.vbufferLightingHandle;
+         mVolumeFogDrawInput.depthMipMapHandle = mDepthPyramidOutput.averageDepthPyramidHandle;
+         mVolumeFogDrawOutput.renderTargetColorHandle = outColorHandle;
+
+         mVolumeLightPass->RenderOpaqueFog(graph, mVolumeFogDrawInput, mVolumeFogDrawOutput);
+
+         outColorHandle = mVolumeFogDrawOutput.renderTargetColorHandle;
+         //=================================================================================
+
+
+         //=================================================================================
+         // indirect transparent draw
+         IndirectDrawTransparentPass::DrawInputParameters mDrawTransIntputParams;
+         IndirectDrawTransparentPass::DrawOutputParameters mDrawTransOutputParams;
+
+         mDrawTransIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mDrawTransIntputParams.renderDataPerDrawHandle = indirectCullOutput.renderDataPerDrawHandle;
+         mDrawTransIntputParams.propertiesPerMaterialHandle = indirectCullOutput.propertiesPerMaterialHandle;
+         mDrawTransIntputParams.transparentDrawHandle = indirectCullOutput.transparentDrawHandle.indirectSortBufferHandle;
+         mDrawTransIntputParams.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
+         mDrawTransIntputParams.spotShadowmapTexHandles = spotShadowmapHandle;
+         mDrawTransOutputParams.renderTargetColorHandle = outColorHandle;
+         mDrawTransOutputParams.renderTargetDepthHandle = outDepthHandle;
+         mIndirectTransparentDrawPass->update(graph, mDrawTransIntputParams, mDrawTransOutputParams);
+
+         outColorHandle = mDrawTransOutputParams.renderTargetColorHandle;
+         outDepthHandle = mDrawTransOutputParams.renderTargetDepthHandle;
+         //=================================================================================
+
+
+         //=================================================================================
+         // postprocess rendertarget
+         PostprocessPasses::PostprocessInputParameters mPostprocessIntputParams;
+         PostprocessPasses::PostprocessOutputParameters mPostprocessOutputParams;
+
+         mPostprocessIntputParams.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+         mPostprocessIntputParams.motionVectorHandle = mCameraMotionVectorOutput.motionVectorHandle;
+         mPostprocessIntputParams.inputSceneColorHandle = mDrawTransOutputParams.renderTargetColorHandle;
+         mPostprocessIntputParams.inputSceneDepthHandle = mDrawTransOutputParams.renderTargetDepthHandle;
+         mPostprocessPasses->update(graph, mPostprocessIntputParams, mPostprocessOutputParams);
+
+         outColorHandle = mPostprocessOutputParams.outputColorHandle;
+         //=================================================================================
+
+         //=================================================================================
+         // display
+         DisplayPass::DisplayInputParameters mDisplayIntputParams;
+         DisplayPass::DisplayOutputParameters mDisplayOutputParams;
+
+         //mDisplayIntputParams.inputRTColorHandle = mTerrainShadowmapOutputParams.directionalShadowmapHandles[3];
+         //mDisplayIntputParams.inputRTColorHandle = mSSGIOutput.ssgiOutHandle;
+         //mDisplayIntputParams.inputRTColorHandle = mSSROutput.ssrOutHandle;
+         mDisplayIntputParams.inputRTColorHandle = outColorHandle;
+         mDisplayOutputParams.renderTargetColorHandle = renderTargetColorHandle;
+         //mDisplayOutputParams.renderTargetColorHandle = backBufColorHandle;
+         mDisplayPass->update(graph, mDisplayIntputParams, mDisplayOutputParams);
+         //=================================================================================
+
+         //=================================================================================
+         if (mUIPass != nullptr)
+         {
+             UIPass::UIInputParameters mUIIntputParams;
+             UIPass::UIOutputParameters mUIOutputParams;
+
+             //mUIIntputParams.renderTargetColorHandle = renderTargetColorHandle;
+             mUIIntputParams.renderTargetColorHandle = mDisplayOutputParams.renderTargetColorHandle;
+             mUIOutputParams.backBufColorHandle = backBufColorHandle;
+
+             mUIPass->update(graph, mUIIntputParams, mUIOutputParams);
+         }
+         //=================================================================================
 
         graph.Execute(context);
 

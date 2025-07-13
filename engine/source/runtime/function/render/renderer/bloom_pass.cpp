@@ -237,6 +237,10 @@ namespace MoYu
             computeContext->SetDynamicConstantBufferView(1, sizeof(_DescriptorIndex), &_DescriptorIndex);
 
             computeContext->Dispatch2D(kBloomWidth, kBloomHeight);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("Bloom Pass");
+#endif
         });
 
         // The difference between high and low quality bloom is that high quality sums 5 octaves with a 2x frequency
@@ -290,6 +294,10 @@ namespace MoYu
                 computeContext->SetDynamicConstantBufferView(1, sizeof(_DescriptorIndex), &_DescriptorIndex);
 
                 computeContext->Dispatch2D(kBloomWidth / 2, kBloomHeight / 2);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("DownSampleBloom Pass");
+#endif
             });
             
             float upsampleBlendFactor = EngineConfig::g_BloomConfig.m_BloomUpsampleFactor;
@@ -339,6 +347,10 @@ namespace MoYu
                 computeContext->SetDynamicConstantBufferView(1, sizeof(_DescriptorIndex), &_DescriptorIndex);
 
                 computeContext->Dispatch2D(kBloomWidth / 2, kBloomHeight / 2);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("DownSampleBloom Pass");
+#endif
             });
 
             float upsampleBlendFactor = EngineConfig::g_BloomConfig.m_BloomUpsampleFactor * 2.0f / 3.0f;
@@ -398,6 +410,10 @@ namespace MoYu
                 computeContext->SetDynamicConstantBufferView(1, sizeof(_DescriptorIndex), &_DescriptorIndex);
 
                 computeContext->Dispatch2D(bufferWidth, bufferHeight);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("Upsample and Blur");
+#endif
             });
         }
         else
@@ -436,6 +452,10 @@ namespace MoYu
                 computeContext->SetDynamicConstantBufferView(1, sizeof(_DescriptorIndex), &_DescriptorIndex);
 
                 computeContext->Dispatch2D(bufferWidth, bufferHeight);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("Upsample and Blur");
+#endif
             });
         }
     }

@@ -677,6 +677,7 @@ namespace MoYu
 				pContext->SetConstant(0, 1, NormalMapUAV->GetIndex());
 				pContext->Dispatch2D(DispatchX, DispatchY);
 
+                LOG_INFO("GenerateNormalMapPass");
             });
 
         }
@@ -702,15 +703,19 @@ namespace MoYu
                     pContext->TransitionBarrier(RegGetTex(terrainMaxHeightHandle), D3D12_RESOURCE_STATE_COPY_DEST, 0);
                     pContext->FlushResourceBarriers();
 
-                    const CD3DX12_TEXTURE_COPY_LOCATION src(terrainHeightmap->GetResource(), 0);
+                    //const CD3DX12_TEXTURE_COPY_LOCATION src(terrainHeightmap->GetResource(), 0);
 
-                    const CD3DX12_TEXTURE_COPY_LOCATION dst_min(RegGetTex(terrainMinHeightHandle)->GetResource(), 0);
-                    context->GetGraphicsCommandList()->CopyTextureRegion(&dst_min, 0, 0, 0, &src, nullptr);
+                    int heightmapSizeX = terrainHeightmap->GetWidth();
+                    int heightmapSizeY = terrainHeightmap->GetHeight();
+                    RECT SourceRect = RECT{ 0, 0, heightmapSizeX, heightmapSizeY };
+                    
+                    pContext->CopyTextureRegion(RegGetTex(terrainMinHeightHandle), 0, 0, 0, terrainHeightmap.get(), SourceRect);
+                    pContext->CopyTextureRegion(RegGetTex(terrainMaxHeightHandle), 0, 0, 0, terrainHeightmap.get(), SourceRect);
+                    
+                    pContext->TransitionBarrier(RegGetTex(terrainMinHeightHandle), D3D12_RESOURCE_STATE_COMMON);
+                    pContext->TransitionBarrier(RegGetTex(terrainMaxHeightHandle), D3D12_RESOURCE_STATE_COMMON);
 
-                    const CD3DX12_TEXTURE_COPY_LOCATION dst_max(RegGetTex(terrainMaxHeightHandle)->GetResource(), 0);
-                    context->GetGraphicsCommandList()->CopyTextureRegion(&dst_max, 0, 0, 0, &src, nullptr);
-
-                    context->FlushResourceBarriers();
+                    pContext->FlushResourceBarriers();
                 }
 
                 //--------------------------------------------------
@@ -746,9 +751,9 @@ namespace MoYu
 
         RHI::RenderPass& traverseQuadTreePass = graph.AddRenderPass("TraverseQuadTreePass");
 
-        traverseQuadTreePass.Read(terrainConsBufferHandle);
-        traverseQuadTreePass.Read(terrainMinHeightHandle);
-        traverseQuadTreePass.Read(terrainMaxHeightHandle);
+        traverseQuadTreePass.Read(terrainConsBufferHandle, true);
+        traverseQuadTreePass.Read(terrainMinHeightHandle, true);
+        traverseQuadTreePass.Read(terrainMaxHeightHandle, true);
         traverseQuadTreePass.Read(TempNodeListHandle[0], true);
         traverseQuadTreePass.Read(TempNodeListHandle[1], true);
 
@@ -756,6 +761,7 @@ namespace MoYu
         traverseQuadTreePass.Write(TempNodeListHandle[1], true);
         traverseQuadTreePass.Write(FinalNodeListHandle, true);
         traverseQuadTreePass.Write(NodeDescriptorsHandle, true);
+        traverseQuadTreePass.Write(traverseDispatchArgsHandle, true);
 
         traverseQuadTreePass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
             RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
@@ -764,7 +770,6 @@ namespace MoYu
             pContext->TransitionBarrier(RegGetBufCounter(TempNodeListHandle[1]), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->TransitionBarrier(RegGetBufCounter(FinalNodeListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->TransitionBarrier(RegGetBufCounter(NodeDescriptorsHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-
             pContext->FlushResourceBarriers();
 
             pContext->ResetCounter(RegGetBufCounter(TempNodeListHandle[0]));
@@ -772,9 +777,20 @@ namespace MoYu
             pContext->ResetCounter(RegGetBufCounter(FinalNodeListHandle));
             pContext->ResetCounter(RegGetBufCounter(NodeDescriptorsHandle));
 
+            pContext->TransitionBarrier(RegGetBuf(TempNodeListHandle[0]), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+            pContext->TransitionBarrier(RegGetBuf(TempNodeListHandle[1]), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);            
+            pContext->TransitionBarrier(RegGetBufCounter(TempNodeListHandle[0]), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+            pContext->TransitionBarrier(RegGetBufCounter(TempNodeListHandle[1]), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+            pContext->TransitionBarrier(RegGetBufCounter(FinalNodeListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+            pContext->TransitionBarrier(RegGetBufCounter(NodeDescriptorsHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+            pContext->FlushResourceBarriers();
+
             int index = 0;
 
             //****************************************************************************
+            pContext->TransitionBarrier(RegGetBuf(terrainConsBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            pContext->TransitionBarrier(RegGetTex(terrainMinHeightHandle), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetTex(terrainMaxHeightHandle), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
             pContext->TransitionBarrier(RegGetBuf(TempNodeListHandle[0]), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->TransitionBarrier(RegGetBufCounter(TempNodeListHandle[0]), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->TransitionBarrier(RegGetBuf(TempNodeListHandle[1]), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -787,13 +803,15 @@ namespace MoYu
 
             RHI::RgResourceHandle AppendNodeListHandle = TempNodeListHandle[index];
 
-            RHI::D3D12UnorderedAccessView* AppendNodeListUAV = registry->GetD3D12Buffer(AppendNodeListHandle)->GetDefaultUAV().get();
-
             pContext->SetRootSignature(pInitQuadTreeSignature.get());
             pContext->SetPipelineState(pInitQuadTreePSO.get());
-            pContext->SetConstant(0, 0, AppendNodeListUAV->GetIndex());
+            pContext->SetConstant(0, 0,  RegGetBufDefUAVIdx(AppendNodeListHandle));
             pContext->Dispatch(1, 1, 1);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("InitQuadTreePass");
+#endif
+            
             //****************************************************************************
             for (int i = MAX_TERRAIN_LOD; i >= 0; i--)
             {
@@ -802,6 +820,9 @@ namespace MoYu
                 pContext->CopyBufferRegion(RegGetBuf(traverseDispatchArgsHandle), 0, RegGetBufCounter(AppendNodeListHandle), 0, sizeof(uint32_t));
                 pContext->FillBuffer(RegGetBuf(traverseDispatchArgsHandle), sizeof(uint32_t), 1, sizeof(uint32_t) * 2);
 
+                pContext->TransitionBarrier(RegGetBuf(traverseDispatchArgsHandle), D3D12_RESOURCE_STATE_COMMON);
+                pContext->FlushResourceBarriers();
+                
                 RHI::RgResourceHandle ConsumeNodeListHandle = TempNodeListHandle[index % 2];
                 AppendNodeListHandle = TempNodeListHandle[(index + 1) % 2];
 
@@ -840,6 +861,10 @@ namespace MoYu
 
                 pContext->DispatchIndirect(RegGetBuf(traverseDispatchArgsHandle), 0);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("TraverseQuadTree {}", index);
+#endif
+
                 index += 1;
             }
         });
@@ -850,13 +875,14 @@ namespace MoYu
 
         RHI::RenderPass& buildLodMapPass = graph.AddRenderPass("BuildLodMapPass");
 
-        buildLodMapPass.Read(terrainConsBufferHandle);
+        buildLodMapPass.Read(terrainConsBufferHandle, true);
         buildLodMapPass.Read(NodeDescriptorsHandle, true);
         buildLodMapPass.Write(LodMapHandle, true);
 
         buildLodMapPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
             RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
 
+            pContext->TransitionBarrier(RegGetBuf(terrainConsBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             pContext->TransitionBarrier(RegGetBuf(NodeDescriptorsHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
             pContext->TransitionBarrier(RegGetTex(LodMapHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->FlushResourceBarriers();
@@ -878,6 +904,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(rootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(SECTOR_COUNT_WORLD, SECTOR_COUNT_WORLD);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("BuildLodMapPass");
+#endif
         });
 
         //------------------------------------------------------------------------------------
@@ -887,12 +917,15 @@ namespace MoYu
 
         RHI::RenderPass& buildPatchesPass = graph.AddRenderPass("BuildCamPatchesPass");
 
-        buildPatchesPass.Read(terrainConsBufferHandle);
-        buildPatchesPass.Read(terrainMinHeightHandle);
-        buildPatchesPass.Read(terrainMaxHeightHandle);
-        buildPatchesPass.Read(LodMapHandle);
-        buildPatchesPass.Read(FinalNodeListHandle);
-        buildPatchesPass.Read(hizDepthBufferHandle);
+        buildPatchesPass.Read(terrainConsBufferHandle, true);
+        buildPatchesPass.Read(terrainMinHeightHandle, true);
+        buildPatchesPass.Read(terrainMaxHeightHandle, true);
+        buildPatchesPass.Read(hizDepthBufferHandle, true);
+        buildPatchesPass.Read(LodMapHandle, true);
+        buildPatchesPass.Read(FinalNodeListHandle, true);
+        buildPatchesPass.Read(buildPatchArgsHandle, true);
+        buildPatchesPass.Read(culledPatchListHandle, true);
+        buildPatchesPass.Write(buildPatchArgsHandle, true);
         buildPatchesPass.Write(culledPatchListHandle, true);
 
         buildPatchesPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
@@ -902,11 +935,19 @@ namespace MoYu
             pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->CopyBufferRegion(RegGetBuf(buildPatchArgsHandle), 0, RegGetBufCounter(FinalNodeListHandle), 0, sizeof(uint32_t));
             pContext->FillBuffer(RegGetBuf(buildPatchArgsHandle), sizeof(uint32_t), 1, sizeof(uint32_t) * 2);
+            pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_COMMON);
 
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->ResetCounter(RegGetBufCounter(culledPatchListHandle));
+            pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
             pContext->FlushResourceBarriers();
-
+            
+            pContext->TransitionBarrier(RegGetBuf(terrainConsBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            pContext->TransitionBarrier(RegGetTex(terrainMinHeightHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetTex(terrainMaxHeightHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetTex(hizDepthBufferHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetTex(LodMapHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetBuf(FinalNodeListHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
             pContext->TransitionBarrier(RegGetBuf(culledPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
@@ -937,6 +978,10 @@ namespace MoYu
             pContext->SetConstantArray(0, sizeof(rootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->DispatchIndirect(RegGetBuf(buildPatchArgsHandle), 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("BuildCamPatchesPass");
+#endif
         });
 
         //------------------------------------------------------------------------------------
@@ -966,6 +1011,12 @@ namespace MoYu
 
             pContext->CopyBufferRegion(
                 RegGetBuf(camPatchCmdSigBufferHandle), instanceCountOffsetInBuffer, RegGetBufCounter(culledPatchListHandle), 0, sizeof(uint32_t));
+
+            pContext->TransitionBarrier(RegGetBuf(camPatchCmdSigBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+            pContext->FlushResourceBarriers();
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("GenTerrainCmdSigPass");
+#endif
         });
         
         //------------------------------------------------------------------------------------
@@ -984,12 +1035,13 @@ namespace MoYu
 
             RHI::RenderPass& buildDirPatchesPass = graph.AddRenderPass("BuildDirPatchesPass");
 
-            buildDirPatchesPass.Read(terrainDirConsBufferHandle);
-            buildDirPatchesPass.Read(terrainMinHeightHandle);
-            buildDirPatchesPass.Read(terrainMaxHeightHandle);
-            buildDirPatchesPass.Read(LodMapHandle);
-            buildDirPatchesPass.Read(FinalNodeListHandle);
-            buildDirPatchesPass.Read(hizDepthBufferHandle);
+            buildDirPatchesPass.Read(terrainDirConsBufferHandle, true);
+            buildDirPatchesPass.Read(terrainMinHeightHandle, true);
+            buildDirPatchesPass.Read(terrainMaxHeightHandle, true);
+            buildDirPatchesPass.Read(LodMapHandle, true);
+            buildDirPatchesPass.Read(FinalNodeListHandle, true);
+            buildDirPatchesPass.Read(hizDepthBufferHandle, true);
+            buildDirPatchesPass.Read(buildPatchArgsHandle, true);
             buildDirPatchesPass.Write(culledDirPatchListHandle, true);
 
             buildDirPatchesPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
@@ -999,16 +1051,20 @@ namespace MoYu
                 pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_COPY_DEST);
                 pContext->CopyBufferRegion(RegGetBuf(buildPatchArgsHandle), 0, RegGetBufCounter(FinalNodeListHandle), 0, sizeof(uint32_t));
                 pContext->FillBuffer(RegGetBuf(buildPatchArgsHandle), sizeof(uint32_t), 1, sizeof(uint32_t) * 2);
-
+                
                 pContext->TransitionBarrier(RegGetBufCounter(culledDirPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
                 pContext->ResetCounter(RegGetBufCounter(culledDirPatchListHandle));
-                pContext->FlushResourceBarriers();
+                //pContext->FlushResourceBarriers();
 
+                pContext->TransitionBarrier(RegGetBufCounter(culledDirPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+                pContext->FlushResourceBarriers();
+                
                 pContext->TransitionBarrier(RegGetBuf(culledDirPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                 pContext->TransitionBarrier(RegGetBufCounter(culledDirPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
                 pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
                 pContext->FlushResourceBarriers();
-
+                
                 pContext->SetRootSignature(pBuildPatchesSignature.get());
                 pContext->SetPipelineState(pBuildPatchesPSO.get());
 
@@ -1034,6 +1090,10 @@ namespace MoYu
                 pContext->SetConstantArray(0, sizeof(rootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
                 pContext->DispatchIndirect(RegGetBuf(buildPatchArgsHandle), 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("BuildDirPatchesPass {}", i);
+#endif
             });
         
             //------------------------------------------------------------------------------------
@@ -1063,6 +1123,10 @@ namespace MoYu
 
                 pContext->CopyBufferRegion(
                     RegGetBuf(dirPatchCmdSigBufferHandle), instanceCountOffsetInBuffer, RegGetBufCounter(culledDirPatchListHandle), 0, sizeof(uint32_t));
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("GenTerrainDirCmdSigPass {}", i);
+#endif
             });
 
             dirConsBufferHandles[i] = terrainDirConsBufferHandle;
@@ -1623,6 +1687,19 @@ namespace MoYu
         pContext->SetConstantArray(0, sizeof(MipGenInBuffer) / sizeof(int), &maxMipGenBuffer);
 
         pContext->Dispatch2D(_width, _height, 8, 8);
+
+        if (genMin)
+        {
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("Generate MinHeightMap Pass");
+#endif
+        }
+        else
+        {
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("Generate MazHeightMap Pass");
+#endif
+        }
     }
 
 }

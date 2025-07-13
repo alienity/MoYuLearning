@@ -119,6 +119,10 @@ namespace MoYu
                 1, sizeof(_DescriptorIndexConstants), &_DescriptorIndexConstants);
 
             computeContext->Dispatch2D(sceneColor->GetWidth(), sceneColor->GetHeight(), 8);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("ToneMappingPass");
+#endif
         });
 	}
 

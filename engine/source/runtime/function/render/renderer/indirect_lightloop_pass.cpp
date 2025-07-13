@@ -118,6 +118,9 @@ namespace MoYu
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("LightLoopPass");
+#endif
         });
     }
 

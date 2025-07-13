@@ -156,7 +156,9 @@ namespace RHI
         FlushResourceBarriers();
         m_CommandListHandle->CopyResource(Dest->GetResource(), Src->GetResource());
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("CopyBuffer from {} to {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), MoYu::HDUtils::ws2s(Dest->GetResourceName()));
+#endif
     }
 
     void D3D12CommandContext::CopyBufferRegion(D3D12Buffer* Dest, UINT64 DestOffset, D3D12Buffer* Src, UINT64 SrcOffset, UINT64 NumBytes)
@@ -167,7 +169,9 @@ namespace RHI
         FlushResourceBarriers();
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, Src->GetResource(), SrcOffset, NumBytes);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("CopyBufferRegion from {} offset {} to {} offset {} numbytes {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), SrcOffset, MoYu::HDUtils::ws2s(Dest->GetResourceName()), DestOffset, NumBytes);
+#endif
     }
 
     void D3D12CommandContext::CopySubresource(D3D12Texture* Dest, UINT DestSubIndex, D3D12Texture* Src, UINT SrcSubIndex)
@@ -177,7 +181,9 @@ namespace RHI
         D3D12_TEXTURE_COPY_LOCATION SrcLocation = {Src->GetResource(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, SrcSubIndex};
         m_CommandListHandle->CopyTextureRegion(&DestLocation, 0, 0, 0, &SrcLocation, nullptr);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("CopySubresource from {} subindex {} to {} subindex {}", MoYu::HDUtils::ws2s(Src->GetResourceName()), SrcSubIndex, MoYu::HDUtils::ws2s(Dest->GetResourceName()), DestSubIndex);
+#endif
     }
 
     void D3D12CommandContext::CopyTextureRegion(D3D12Texture* Dest, UINT x, UINT y, UINT z, D3D12Texture* Source, RECT& Rect)
@@ -198,16 +204,20 @@ namespace RHI
 
         m_CommandListHandle->CopyTextureRegion(&destLoc, x, y, z, &srcLoc, &box);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("CopyTextureRegion from {} rect(left, right, top, down) ({}, {}, {}, {}) to {} (DstX, DstY, DstZ) ({}, {}, {})",
             MoYu::HDUtils::ws2s(Source->GetResourceName()), Rect.left, Rect.right, Rect.top, Rect.bottom,
             MoYu::HDUtils::ws2s(Dest->GetResourceName()), x, y, z);
+#endif
     }
 
     void D3D12CommandContext::ResetCounter(D3D12Buffer* CounterResource, UINT64 CounterOffset, UINT Value /*= 0*/)
     {
         FillBuffer(CounterResource, 0, Value, sizeof(UINT));
         //TransitionBarrier(CounterResource, D3D12_RESOURCE_STATE_GENERIC_READ);
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("ResetCounter {} Value {}", MoYu::HDUtils::ws2s(CounterResource->GetResourceName()), Value);
+#endif
     }
 
     GraphicsResource D3D12CommandContext::ReserveUploadMemory(UINT64 SizeInBytes, UINT Alignment)
@@ -233,7 +243,9 @@ namespace RHI
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, true);
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, TempSpace.Resource(), TempSpace.ResourceOffset(), NumBytes);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("WriteBuffer {}", MoYu::HDUtils::ws2s(Dest->GetResourceName()));
+#endif
     }
 
     void D3D12CommandContext::FillBuffer(D3D12Buffer* Dest, UINT64 DestOffset, DWParam Value, UINT64 NumBytes)
@@ -244,7 +256,9 @@ namespace RHI
         TransitionBarrier(Dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, true);
         m_CommandListHandle->CopyBufferRegion(Dest->GetResource(), DestOffset, TempSpace.Resource(), TempSpace.ResourceOffset(), NumBytes);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         LOG_INFO("FillBuffer {}", MoYu::HDUtils::ws2s(Dest->GetResourceName()));
+#endif
     }
 
     void D3D12CommandContext::TransitionBarrier(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource, bool FlushImmediate)

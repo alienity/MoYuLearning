@@ -212,6 +212,10 @@ namespace MoYu
             uint32_t dispatchHeight = colorTexDesc.Height;
 
             pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("VolumeCloudPass");
+#endif
         });
 
         passOutput.outColorHandle = mOutColorHandle;
@@ -280,6 +284,10 @@ namespace MoYu
             uint32_t dispatchHeight = volumeCloudShadowMapSize.y;
 
             pContext->Dispatch((dispatchWidth + 8 - 1) / 8, (dispatchHeight + 8 - 1) / 8, 1);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("VolumeCloudShadowPass");
+#endif
         });
 
         passOutput.outCloudShadowHandle = mVolumeShadowmapHandle;

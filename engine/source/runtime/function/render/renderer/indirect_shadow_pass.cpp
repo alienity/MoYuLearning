@@ -355,16 +355,15 @@ namespace MoYu
 
         RHI::RgResourceHandle directionalCascadeShadowmapHandle = graph.Import<RHI::D3D12Texture>(m_DirectionalShadowmap.p_LightCascadeShadowmap.get());
         shadowpass.Write(directionalCascadeShadowmapHandle, false, RHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
-        passOutput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
 
+        std::vector<RHI::RgResourceHandle> spotShadowmapHandles;
         for (size_t i = 0; i < m_SpotShadowmaps.size(); i++)
         {
             RHI::RgResourceHandle spotShadowMapHandle =
                 graph.Import<RHI::D3D12Texture>(m_SpotShadowmaps[i].p_LightShadowmap.get());
             shadowpass.Write(spotShadowMapHandle, false, RHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
-            passOutput.spotShadowmapHandle.push_back(spotShadowMapHandle);
+            spotShadowmapHandles.push_back(spotShadowMapHandle);
         }
-        std::vector<RHI::RgResourceHandle> spotShadowmapHandles = passOutput.spotShadowmapHandle;
 
         shadowpass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
 
@@ -423,6 +422,10 @@ namespace MoYu
                         HLSL::MeshLimit,
                         pDirectionCommandBuffer->GetCounterBuffer().get(),
                         0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("IndirectDirectionalShadowmapPass {}", i);
+#endif
                 }
             }
              
@@ -458,9 +461,16 @@ namespace MoYu
                                                 HLSL::MeshLimit,
                                                 pSpotCommandBuffer->GetCounterBuffer().get(),
                                                 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("IndirectSpotShadowmapsPass {}", i);
+#endif
             }
 
         });
+
+        passOutput.directionalCascadeShadowmapHandle = directionalCascadeShadowmapHandle;
+        passOutput.spotShadowmapHandle = spotShadowmapHandles;
     }
 
     void IndirectShadowPass::destroy() {}

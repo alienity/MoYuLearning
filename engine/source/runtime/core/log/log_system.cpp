@@ -14,6 +14,8 @@
 
 namespace MoYu
 {
+    static bool CVar_FileLog = false;
+
     std::string get_log_file_path() {
         namespace fs = std::filesystem;
         using namespace std::chrono;
@@ -66,7 +68,8 @@ namespace MoYu
             file_sink->set_level(spdlog::level::trace);
             file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [thread %t] %v");
 
-            const spdlog::sinks_init_list sink_list = { console_sink, file_sink };
+            const spdlog::sinks_init_list sink_list = CVar_FileLog ? spdlog::sinks_init_list{ console_sink, file_sink } : spdlog::sinks_init_list{ console_sink };
+            //const spdlog::sinks_init_list sink_list = { console_sink, file_sink };
 
             spdlog::init_thread_pool(8192, 1);
 

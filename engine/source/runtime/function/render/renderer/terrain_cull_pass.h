@@ -134,11 +134,11 @@ namespace MoYu
         RHI::RgTextureDesc depthTexDesc;
 
         /*
-         * ¶ÔÓÚWorldLodParams
-         * - nodeSizeÎªNodeµÄ±ß³¤(Ã×)
-         * - patchExtentµÈÓÚnodeSize/16
-         * - nodeCountµÈÓÚWorldSize/nodeSize
-         * - sectorCountPerNodeµÈÓÚ2^lod
+         * ï¿½ï¿½ï¿½ï¿½WorldLodParams
+         * - nodeSizeÎªNodeï¿½Ä±ß³ï¿½(ï¿½ï¿½)
+         * - patchExtentï¿½ï¿½ï¿½ï¿½nodeSize/16
+         * - nodeCountï¿½ï¿½ï¿½ï¿½WorldSize/nodeSize
+         * - sectorCountPerNodeï¿½ï¿½ï¿½ï¿½2^lod
          */
         glm::float4 worldLODParams[MAX_TERRAIN_LOD + 1];
         int nodeIDOffsetLOD[MAX_TERRAIN_LOD + 1];
@@ -151,18 +151,18 @@ namespace MoYu
 
         std::shared_ptr<RHI::D3D12Texture> pLodMap; // R8, 160x160
 
-        std::shared_ptr<RHI::D3D12Buffer> TempNodeList[2]; // uint2, ´ú±íµ±Ç°LODÏÂNodeµÄ¶þÎ¬Ë÷Òý
-        std::shared_ptr<RHI::D3D12Buffer> FinalNodeList; // uint3, ÆäÖÐz±íÊ¾NodeµÄLOD£¬xy´ú±í¶þÎ¬Ë÷Òý
+        std::shared_ptr<RHI::D3D12Buffer> TempNodeList[2]; // uint2, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°LODï¿½ï¿½Nodeï¿½Ä¶ï¿½Î¬ï¿½ï¿½ï¿½ï¿½
+        std::shared_ptr<RHI::D3D12Buffer> FinalNodeList; // uint3, ï¿½ï¿½ï¿½ï¿½zï¿½ï¿½Ê¾Nodeï¿½ï¿½LODï¿½ï¿½xyï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½
         std::shared_ptr<RHI::D3D12Buffer> NodeDescriptors; // uint, branch
 
         std::shared_ptr<RHI::D3D12Buffer> pTerrainRenderDataBuffer;
         std::shared_ptr<RHI::D3D12Buffer> pTerrainMatPropertiesBuffer;
 
-        // Ïà»úÊÓ×¶ÄÚµÄCommandSignature
+        // ï¿½ï¿½ï¿½ï¿½ï¿½×¶ï¿½Úµï¿½CommandSignature
         std::shared_ptr<RHI::D3D12Buffer> camUploadPatchCmdSigBuffer;
 
         std::shared_ptr<RHI::D3D12Buffer> CulledPatchListBuffer;
-        std::shared_ptr<RHI::D3D12Buffer> mTerrainConsBuffer; // ´¿µØÐÎ»æÖÆ³£Á¿
+        std::shared_ptr<RHI::D3D12Buffer> mTerrainConsBuffer; // ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½Æ³ï¿½ï¿½ï¿½
         std::shared_ptr<RHI::D3D12Buffer> camPatchCmdSigBuffer;
 
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> CulledDirPatchListBuffers; // For DirectionalLight

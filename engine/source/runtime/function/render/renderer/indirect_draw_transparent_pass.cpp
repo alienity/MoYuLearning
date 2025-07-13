@@ -176,6 +176,10 @@ namespace MoYu
                 HLSL::MeshLimit,
                 pIndirectCommandBuffer->GetCounterBuffer().get(),
                 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("IndirectDrawTransparentPass");
+#endif
         });
     }
 

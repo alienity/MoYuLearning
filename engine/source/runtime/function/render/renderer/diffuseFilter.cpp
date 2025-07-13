@@ -78,8 +78,7 @@ namespace MoYu
                     1,
                     MoYu::AlignUp(sizeof(BilateralFilterParameter), 256),
                     L"BilateralFilterParameter",
-                    RHI::RHIBufferModeDynamic,
-                    D3D12_RESOURCE_STATE_GENERIC_READ);
+                    RHI::RHIBufferModeDynamic);
         }
 
         mBilateralFilterParameter._DenoiserResolutionMultiplierVals = glm::float4(1, 1, 1, 1);
@@ -99,8 +98,7 @@ namespace MoYu
                     m_PointDistributionSize,
                     MoYu::AlignUp(sizeof(glm::float2), 256),
                     L"PointDistributionStructure",
-                    RHI::RHIBufferModeImmutable,
-                    D3D12_RESOURCE_STATE_GENERIC_READ);
+                    RHI::RHIBufferModeImmutable);
         }
 
         owenScrambled256Tex = render_scene->m_bluenoise_map.m_owenScrambled256Tex;
@@ -142,6 +140,9 @@ namespace MoYu
 
                 pContext->Dispatch(1, 1, 1);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("GeneratePointDistributionPass");
+#endif
             });
         }
 
@@ -207,6 +208,9 @@ namespace MoYu
 
             pContext->Dispatch2D(colorTexDesc.Width, colorTexDesc.Height, 8, 8);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("Bilateral Filter Pass");
+#endif
         });
 
         passData.outputBufferHandle = outputBufferHandle;

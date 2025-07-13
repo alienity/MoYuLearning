@@ -123,15 +123,15 @@ namespace MoYu
                 EngineConfig::kInitialMaxLog - EngineConfig::kInitialMinLog,
                 1.0f / (EngineConfig::kInitialMaxLog - EngineConfig::kInitialMinLog)};
 
-            m_ExposureBuffer = RHI::D3D12Buffer::Create(m_Device->GetLinkedDevice(),
-                                                        RHI::RHIBufferTarget::RHIBufferRandomReadWrite,
-                                                        8,
-                                                        4,
-                                                        L"Exposure",
-                                                        RHI::RHIBufferMode::RHIBufferModeImmutable,
-                                                        D3D12_RESOURCE_STATE_GENERIC_READ,
-                                                        (BYTE*)initExposure,
-                                                        sizeof(initExposure));
+			m_ExposureBuffer = RHI::D3D12Buffer::Create(m_Device->GetLinkedDevice(),
+				RHI::RHIBufferTarget::RHIBufferRandomReadWrite,
+				8,
+				4,
+				L"Exposure",
+				RHI::RHIBufferMode::RHIBufferModeImmutable,
+				D3D12_RESOURCE_STATE_COMMON,
+				(BYTE*)initExposure,
+				sizeof(initExposure));
         }
 
     }

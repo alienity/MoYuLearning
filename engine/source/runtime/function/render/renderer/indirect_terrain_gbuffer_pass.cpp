@@ -195,6 +195,10 @@ namespace MoYu
             auto pMainCamVisCmdSigBuffer = registry->GetD3D12Buffer(mainCamVisCmdSigHandle);
 
             graphicContext->ExecuteIndirect(pTerrainGBufferCommandSignature.get(), pMainCamVisCmdSigBuffer, 0, 1, nullptr, 0);
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("IndirectTerrainGBufferPass");
+#endif
         });
 
     }

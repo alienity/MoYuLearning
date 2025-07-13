@@ -195,6 +195,9 @@ namespace MoYu
                     auto pDirectionCommandBuffer = registry->GetD3D12Buffer(dirVisCmdSigBufferHandle);
                     graphicContext->ExecuteIndirect(pIndirectTerrainShadowmapCommandSignature.get(), pDirectionCommandBuffer, 0, 1, nullptr, 0);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                    LOG_INFO("IndirectTerrainShadowPass {}", i);
+#endif
                 }
             }
 

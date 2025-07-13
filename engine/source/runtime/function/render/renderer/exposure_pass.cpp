@@ -148,6 +148,10 @@ namespace MoYu
 
                 computeContext->Dispatch2D(
                     m_LumaLRColor->GetWidth(), m_LumaLRColor->GetHeight(), 16, m_LumaLRColor->GetHeight());
+
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("GenerateHDRDistogramPass");
+#endif
             });
             
             RHI::RenderPass& genHistogram2Pass = graph.AddRenderPass("AdaptExposure");
@@ -193,6 +197,9 @@ namespace MoYu
 
                 computeContext->Dispatch(1, 1, 64);
 
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+                LOG_INFO("AdaptExposurePass");
+#endif
             });
             
         }
