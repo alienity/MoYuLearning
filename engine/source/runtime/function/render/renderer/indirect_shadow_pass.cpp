@@ -266,7 +266,7 @@ namespace MoYu
             rtDesc.colorSurface = true;
             rtDesc.backBuffer = false;
             std::shared_ptr<RHI::D3D12Texture> clightCascadeShadowMap =
-                render_resource->CreateTransientTexture(rtDesc, L"DirectionCascadeShadowMap", D3D12_RESOURCE_STATE_COMMON);
+                render_resource->CreateTransientTexture(rtDesc, L"DirectionCascadeShadowMap", D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_COMMON*/);
 
             for (int i = 0; i < cascadeNumber; i++)
             {
