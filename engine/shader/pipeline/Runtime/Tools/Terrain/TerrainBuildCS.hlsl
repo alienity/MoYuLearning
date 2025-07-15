@@ -182,8 +182,8 @@ TerrainPatchBounds GetPatchBounds(TerrainConsData inConsBuffer, TerrainRenderPat
     float3 boundsMin, boundsMax;
     boundsMin.xz = patch.position - halfSize;
     boundsMax.xz = patch.position + halfSize;
-    boundsMin.y = patch.minHeight;
-    boundsMax.y = patch.maxHeight;
+    boundsMin.y = -1000000;//patch.minHeight;
+    boundsMax.y =  1000000;//patch.maxHeight;
 
     bounds.minPosition = boundsMin;
     bounds.maxPosition = boundsMax;
@@ -442,7 +442,7 @@ void BuildPatches(uint3 id : SV_DispatchThreadID, uint3 groupId: SV_GroupID, uin
     TerrainPatchBounds bounds = GetPatchBounds(InConsBuffer, patch);
     if(Cull(InConsBuffer, bounds, hizDepthMap))
     {
-        // return;
+        return;
     }
     SetLodTrans(patch, InConsBuffer, LodMap, nodeLoc, patchOffset);
     CulledPatchList.Append(patch);
