@@ -79,8 +79,8 @@ struct TerrainConsData
     float _HizDepthBias;
     float4 HizDepthMapSize;
     float4 NodeEvaluationC; //节点评价系数。x为距离系数
-    float4 WorldLodParams[6]; // (nodeSize,patchExtent,nodeCount,sectorCountPerNode)
-    uint NodeIDOffsetOfLOD[6];
+    float4 WorldLodParams[MAX_TERRAIN_LOD+1]; // (nodeSize,patchExtent,nodeCount,sectorCountPerNode)
+    uint NodeIDOffsetOfLOD[MAX_TERRAIN_LOD+1];
 };
 
 #ifdef _CPP_MACRO_

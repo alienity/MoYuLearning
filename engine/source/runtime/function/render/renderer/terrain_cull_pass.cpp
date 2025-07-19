@@ -9,8 +9,12 @@
 #include "fmt/core.h"
 #include <cassert>
 
+#include "core/meta/RegisterVariable.h"
+
 namespace MoYu
 {
+    REGISTER_VARIABLE(int, mUseFixedCamera, 0);
+    
     void IndirectTerrainCullPass::initialize(const TerrainCullInitInfo& init_info)
     {
         ShaderCompiler* m_ShaderCompiler = init_info.m_ShaderCompiler;
@@ -285,8 +289,11 @@ namespace MoYu
 
 
         HLSL::FrameUniforms& frameUniform = render_resource->m_FrameUniforms;
-        glm::float3 cameraPosition = frameUniform.cameraUniform._WorldSpaceCameraPos;
-        glm::float4x4 cameraViewProj = frameUniform.cameraUniform._ViewProjMatrix;
+        if (mUseFixedCamera == 0)
+        {
+            cameraPosition = frameUniform.cameraUniform._WorldSpaceCameraPos;
+            cameraViewProj = frameUniform.cameraUniform._ViewProjMatrix;            
+        }
 
         InternalTerrainRenderer& internalTerrainRenderer = m_render_scene->m_terrain_renderers[0].internalTerrainRenderer;
         glm::float3 terrainSize = internalTerrainRenderer.ref_terrain.terrain_size;

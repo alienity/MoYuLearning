@@ -130,6 +130,9 @@ namespace MoYu
         bool iMinMaxHeightReady;
         bool iNormalMapReady;
 
+        glm::float3 cameraPosition;
+        glm::float4x4 cameraViewProj;
+
         RHI::RgTextureDesc colorTexDesc;
         RHI::RgTextureDesc depthTexDesc;
 

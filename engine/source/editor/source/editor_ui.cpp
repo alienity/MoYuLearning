@@ -32,7 +32,6 @@
 #include "runtime/core/math/moyu_math2.h"
 
 #include "imgui.h"
-#include "imgui_widgets.cpp"
 #include "imgui_internal.h"
 #include "backends/imgui_impl_dx12.h"
 #include "backends/imgui_impl_glfw.h"
@@ -40,6 +39,7 @@
 #include "stb_image.h"
 
 #include "ImGuizmo.h"
+#include "core/meta/RegisterVariable.h"
 
 namespace MoYu
 {
@@ -848,6 +848,7 @@ namespace MoYu
         showEditorGameWindow(&m_game_engine_window_open);
         showEditorFileContentWindow(&m_file_content_window_open);
         showEditorDetailWindow(&m_detail_window_open);
+        showConsoleWindow(&m_console_window_open);
     }
 
     void EditorUI::showEditorMenu(bool* p_open)
@@ -926,6 +927,7 @@ namespace MoYu
                 ImGui::MenuItem("Game", nullptr, &m_game_engine_window_open);
                 ImGui::MenuItem("File Content", nullptr, &m_file_content_window_open);
                 ImGui::MenuItem("Detail", nullptr, &m_detail_window_open);
+                ImGui::MenuItem("Console", nullptr, &m_console_window_open);
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -1303,6 +1305,23 @@ namespace MoYu
             ImGui::EndPopup();
         }
 
+        ImGui::End();
+    }
+
+    void EditorUI::showConsoleWindow(bool* p_open)
+    {
+        ImGui::Begin("Console");
+
+        static char inputBuffer[256];
+        memset(inputBuffer, 0, 256);
+        if (ImGui::InputText("##Name", inputBuffer, IM_ARRAYSIZE(inputBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            std::string inputBufferStr(inputBuffer);
+            if (!inputBufferStr.empty())
+            {
+                VariableSystem::ExecuteRegisterVariableStr(inputBuffer);
+            }
+        }
         ImGui::End();
     }
 

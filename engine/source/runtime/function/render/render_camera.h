@@ -202,7 +202,6 @@ namespace MoYu
         // <summary>View constants.</summary>
         ViewConstants mainViewConstants;
 
-        // 直接从swapdata传入的相机需要的数据
         RawCameraData rawCameraData;
 
         std::mutex m_view_matrix_mutex;
