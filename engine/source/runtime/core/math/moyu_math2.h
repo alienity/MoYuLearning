@@ -380,14 +380,14 @@ namespace MoYu
         // ע�����֣���OpenGL�м���ͶӰ�����ʱ��һ�㶼��zNear��zFar����ֵ�������������ﻹ��ʹ��λ�����������е�ֵ
 
         // ʹ����������ϵ���������-z���򣬲ο� Fundamentals of Computer Graphics
-        // ���� zNearPlane < zFarPlane���Ҷ�����ֵ
+        // ���� zNearValue < zFarValue���Ҷ�����ֵ
         // ��� canonical view volume ��xy������[-1,1]��z��������[0,1]
         // �ο� http://www.songho.ca/opengl/gl_projectionmatrix.html
-        glm::float4x4 createPerspectiveFieldOfView(float fovY, float aspectRatio, float zNearPlane, float zFarPlane);
-        glm::float4x4 createPerspective(float width, float height, float zNearPlane, float zFarPlane);
-        glm::float4x4 createPerspectiveOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane);
-        glm::float4x4 createOrthographic(float width, float height, float zNearPlane, float zFarPlane);
-        glm::float4x4 createOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane);
+        glm::float4x4 createPerspectiveFieldOfView(float fovY, float aspectRatio, float zNearValue, float zFarValue);
+        glm::float4x4 createPerspective(float width, float height, float zNearValue, float zFarValue);
+        glm::float4x4 createPerspectiveOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue);
+        glm::float4x4 createOrthographic(float width, float height, float zNearValue, float zFarValue);
+        glm::float4x4 createOrthographicOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue);
 
         // eye�����λ�ã�gaze�������ǰ����up��������ϳ���
         glm::float4x4 createLookAtMatrix(const glm::float3& eye, const glm::float3& center, const glm::float3& up);

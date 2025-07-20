@@ -95,45 +95,45 @@ namespace MoYu
        return glm::float2(x1, y1);
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspectiveFieldOfView(float fovY, float aspectRatio, float zNearPlane, float zFarPlane)
+    glm::float4x4 MYMatrix4x4::createPerspectiveFieldOfView(float fovY, float aspectRatio, float zNearValue, float zFarValue)
     {
        glm::float4x4 m = Zero;
 
         m[0][0] = 1.0f / (aspectRatio * std::tan(fovY * 0.5f));
         m[1][1] = 1.0f / std::tan(fovY * 0.5f);
-        m[2][2] = zNearPlane / (zFarPlane - zNearPlane);
-        m[3][2] = zFarPlane * zNearPlane / (zFarPlane - zNearPlane);
+        m[2][2] = zNearValue / (zFarValue - zNearValue);
+        m[3][2] = zFarValue * zNearValue / (zFarValue - zNearValue);
         m[2][3] = -1;
 
         return m;
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspective(float width, float height, float zNearPlane, float zFarPlane)
+    glm::float4x4 MYMatrix4x4::createPerspective(float width, float height, float zNearValue, float zFarValue)
     {
-        return createPerspectiveOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearPlane, zFarPlane);
+        return createPerspectiveOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearValue, zFarValue);
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspectiveOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane)
+    glm::float4x4 MYMatrix4x4::createPerspectiveOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue)
     {
         glm::float4x4 m = Zero;
 
-        m[0][0] = 2 * zNearPlane / (right - left);
+        m[0][0] = 2 * zNearValue / (right - left);
         m[2][0] = (right + left) / (right - left);
-        m[1][1] = 2 * zNearPlane / (top - bottom);
+        m[1][1] = 2 * zNearValue / (top - bottom);
         m[2][1] = (top + bottom) / (top - bottom);
-        m[2][2] = zNearPlane / (zFarPlane - zNearPlane);
-        m[3][2] = zFarPlane * zNearPlane / (zFarPlane - zNearPlane);
+        m[2][2] = zNearValue / (zFarValue - zNearValue);
+        m[3][2] = zFarValue * zNearValue / (zFarValue - zNearValue);
         m[2][3] = -1;
 
         return m;
     }
 
-    glm::float4x4 MYMatrix4x4::createOrthographic(float width, float height, float zNearPlane, float zFarPlane)
+    glm::float4x4 MYMatrix4x4::createOrthographic(float width, float height, float zNearValue, float zFarValue)
     {
-        return createOrthographicOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearPlane, zFarPlane);
+        return createOrthographicOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearValue, zFarValue);
     }
 
-    glm::float4x4 MYMatrix4x4::createOrthographicOffCenter(float left, float right, float bottom, float top, float zNearPlane, float zFarPlane)
+    glm::float4x4 MYMatrix4x4::createOrthographicOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue)
     {
         glm::float4x4 m = Zero;
 
@@ -141,8 +141,8 @@ namespace MoYu
         m[3][0] = -(right + left) / (right - left);
         m[1][1] = 2 / (top - bottom);
         m[3][1] = -(top + bottom) / (top - bottom);
-        m[2][2] = 1 / (zFarPlane - zNearPlane);
-        m[3][2] = zFarPlane / (zFarPlane - zNearPlane);
+        m[2][2] = 1 / (zFarValue - zNearValue);
+        m[3][2] = zFarValue / (zFarValue - zNearValue);
         m[3][3] = 1;
 
         return m;

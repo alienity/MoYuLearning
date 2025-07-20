@@ -1321,6 +1321,7 @@ int FrustumContainsBoundingBox(Frustum f, BoundingBox b)
 	return CONTAINMENT_INTERSECTS;
 }
 
+// https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
 Frustum ExtractPlanesDX(const float4x4 mvp)
 {
     Frustum frustum;
