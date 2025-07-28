@@ -73,6 +73,7 @@ namespace MoYu
 
             RHIRasterizerState rasterizerState = RHIRasterizerState();
             rasterizerState.CullMode = RHI_CULL_MODE::Back;
+            rasterizerState.FillMode = RHI_FILL_MODE::Wireframe;
 
             RHIDepthStencilState DepthStencilState;
             DepthStencilState.DepthEnable = true;

@@ -14,6 +14,7 @@
 namespace MoYu
 {
     REGISTER_VARIABLE(int, mUseFixedCamera, 0);
+    REGISTER_VARIABLE(int, mIterationCount, 0);
     
     void IndirectTerrainCullPass::initialize(const TerrainCullInitInfo& init_info)
     {
@@ -97,7 +98,7 @@ namespace MoYu
             RHI::RootSignatureDesc rootSigDesc =
                 RHI::RootSignatureDesc()
                 .Add32BitConstants<0, 0>(16)
-                .AddStaticSampler<10, 0>(D3D12_FILTER::D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP, 8)
+                .AddStaticSampler<11, 0>(D3D12_FILTER::D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 8)
                 .AllowInputLayout()
                 .AllowResourceDescriptorHeapIndexing()
                 .AllowSampleDescriptorHeapIndexing();
@@ -182,6 +183,37 @@ namespace MoYu
 
             pBuildPatchesPSO =
                 std::make_shared<RHI::D3D12PipelineState>(m_Device, L"BuildPatchesPSO", psoDesc);
+        }
+
+        //--------------------------------------------------------------------------
+
+        //--------------------------------------------------------------------------
+        {
+            ShaderCompileOptions shaderCompileOpt = ShaderCompileOptions(L"GenerateTerrainBoundsCS");
+
+            BuildPatcheBoundsCS = m_ShaderCompiler->CompileShader(
+                RHI_SHADER_TYPE::Compute, m_ShaderRootPath / "pipeline/Runtime/Tools/Terrain/TerrainBoundsBuildCS.hlsl", shaderCompileOpt);
+
+            RHI::RootSignatureDesc rootSigDesc =
+                RHI::RootSignatureDesc()
+                .AddDescriptorTable(RHI::D3D12DescriptorTable(1).AddSRVRange<0, 0>(1, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0))
+                .AddDescriptorTable(RHI::D3D12DescriptorTable(1).AddUAVRange<0, 0>(1, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0))
+                .AllowResourceDescriptorHeapIndexing()
+                .AllowSampleDescriptorHeapIndexing();
+
+            pBuildPatcheBoundsSignature = std::make_shared<RHI::D3D12RootSignature>(m_Device, rootSigDesc);
+
+            struct PsoStream
+            {
+                PipelineStateStreamRootSignature RootSignature;
+                PipelineStateStreamCS            CS;
+            } psoStream;
+            psoStream.RootSignature = PipelineStateStreamRootSignature(pBuildPatcheBoundsSignature.get());
+            psoStream.CS = &BuildPatcheBoundsCS;
+            PipelineStateStreamDesc psoDesc = { sizeof(PsoStream), &psoStream };
+
+            pBuildPatcheBoundsPSO =
+                std::make_shared<RHI::D3D12PipelineState>(m_Device, L"BuildPatcheBoundsPSO", psoDesc);
         }
 
         //--------------------------------------------------------------------------
@@ -297,6 +329,7 @@ namespace MoYu
 
         InternalTerrainRenderer& internalTerrainRenderer = m_render_scene->m_terrain_renderers[0].internalTerrainRenderer;
         glm::float3 terrainSize = internalTerrainRenderer.ref_terrain.terrain_size;
+        terrainSize.y = 512;
         
         int nodeCount = MAX_LOD_NODE_COUNT;
         for (int lod = MAX_TERRAIN_LOD; lod >= 0; lod--)
@@ -394,6 +427,18 @@ namespace MoYu
                 L"CulledPatchListBuffer");
         }
 
+#if TERRAIN_BOUNDS_DEBUG
+        if (PatchBoundsListBuffer == nullptr)
+        {
+            PatchBoundsListBuffer = RHI::D3D12Buffer::Create(
+                m_Device->GetLinkedDevice(),
+                RHI::RHIBufferRandomReadWrite | RHI::RHIBufferTargetStructured | RHI::RHIBufferTargetCounter,
+                maxNodeCount,
+                sizeof(HLSL::BoundsDebug),
+                L"PatchBoundsListBuffer");
+        }
+#endif
+
         if (CulledDirPatchListBuffers.empty())
         {
             CulledDirPatchListBuffers.resize(4);
@@ -462,8 +507,24 @@ namespace MoYu
                         1, MoYu::AlignUp(sizeof(HLSL::ToDrawCommandSignatureParams), 256),
                         tname);
             }
-
         }
+
+#if TERRAIN_BOUNDS_DEBUG
+        if (camPatchBoundsCmdSigBuffer == nullptr)
+        {
+            struct PatchBoundsArgsStruct
+            {
+                D3D12_DRAW_ARGUMENTS drawArgs;
+            };
+            
+            camPatchBoundsCmdSigBuffer =
+                RHI::D3D12Buffer::Create(
+                    m_Device->GetLinkedDevice(),
+                    RHI::RHIBufferRandomReadWrite | RHI::RHIBufferTargetStructured | RHI::RHIBufferTargetIndirectArgs,
+                    1, MoYu::AlignUp(sizeof(PatchBoundsArgsStruct), 256),
+                    L"CamPatchBoundsCmdSigBuffer");
+        }
+#endif
 
         //--------------------------------------------------------------------------
         
@@ -820,7 +881,8 @@ namespace MoYu
 #endif
             
             //****************************************************************************
-            for (int i = MAX_TERRAIN_LOD; i >= 0; i--)
+            int iterationEnd = std::max(std::min(mIterationCount, MAX_TERRAIN_LOD), 0);
+            for (int i = MAX_TERRAIN_LOD; i >= iterationEnd; i--)
             {
                 pContext->TransitionBarrier(RegGetBufCounter(AppendNodeListHandle), D3D12_RESOURCE_STATE_COPY_SOURCE);
                 pContext->TransitionBarrier(RegGetBuf(traverseDispatchArgsHandle), D3D12_RESOURCE_STATE_COPY_DEST);
@@ -921,6 +983,9 @@ namespace MoYu
 
         RHI::RgResourceHandle buildPatchArgsHandle = graph.Create<RHI::D3D12Buffer>(buildPatchArgsBufferDesc);
         RHI::RgResourceHandle culledPatchListHandle = GImport(graph, CulledPatchListBuffer.get());
+#if TERRAIN_BOUNDS_DEBUG
+        RHI::RgResourceHandle patchBoundsListHandle = GImport(graph, PatchBoundsListBuffer.get());
+#endif
 
         RHI::RenderPass& buildPatchesPass = graph.AddRenderPass("BuildCamPatchesPass");
 
@@ -932,8 +997,14 @@ namespace MoYu
         buildPatchesPass.Read(FinalNodeListHandle, true);
         buildPatchesPass.Read(buildPatchArgsHandle, true);
         buildPatchesPass.Read(culledPatchListHandle, true);
+#if TERRAIN_BOUNDS_DEBUG
+        buildPatchesPass.Read(patchBoundsListHandle, true);
+#endif
         buildPatchesPass.Write(buildPatchArgsHandle, true);
         buildPatchesPass.Write(culledPatchListHandle, true);
+#if TERRAIN_BOUNDS_DEBUG
+        buildPatchesPass.Write(patchBoundsListHandle, true);
+#endif
 
         buildPatchesPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
             RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
@@ -947,6 +1018,11 @@ namespace MoYu
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->ResetCounter(RegGetBufCounter(culledPatchListHandle));
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+#if TERRAIN_BOUNDS_DEBUG
+            pContext->TransitionBarrier(RegGetBufCounter(patchBoundsListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+            pContext->ResetCounter(RegGetBufCounter(patchBoundsListHandle));
+            pContext->TransitionBarrier(RegGetBufCounter(patchBoundsListHandle), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON);
+#endif
             pContext->FlushResourceBarriers();
             
             pContext->TransitionBarrier(RegGetBuf(terrainConsBufferHandle), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -957,6 +1033,10 @@ namespace MoYu
             pContext->TransitionBarrier(RegGetBuf(FinalNodeListHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
             pContext->TransitionBarrier(RegGetBuf(culledPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+#if TERRAIN_BOUNDS_DEBUG
+            pContext->TransitionBarrier(RegGetBuf(patchBoundsListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+            pContext->TransitionBarrier(RegGetBufCounter(patchBoundsListHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+#endif
             pContext->TransitionBarrier(RegGetBuf(buildPatchArgsHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
             pContext->FlushResourceBarriers();
 
@@ -972,15 +1052,23 @@ namespace MoYu
                 uint32_t lodMapIndex;
                 uint32_t finalNodeListBufferIndex;
                 uint32_t culledPatchListBufferIndex;
+#if TERRAIN_BOUNDS_DEBUG
+                uint32_t patchBoundsListBufferIndex;
+#endif
             };
 
-            RootIndexBuffer rootIndexBuffer = RootIndexBuffer{ RegGetBufDefCBVIdx(terrainConsBufferHandle),
-                                                               RegGetTexDefSRVIdx(terrainMinHeightHandle),
-                                                               RegGetTexDefSRVIdx(terrainMaxHeightHandle),
-                                                               RegGetTexDefSRVIdx(hizDepthBufferHandle),
-                                                               RegGetTexDefSRVIdx(LodMapHandle),
-                                                               RegGetBufDefSRVIdx(FinalNodeListHandle),
-                                                               RegGetBufDefUAVIdx(culledPatchListHandle) };
+            RootIndexBuffer rootIndexBuffer = RootIndexBuffer{
+                RegGetBufDefCBVIdx(terrainConsBufferHandle),
+                RegGetTexDefSRVIdx(terrainMinHeightHandle),
+                RegGetTexDefSRVIdx(terrainMaxHeightHandle),
+                RegGetTexDefSRVIdx(hizDepthBufferHandle),
+                RegGetTexDefSRVIdx(LodMapHandle),
+                RegGetBufDefSRVIdx(FinalNodeListHandle),
+                RegGetBufDefUAVIdx(culledPatchListHandle),
+#if TERRAIN_BOUNDS_DEBUG
+                RegGetBufDefUAVIdx(patchBoundsListHandle),
+#endif
+            };
 
             pContext->SetConstantArray(0, sizeof(rootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
@@ -1004,8 +1092,10 @@ namespace MoYu
 
         genTerrainCmdSigPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
             RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
-
             pContext->TransitionBarrier(RegGetBufCounter(culledPatchListHandle), D3D12_RESOURCE_STATE_COPY_SOURCE);
+#if TERRAIN_BOUNDS_DEBUG
+            pContext->TransitionBarrier(RegGetBufCounter(patchBoundsListHandle), D3D12_RESOURCE_STATE_COPY_SOURCE);
+#endif
             pContext->TransitionBarrier(RegGetBuf(camUploadPatchCmdSigBufferHandle), D3D12_RESOURCE_STATE_COPY_SOURCE);
             pContext->TransitionBarrier(RegGetBuf(camPatchCmdSigBufferHandle), D3D12_RESOURCE_STATE_COPY_DEST);
             pContext->FlushResourceBarriers();
@@ -1026,6 +1116,38 @@ namespace MoYu
 #endif
         });
         
+
+        //------------------------------------------------------------------------------------
+#if TERRAIN_BOUNDS_DEBUG
+        RHI::RgResourceHandle camPatchBoundsCmdSigBufferHandle = GImport(graph, camPatchBoundsCmdSigBuffer.get());
+
+        RHI::RenderPass& genTerrainBoundsCmdSigPass = graph.AddRenderPass("GenTerrainBoundsCmdSigPass");
+        
+        genTerrainBoundsCmdSigPass.Read(patchBoundsListHandle, true);
+        genTerrainBoundsCmdSigPass.Write(camPatchBoundsCmdSigBufferHandle, true);
+
+        genTerrainBoundsCmdSigPass.Execute([=](RHI::RenderGraphRegistry* registry, RHI::D3D12CommandContext* context) {
+            RHI::D3D12ComputeContext* pContext = context->GetComputeContext();
+
+            pContext->TransitionBarrier(RegGetBufCounter(patchBoundsListHandle), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            pContext->TransitionBarrier(RegGetBuf(camPatchBoundsCmdSigBufferHandle), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+            pContext->FlushResourceBarriers();
+            
+            pContext->SetPipelineState(pBuildPatcheBoundsPSO.get());
+            pContext->SetRootSignature(pBuildPatcheBoundsSignature.get());
+
+            pContext->SetDynamicDescriptor(0, 0, RegGetBufCounter(patchBoundsListHandle)->GetDefaultSRV(1)->GetCpuHandle());
+            pContext->SetDynamicDescriptor(1, 0, RegGetBuf(camPatchBoundsCmdSigBufferHandle)->GetDefaultUAV(1)->GetCpuHandle());
+
+            pContext->Dispatch(1, 1, 1);
+
+            pContext->TransitionBarrier(RegGetBuf(camPatchBoundsCmdSigBufferHandle), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+            pContext->FlushResourceBarriers();
+#ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
+            LOG_INFO("GenTerrainBoundsCmdSigPass");
+#endif
+        });
+#endif
         //------------------------------------------------------------------------------------
 
         std::vector<RHI::RgResourceHandle> dirConsBufferHandles;
@@ -1151,6 +1273,10 @@ namespace MoYu
         passOutput.terrainMatPropertyHandle = terrainMatPropertiesHandle;
         passOutput.mainCamVisPatchListHandle = culledPatchListHandle;
         passOutput.mainCamVisCmdSigBufferHandle = camPatchCmdSigBufferHandle;
+#if TERRAIN_BOUNDS_DEBUG
+        passOutput.terrainConsBufferHandle = terrainConsBufferHandle;
+        passOutput.camPatchBoundsCmdSigBufferHandle = camPatchBoundsCmdSigBufferHandle;
+#endif
 
         passOutput.dirConsBufferHandles = std::move(dirConsBufferHandles);
         passOutput.dirVisPatchListHandles = std::move(dirVisPatchListHandles);

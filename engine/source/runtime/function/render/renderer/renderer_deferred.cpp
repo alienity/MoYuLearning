@@ -218,6 +218,18 @@ namespace MoYu
             mIndirectTerrainGBufferPass->setCommonInfo(renderPassCommonInfo);
             mIndirectTerrainGBufferPass->initialize(drawPassInit);
         }
+        // Terrain Bounds Debug pass
+        {
+            IndirectTerrainBoundsDebugPass::DrawPassInitInfo drawPassInit;
+            drawPassInit.colorTexDesc = colorTexDesc;
+            drawPassInit.depthTexDesc = depthTexDesc;
+            drawPassInit.m_ShaderCompiler = pCompiler;
+            drawPassInit.m_ShaderRootPath = g_runtime_global_context.m_config_manager->getShaderFolder();
+
+            mIndirectTerrainBoundsDebugPass = std::make_shared<IndirectTerrainBoundsDebugPass>();
+            mIndirectTerrainBoundsDebugPass->setCommonInfo(renderPassCommonInfo);
+            mIndirectTerrainBoundsDebugPass->initialize(drawPassInit);
+        }
         // Object Motion Vectors pass
         {
             IndirectMotionVectorPass::DrawPassInitInfo drawPassInit;
@@ -483,6 +495,7 @@ namespace MoYu
         mSkyBoxPass->prepareMeshData(render_resource);
         mTerrainCullPass->prepareMeshData(render_resource);
         mIndirectTerrainGBufferPass->prepareMatBuffer(render_resource);
+        mIndirectTerrainBoundsDebugPass->prepareMatBuffer(render_resource);
         mIndirectMotionVectorPass->prepareMatBuffer(render_resource);
         mCameraMotionVectorPass->prepareMatBuffer(render_resource);
         mDepthPrePass->prepareMatBuffer(render_resource);
@@ -518,6 +531,7 @@ namespace MoYu
         mTerrainDepthPrePass = nullptr;
         mIndirectGBufferPass = nullptr;
         mIndirectTerrainGBufferPass = nullptr;
+        mIndirectTerrainBoundsDebugPass = nullptr;
         mIndirectMotionVectorPass = nullptr;
         mCameraMotionVectorPass = nullptr;
         mDepthPyramidPass = nullptr;
@@ -883,6 +897,24 @@ namespace MoYu
          mIndirectLightLoopPass->update(graph, mLightLoopIntput, mLightLoopOutput);
          //=================================================================================
 
+        //=================================================================================
+        // terrain bounds debug pass
+        IndirectTerrainBoundsDebugPass::DrawInputParameters mTerrainBoundsDebugInput;
+        IndirectTerrainBoundsDebugPass::DrawOutputParameters mTerrainBoundsDebugOutput;
+
+        mTerrainBoundsDebugInput.perframeBufferHandle = indirectCullOutput.perframeBufferHandle;
+        mTerrainBoundsDebugInput.terrainConstantBufferHandle = terrainCullOutput.terrainConsBufferHandle;
+        mTerrainBoundsDebugInput.culledPatchListBufferHandle = terrainCullOutput.mainCamVisPatchListHandle;
+        mTerrainBoundsDebugInput.terrainRenderDataHandle = terrainCullOutput.terrainRenderDataHandle;
+        mTerrainBoundsDebugInput.mainCamVisCmdSigHandle = terrainCullOutput.camPatchBoundsCmdSigBufferHandle;
+
+        mTerrainBoundsDebugOutput.colorHandle = mLightLoopOutput.specularLightinghandle;
+        mTerrainBoundsDebugOutput.depthHandle = mGBufferOutput.depthHandle;
+        
+        mIndirectTerrainBoundsDebugPass->update(graph, mTerrainBoundsDebugInput, mTerrainBoundsDebugOutput);
+        
+        //=================================================================================
+
          ////=================================================================================
          //// subsurface scattering pass
          //SubsurfaceScatteringPass::DrawInputParameters mSubsurfaceScatteringInput;
@@ -898,8 +930,11 @@ namespace MoYu
          //mSubsurfaceScatteringPass->update(graph, mSubsurfaceScatteringInput, mSubsurfaceScatteringOutput);
          ////=================================================================================
 
-         RHI::RgResourceHandle outColorHandle = mLightLoopOutput.specularLightinghandle;
-         RHI::RgResourceHandle outDepthHandle = mGBufferOutput.depthHandle;
+         // RHI::RgResourceHandle outColorHandle = mLightLoopOutput.specularLightinghandle;
+         // RHI::RgResourceHandle outDepthHandle = mGBufferOutput.depthHandle;
+
+        RHI::RgResourceHandle outColorHandle = mTerrainBoundsDebugOutput.colorHandle;
+        RHI::RgResourceHandle outDepthHandle = mTerrainBoundsDebugOutput.depthHandle;
 
          //=================================================================================
          // color pyramid

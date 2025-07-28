@@ -49,7 +49,7 @@ bool EvaluateNode(TerrainConsData inConsBuffer, Texture2D<float> minHeightTextur
     float dis = distance(inConsBuffer.CameraPositionWS, positionWS);
     float nodeSize = GetNodeSize(inConsBuffer, lod);
     float f = dis / (nodeSize * inConsBuffer.NodeEvaluationC.x);
-    if( f <= 1.0f)
+    if( f < 1.0f)
     {
         return true;
     }
@@ -172,6 +172,8 @@ void BuildLodMap(uint3 id : SV_DispatchThreadID)
 
 #elif defined(BUILD_PATCHES)
 
+SamplerState s_linear_clamp_sampler     : register(s10);
+
 TerrainPatchBounds GetPatchBounds(TerrainConsData inConsBuffer, TerrainRenderPatch patch)
 {
     float halfSize = GetPatchExtent(inConsBuffer, patch.lod);
@@ -182,8 +184,8 @@ TerrainPatchBounds GetPatchBounds(TerrainConsData inConsBuffer, TerrainRenderPat
     float3 boundsMin, boundsMax;
     boundsMin.xz = patch.position - halfSize;
     boundsMax.xz = patch.position + halfSize;
-    boundsMin.y = -1000000;//patch.minHeight;
-    boundsMax.y =  1000000;//patch.maxHeight;
+    boundsMin.y = patch.minHeight;
+    boundsMax.y = patch.maxHeight;
 
     bounds.minPosition = boundsMin;
     bounds.maxPosition = boundsMax;
@@ -199,7 +201,6 @@ TerrainRenderPatch CreatePatch(
     float2 nodePositionWS = GetNodePositionWS2(inConsBuffer, nodeLoc.xy, lod);
 
     uint2 patchLoc = nodeLoc.xy * PATCH_COUNT_PER_NODE + patchOffset;
-    //经测试，当min和max相差较小时，RG32似乎还是存在精度问题
     float minHeight = minHeightTexture.mips[lod][patchLoc].r * inConsBuffer.WorldSize.y - inConsBuffer.BoundsHeightRedundance;
     float maxHeight = maxHeightTexture.mips[lod][patchLoc].r * inConsBuffer.WorldSize.y + inConsBuffer.BoundsHeightRedundance;
     TerrainRenderPatch patch;
@@ -268,7 +269,11 @@ float3 TransformWorldToUVD(float3 positionWS, float4x4 _HizCameraMatrixVP)
     //点可能跑到摄像机背后去，深度会变成负数，需要特殊处理一下
     if(uvd.z < 0)
     {
+// #if _REVERSE_Z
         uvd.z = 1;
+// #else
+//         uvd.z = 0;
+// #endif
     }
     return uvd;
 }
@@ -342,9 +347,14 @@ bool HizOcclusionCull(
     float d2 = SampleHiz(maxP.xy, mip, mipTexSize, _HizMap); 
     float d3 = SampleHiz(float2(minP.x,maxP.y), mip, mipTexSize, _HizMap);
     float d4 = SampleHiz(float2(maxP.x,minP.y), mip, mipTexSize, _HizMap);
-    
+
+// #if _REVERSE_Z
     float depth = maxP.z;
     return d1 > depth && d2 > depth && d3 > depth && d4 > depth;
+// #else
+//     float depth = minP.z;
+//     return d1 < depth && d2 < depth && d3 < depth && d4 < depth;
+// #endif
 }
 
 TerrainPatchBounds TransformToWorld(TerrainPatchBounds bounds, float4x4 terrainModelMatrix)
@@ -401,7 +411,7 @@ bool Cull(TerrainConsData inConsBuffer, TerrainPatchBounds bounds, Texture2D<flo
     float _HizDepthBias = inConsBuffer._HizDepthBias;
     if(HizOcclusionCull(hizBounds, _HizCameraMatrixVP, _HizCameraPositionWS, _HizMapSize, _HizDepthBias, hizMap))
     {
-        return true;
+        // return true;
     }
 #endif
     return false;
@@ -416,6 +426,9 @@ cbuffer RootConstants : register(b0, space0)
     uint lodMapIndex;
     uint finalNodeListBufferIndex;
     uint culledPatchListBufferIndex;
+#if TERRAIN_BOUNDS_DEBUG
+    uint PatchBoundsListBufferIndex;
+#endif
 };
 
 [numthreads(8,8,1)]
@@ -430,7 +443,9 @@ void BuildPatches(uint3 id : SV_DispatchThreadID, uint3 groupId: SV_GroupID, uin
     
     StructuredBuffer<uint3> FinalNodeList = ResourceDescriptorHeap[finalNodeListBufferIndex];
     AppendStructuredBuffer<TerrainRenderPatch> CulledPatchList = ResourceDescriptorHeap[culledPatchListBufferIndex];
-
+#if TERRAIN_BOUNDS_DEBUG
+    AppendStructuredBuffer<BoundsDebug> PatchBoundsList = ResourceDescriptorHeap[PatchBoundsListBufferIndex];
+#endif    
     Texture2D<float4> LodMap = ResourceDescriptorHeap[lodMapIndex];
     
     uint3 nodeLoc = FinalNodeList[groupId.x];
@@ -446,6 +461,13 @@ void BuildPatches(uint3 id : SV_DispatchThreadID, uint3 groupId: SV_GroupID, uin
     }
     SetLodTrans(patch, InConsBuffer, LodMap, nodeLoc, patchOffset);
     CulledPatchList.Append(patch);
+
+#if TERRAIN_BOUNDS_DEBUG
+    BoundsDebug boundsDebug;
+    boundsDebug.bounds = bounds;
+    boundsDebug.color = float4((bounds.minPosition + InConsBuffer.WorldSize * 0.5) / InConsBuffer.WorldSize,1);
+    PatchBoundsList.Append(boundsDebug);
+#endif
 }
 
 #endif

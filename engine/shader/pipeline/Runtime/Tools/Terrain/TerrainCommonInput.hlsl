@@ -1,6 +1,10 @@
 #ifndef TERRAIN_COMMON_INPUT
 #define TERRAIN_COMMON_INPUT
 
+#ifndef TERRAIN_BOUNDS_DEBUG
+#define TERRAIN_BOUNDS_DEBUG 1
+#endif
+
 #ifdef _CPP_MACRO_
 #define uint glm::uint
 #define uint2 glm::uvec2
@@ -52,6 +56,14 @@ struct TerrainPatchBounds
     float3 minPosition;
     float3 maxPosition;
 };
+
+#if TERRAIN_BOUNDS_DEBUG
+struct BoundsDebug
+{
+    TerrainPatchBounds bounds;
+    float4 color;
+};
+#endif
 
 struct TerrainRenderData
 {

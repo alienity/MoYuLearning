@@ -65,6 +65,10 @@ namespace MoYu
 
             RHI::RgResourceHandle mainCamVisPatchListHandle;
             RHI::RgResourceHandle mainCamVisCmdSigBufferHandle;
+#if TERRAIN_BOUNDS_DEBUG
+            RHI::RgResourceHandle terrainConsBufferHandle;
+            RHI::RgResourceHandle camPatchBoundsCmdSigBufferHandle;
+#endif
 
             std::vector<RHI::RgResourceHandle> dirConsBufferHandles;
             std::vector<RHI::RgResourceHandle> dirVisPatchListHandles;
@@ -137,11 +141,11 @@ namespace MoYu
         RHI::RgTextureDesc depthTexDesc;
 
         /*
-         * ����WorldLodParams
-         * - nodeSizeΪNode�ı߳�(��)
-         * - patchExtent����nodeSize/16
-         * - nodeCount����WorldSize/nodeSize
-         * - sectorCountPerNode����2^lod
+         * WorldLodParams
+         * - nodeSize
+         * - patchExtent - nodeSize/16
+         * - nodeCount - WorldSize/nodeSize
+         * - sectorCountPerNode - 2^lod
          */
         glm::float4 worldLODParams[MAX_TERRAIN_LOD + 1];
         int nodeIDOffsetLOD[MAX_TERRAIN_LOD + 1];
@@ -154,20 +158,24 @@ namespace MoYu
 
         std::shared_ptr<RHI::D3D12Texture> pLodMap; // R8, 160x160
 
-        std::shared_ptr<RHI::D3D12Buffer> TempNodeList[2]; // uint2, ������ǰLOD��Node�Ķ�ά����
-        std::shared_ptr<RHI::D3D12Buffer> FinalNodeList; // uint3, ����z��ʾNode��LOD��xy������ά����
+        std::shared_ptr<RHI::D3D12Buffer> TempNodeList[2]; // uint2
+        std::shared_ptr<RHI::D3D12Buffer> FinalNodeList; // uint3
         std::shared_ptr<RHI::D3D12Buffer> NodeDescriptors; // uint, branch
 
         std::shared_ptr<RHI::D3D12Buffer> pTerrainRenderDataBuffer;
         std::shared_ptr<RHI::D3D12Buffer> pTerrainMatPropertiesBuffer;
 
-        // �����׶�ڵ�CommandSignature
+        // CommandSignature
         std::shared_ptr<RHI::D3D12Buffer> camUploadPatchCmdSigBuffer;
 
         std::shared_ptr<RHI::D3D12Buffer> CulledPatchListBuffer;
-        std::shared_ptr<RHI::D3D12Buffer> mTerrainConsBuffer; // �����λ��Ƴ���
+        std::shared_ptr<RHI::D3D12Buffer> mTerrainConsBuffer;
         std::shared_ptr<RHI::D3D12Buffer> camPatchCmdSigBuffer;
-
+#if TERRAIN_BOUNDS_DEBUG
+        std::shared_ptr<RHI::D3D12Buffer> PatchBoundsListBuffer;
+        std::shared_ptr<RHI::D3D12Buffer> camPatchBoundsCmdSigBuffer;
+#endif
+        
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> CulledDirPatchListBuffers; // For DirectionalLight
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> mTerrainDirConsBuffers; // For DirectionalLight
         std::vector<std::shared_ptr<RHI::D3D12Buffer>> dirPatchCmdSigBuffers; // For DirectionalLight
@@ -192,6 +200,10 @@ namespace MoYu
         std::shared_ptr<RHI::D3D12RootSignature> pBuildPatchesSignature;
         std::shared_ptr<RHI::D3D12PipelineState> pBuildPatchesPSO;
 
+        Shader BuildPatcheBoundsCS;
+        std::shared_ptr<RHI::D3D12RootSignature> pBuildPatcheBoundsSignature;
+        std::shared_ptr<RHI::D3D12PipelineState> pBuildPatcheBoundsPSO;
+        
 	};
 }
 

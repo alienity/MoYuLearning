@@ -32,6 +32,7 @@
 #include "runtime/function/render/renderer/indirect_lightloop_pass.h"
 #include "runtime/function/render/renderer/subsurface_scattering_pass.h"
 //#include "runtime/function/render/renderer/volume_light_pass.h"
+#include "indirect_terrain_bounds_debug_pass.h"
 #include "runtime/function/render/renderer/VolumetricLighting.h"
 #include "runtime/function/render/renderer/temporalFilter.h"
 #include "runtime/function/render/renderer/diffuseFilter.h"
@@ -91,6 +92,7 @@ namespace MoYu
         std::shared_ptr<IndirectDrawPass>            mIndirectOpaqueDrawPass;
         std::shared_ptr<DepthPyramidPass>            mDepthPyramidPass;
         std::shared_ptr<ColorPyramidPass>            mColorPyramidPass;
+		std::shared_ptr<IndirectTerrainBoundsDebugPass> mIndirectTerrainBoundsDebugPass;
         std::shared_ptr<SkyBoxPass>                  mSkyBoxPass;
         std::shared_ptr<AtmosphericScatteringPass>   mAtmosphericScatteringPass;
         std::shared_ptr<VolumeCloudPass>             mVolumeCloudPass;
