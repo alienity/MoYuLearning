@@ -4,6 +4,9 @@
 #include "runtime/function/framework/component/component.h"
 #include "runtime/function/framework/object/object.h"
 
+#include <memory>
+#include <string>
+
 namespace MoYu
 {
     class TransformComponent : public Component
@@ -17,22 +20,26 @@ namespace MoYu
 
         void markToErase() override {};
 
-        glm::float3    getPosition() const { return m_transform_buffer[m_current_index].m_position; }
-        glm::float3    getScale() const { return m_transform_buffer[m_current_index].m_scale; }
-        glm::quat getRotation() const { return m_transform_buffer[m_current_index].m_rotation; }
+        glm::float3 getPosition() const { return m_transform_buffer[m_current_index].getPosition(); }
+        glm::float3 getScale() const { return m_transform_buffer[m_current_index].getScale(); }
+        glm::quat   getRotation() const { return m_transform_buffer[m_current_index].getRotation(); }
 
         void setPosition(const glm::float3& new_translation);
         void setScale(const glm::float3& new_scale);
         void setRotation(const glm::quat& new_rotation);
+        void setRotation(const glm::float3& new_eulerAngles);
 
         const Transform& getTransformConst() const { return m_transform_buffer[m_current_index]; }
 
         // for editor
         Transform& getTransform() { return m_transform_buffer[m_next_index]; }
 
-        const glm::float4x4 getMatrix() const { return m_transform_buffer[m_current_index].getMatrix(); }
+        const glm::float4x4 getMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
 
         const glm::float4x4 getMatrixWorld();
+        
+        // Get local transformation matrix (relative to parent node)
+        const glm::float4x4 getLocalMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
 
         const bool isMatrixDirty() const;
 
@@ -40,18 +47,24 @@ namespace MoYu
         void tick(float delta_time) override;
         void lateTick(float delta_time) override;
 
-        static glm::float4x4 getMatrixWorldRecursively(const TransformComponent* trans);
-        static bool isDirtyRecursively(const TransformComponent* trans);
-        static void UpdateWorldMatrixRecursively(TransformComponent* trans);
+        // New: Get the status of whether the world matrix needs to be updated
+        bool isWorldTransformDirty() const { return m_world_transform_dirty; }
+        
+        // New: Mark world transform as dirty
+        void markWorldTransformDirty();
 
     private:
-        glm::float4x4 m_matrix_world_prev {MYMatrix4x4::Zero};
-        glm::float4x4 m_matrix_world {MYMatrix4x4::Identity};
-
-        //Transform m_transform;
-
         Transform m_transform_buffer[2];
         uint32_t  m_current_index {0};
         uint32_t  m_next_index {1};
+        
+        // Cache world matrix and dirty flag
+        mutable glm::float4x4 m_matrix_world = MYMatrix4x4::Identity;
+        mutable glm::float4x4 m_matrix_world_prev = MYMatrix4x4::Identity;
+        mutable bool m_world_transform_dirty = true; // Whether the world matrix needs to be recalculated
+        mutable bool m_world_transform_cache_valid = false; // Whether the world matrix cache is valid
+        
+        // Internal implementation for updating the world matrix
+        void updateWorldMatrix() const;
     };
 } // namespace MoYu

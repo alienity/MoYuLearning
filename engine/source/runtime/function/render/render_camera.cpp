@@ -117,7 +117,8 @@ namespace MoYu
         // rotation around x, y axis
         delta = glm::float2(MoYu::degreesToRadians(delta.x), MoYu::degreesToRadians(delta.y));
 
-        // ZXY从右往左乘得旋转矩阵，就是intrinsic的，对应的分别是从右往左 Roll - Pitch - Yaw
+        // ZXY rotation matrix obtained by multiplying from right to left is intrinsic, 
+        // corresponding respectively from right to left Roll - Pitch - Yaw
 
         float _alpha, _beta, _gamma;
         glm::extractEulerAngleZXY(glm::toMat4(rawCameraData.m_rotation), _gamma, _beta, _alpha);
@@ -155,7 +156,7 @@ namespace MoYu
     {
         rawCameraData.m_position = position;
 
-        glm::float4x4 viewMat = MoYu::MYMatrix4x4::createLookAtMatrix(position, target, up);
+        glm::float4x4 viewMat = MoYu::MYMatrix4x4::lookAtRH(position, target, up);
 
         rawCameraData.m_rotation = glm::toQuat(viewMat);
         rawCameraData.m_invRotation = glm::inverse(rawCameraData.m_rotation);

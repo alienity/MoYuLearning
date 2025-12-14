@@ -914,7 +914,7 @@ namespace MoYu
                     uint32_t appendNodeListBufferIndex;
                     uint32_t appendFinalNodeListBufferIndex;
                     uint32_t nodeDescriptorsBufferIndex;
-                    uint32_t PassLOD; //表示TraverseQuadTree kernel执行的LOD级别
+                    uint32_t PassLOD; // Indicates the LOD level executed by the TraverseQuadTree kernel
                 };
 
                 RootIndexBuffer rootIndexBuffer = RootIndexBuffer{ RegGetBufDefCBVIdx(terrainConsBufferHandle),

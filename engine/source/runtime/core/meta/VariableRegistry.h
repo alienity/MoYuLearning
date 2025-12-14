@@ -27,8 +27,8 @@ namespace VariableSystem
         {
             VariableInfo info;
             info.name = name;
-            info.type = typeid(T).name(); // 获取类型名（编译期类型）
-            info.ptr = reinterpret_cast<void*>(ptr); // 指向变量的指针
+            info.type = typeid(T).name(); // Get type name (compile-time type)
+            info.ptr = reinterpret_cast<void*>(ptr); // Pointer to the variable
             variables[name] = info;
         }
 

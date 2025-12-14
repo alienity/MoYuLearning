@@ -13,9 +13,9 @@ namespace MoYu
 
         Transform m_transform = {};
 
-        m_transform.m_position = (&transform_res)->m_position;
-        m_transform.m_scale    = (&transform_res)->m_scale;
-        m_transform.m_rotation = (&transform_res)->m_rotation;
+        m_transform.setPosition((&transform_res)->m_position);
+        m_transform.setScale((&transform_res)->m_scale);
+        m_transform.setRotation((&transform_res)->m_rotation);
 
         m_transform_buffer[m_current_index] = m_transform;
         m_transform_buffer[m_next_index]    = m_transform;
@@ -26,9 +26,9 @@ namespace MoYu
     void TransformComponent::save(ComponentDefinitionRes& out_component_res)
     {
         TransformRes transform_res = {};
-        (&transform_res)->m_position = m_transform_buffer[m_next_index].m_position;
-        (&transform_res)->m_scale    = m_transform_buffer[m_next_index].m_scale;
-        (&transform_res)->m_rotation = m_transform_buffer[m_next_index].m_rotation;
+        (&transform_res)->m_position = m_transform_buffer[m_next_index].getPosition();
+        (&transform_res)->m_scale    = m_transform_buffer[m_next_index].getScale();
+        (&transform_res)->m_rotation = m_transform_buffer[m_next_index].getRotation();
 
         out_component_res.m_type_name = "TransformComponent";
         out_component_res.m_component_name = this->m_component_name;
@@ -37,36 +37,42 @@ namespace MoYu
 
     void TransformComponent::setPosition(const glm::float3& new_translation)
     {
-        //m_transform.m_position = new_translation;
-
-        m_transform_buffer[m_next_index].m_position = new_translation;
+        m_transform_buffer[m_next_index].setPosition(new_translation);
 
         markDirty();
+        markWorldTransformDirty();
     }
 
     void TransformComponent::setScale(const glm::float3& new_scale)
     {
-        //m_transform.m_scale = new_scale;
-
-        m_transform_buffer[m_next_index].m_scale = new_scale;
+        m_transform_buffer[m_next_index].setScale(new_scale);
         
         markDirty();
+        markWorldTransformDirty();
     }
 
     void TransformComponent::setRotation(const glm::quat& new_rotation)
     {
-        //m_transform.m_rotation = new_rotation;
-
-        m_transform_buffer[m_next_index].m_rotation = new_rotation;
+        m_transform_buffer[m_next_index].setRotation(new_rotation);
 
         markDirty();
+        markWorldTransformDirty();
+    }
+
+    void TransformComponent::setRotation(const glm::float3& new_eulerAngles)
+    {
+        m_transform_buffer[m_next_index].setRotation(new_eulerAngles);
+
+        markDirty();
+        markWorldTransformDirty();
     }
 
     const glm::float4x4 TransformComponent::getMatrixWorld()
     {
-        if (TransformComponent::isDirtyRecursively(this))
+        // If the world matrix needs to be updated, then update it
+        if (m_world_transform_dirty) 
         {
-            m_matrix_world = getMatrixWorldRecursively(this);
+            updateWorldMatrix();
         }
         return m_matrix_world;
     }
@@ -83,10 +89,10 @@ namespace MoYu
 
         m_matrix_world_prev = m_matrix_world;
 
-        if (TransformComponent::isDirtyRecursively(this))
+        // Check if itself or parent node has changed, if so, update the world matrix
+        if (m_world_transform_dirty)
         {
-            // update transform component, dirty flag will be reset in mesh component
-            UpdateWorldMatrixRecursively(this);
+            updateWorldMatrix();
         }
 
         m_transform_buffer[m_current_index] = m_transform_buffer[m_next_index];
@@ -133,52 +139,75 @@ namespace MoYu
         markIdle();
     }
 
-    glm::float4x4 TransformComponent::getMatrixWorldRecursively(const TransformComponent* trans)
+    void TransformComponent::markWorldTransformDirty()
     {
-        if (trans == nullptr)
-            return MYMatrix4x4::Identity;
-
-        glm::float4x4 matrix_world = trans->getMatrix();
-        if (!trans->m_object.expired())
+        if (m_world_transform_dirty) 
         {
-            auto m_object_ptr    = trans->m_object.lock();
-            auto m_object_parent = m_object_ptr->getParent();
-            if (m_object_parent)
+            // Already marked as dirty, no need to mark again
+            return;
+        }
+        
+        m_world_transform_dirty = true;
+        
+        // Also mark all child nodes' world transform as dirty
+        if (auto object = m_object.lock()) 
+        {
+            auto children = object->getChildren();
+            for (auto& child : children) 
             {
-                TransformComponent* m_parent_trans = m_object_parent->getTransformComponent().lock().get();
-                matrix_world = getMatrixWorldRecursively(m_parent_trans) * matrix_world;
+                if (auto childTransform = child->getTransformComponent().lock()) 
+                {
+                    childTransform->markWorldTransformDirty();
+                }
             }
         }
-        return matrix_world;
     }
 
-    // check all parent object to see if they are some object dirty
-    bool TransformComponent::isDirtyRecursively(const TransformComponent* trans)
+    void TransformComponent::updateWorldMatrix() const
     {
-        if (trans == nullptr)
-            return false;
-
-        bool is_dirty = trans->isDirty();
-        if (!trans->m_object.expired())
+        // If there's already a valid cache and not marked as dirty, return the cached value directly
+        if (m_world_transform_cache_valid && !m_world_transform_dirty) 
         {
-            auto m_object_ptr    = trans->m_object.lock();
-            auto m_object_parent = m_object_ptr->getParent();
-            if (m_object_parent)
+            return;
+        }
+
+        // Calculate local matrix
+        glm::float4x4 localMatrix = ((Transform&)m_transform_buffer[m_current_index]).getMatrix();
+        
+        // If there's no parent object, the world matrix is the local matrix
+        if (m_object.expired()) 
+        {
+            m_matrix_world = localMatrix;
+        } 
+        else 
+        {
+            auto object = m_object.lock();
+            auto parent = object->getParent();
+            
+            // If there's no parent object, the world matrix is the local matrix
+            if (!parent) 
             {
-                TransformComponent* m_parent_trans = m_object_parent->getTransformComponent().lock().get();
-                is_dirty |= isDirtyRecursively(m_parent_trans);
+                m_matrix_world = localMatrix;
+            } 
+            else 
+            {
+                // Get the transform component of the parent object
+                auto parentTransform = parent->getTransformComponent().lock();
+                if (parentTransform) 
+                {
+                    // World matrix = Parent object's world matrix * Local matrix
+                    m_matrix_world = parentTransform->getMatrixWorld() * localMatrix;
+                } 
+                else 
+                {
+                    m_matrix_world = localMatrix;
+                }
             }
         }
-        return is_dirty;
-    }
-
-    void TransformComponent::UpdateWorldMatrixRecursively(TransformComponent* trans)
-    {
-        if (TransformComponent::isDirtyRecursively(trans))
-        {
-            trans->m_matrix_world = getMatrixWorldRecursively(trans);
-            trans->markIdle();
-        }
+        
+        // Update cache status
+        m_world_transform_dirty = false;
+        m_world_transform_cache_valid = true;
     }
 
 } // namespace MoYu

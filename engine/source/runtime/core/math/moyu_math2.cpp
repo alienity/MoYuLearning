@@ -1,4 +1,4 @@
-﻿#include "moyu_math2.h"
+#include "moyu_math2.h"
 
 namespace MoYu
 {
@@ -8,26 +8,28 @@ namespace MoYu
      * returns n! / d!
      */
     static constexpr float factorial(size_t n, size_t d) {
-       d = std::max(size_t(1), d);
-       n = std::max(size_t(1), n);
-       float r = 1.0;
-       if (n == d) {
-           // intentionally left blank
-       } else if (n > d) {
-           for ( ; n>d ; n--) {
-               r *= n;
-           }
-       } else {
-           for ( ; d>n ; d--) {
-               r *= d;
-           }
-           r = 1.0f / r;
-       }
-       return r;
+        d = std::max(size_t(1), d);
+        n = std::max(size_t(1), n);
+        float r = 1.0;
+        if (n == d) {
+            // intentionally left blank
+        }
+        else if (n > d) {
+            for (; n > d; n--) {
+                r *= n;
+            }
+        }
+        else {
+            for (; d > n; d--) {
+                r *= d;
+            }
+            r = 1.0f / r;
+        }
+        return r;
     }
 
     //------------------------------------------------------------------------------------------
-    
+
 
 
     //------------------------------------------------------------------------------------------
@@ -69,125 +71,1035 @@ namespace MoYu
 
     float MYFloat2::signedAngle(glm::float2 v1, glm::float2 v2)
     {
-       glm::float2 n1 = glm::normalize(v1);
-       glm::float2 n2 = glm::normalize(v2);
+        glm::float2 n1 = glm::normalize(v1);
+        glm::float2 n2 = glm::normalize(v2);
 
-       float dot = glm::dot(n1, n2);
-       if (dot > 1.0f)
-           dot = 1.0f;
-       if (dot < -1.0f)
-           dot = -1.0f;
+        float dot = glm::dot(n1, n2);
+        if (dot > 1.0f)
+            dot = 1.0f;
+        if (dot < -1.0f)
+            dot = -1.0f;
 
-       float theta = glm::acos(dot);
-       float sgn   = glm::dot(glm::float2(-n1.y, n1.x), n2);
-       if (sgn >= 0.0f)
-           return theta;
-       else
-           return -theta;
+        float theta = glm::acos(dot);
+        float sgn = glm::dot(glm::float2(-n1.y, n1.x), n2);
+        if (sgn >= 0.0f)
+            return theta;
+        else
+            return -theta;
     }
 
     glm::float2 MYFloat2::rotate(glm::float2 v, float theta)
     {
-       float cs = glm::cos(theta);
-       float sn = glm::sin(theta);
-       float x1 = v.x * cs - v.y * sn;
-       float y1 = v.x * sn + v.y * cs;
-       return glm::float2(x1, y1);
+        float cs = glm::cos(theta);
+        float sn = glm::sin(theta);
+        float x1 = v.x * cs - v.y * sn;
+        float y1 = v.x * sn + v.y * cs;
+        return glm::float2(x1, y1);
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspectiveFieldOfView(float fovY, float aspectRatio, float zNearValue, float zFarValue)
+    //------------------------------------------------------------------------------------------
+
+    namespace MYMatrix4x4
     {
-       glm::float4x4 m = Zero;
 
-        m[0][0] = 1.0f / (aspectRatio * std::tan(fovY * 0.5f));
-        m[1][1] = 1.0f / std::tan(fovY * 0.5f);
-        m[2][2] = zNearValue / (zFarValue - zNearValue);
-        m[3][2] = zFarValue * zNearValue / (zFarValue - zNearValue);
-        m[2][3] = -1;
+        /**
+         * @brief :  View Matrix
+         *
+         * Create view matrix from position and orientation
+         *
+         * @param position Position of the camera
+         * @param orientation Orientation of the camera as quaternion
+         * @return glm::float4x4 The resulting View Matrix
+         */
+        glm::float4x4 createViewMatrixFromQuaternionDirect(const glm::float3& position, const glm::quat& orientation) {
+            // Conjugate the quaternion
+            float qx = -orientation.x; // Negate vector part
+            float qy = -orientation.y;
+            float qz = -orientation.z;
+            float qw = orientation.w;
 
-        return m;
+            // Calculate products for rotation matrix
+            float xx = qx * qx;
+            float yy = qy * qy;
+            float zz = qz * qz;
+            float xy = qx * qy;
+            float xz = qx * qz;
+            float yz = qy * qz;
+            float wx = qw * qx;
+            float wy = qw * qy;
+            float wz = qw * qz;
+
+            // Initialize view matrix (3x3 rotation part)
+            glm::float4x4 view(1.0f);
+
+            // First column (X axis)
+            view[0][0] = 1.0f - 2.0f * (yy + zz);
+            view[0][1] = 2.0f * (xy - wz);
+            view[0][2] = 2.0f * (xz + wy);
+
+            // Second column (Y axis)
+            view[1][0] = 2.0f * (xy + wz);
+            view[1][1] = 1.0f - 2.0f * (xx + zz);
+            view[1][2] = 2.0f * (yz - wx);
+
+            // Third column (Z axis)
+            view[2][0] = 2.0f * (xz - wy);
+            view[2][1] = 2.0f * (yz + wx);
+            view[2][2] = 1.0f - 2.0f * (xx + yy);
+
+            // Translation part: -R^T * position
+            glm::float3 translation(
+                -(view[0][0] * position.x + view[1][0] * position.y + view[2][0] * position.z),
+                -(view[0][1] * position.x + view[1][1] * position.y + view[2][1] * position.z),
+                -(view[0][2] * position.x + view[1][2] * position.y + view[2][2] * position.z)
+            );
+
+            // Set translation component
+            view[3][0] = translation.x;
+            view[3][1] = translation.y;
+            view[3][2] = translation.z;
+
+            return view;
+        }
+
+        /**
+         * @brief Right-handed coordinate system perspective projection matrix, Z range [0,1]
+         *
+         * Maps frustum to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param fovY Vertical field of view (radians)
+         * @param aspect Aspect ratio (width/height)
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Perspective projection matrix
+         */
+        glm::float4x4 perspectiveRH_ZO(float fovY, float aspect, float near, float far)
+        {
+            assert(aspect > 0.0f);
+            assert(far > near && near > 0.0f);
+            assert(fovY > 0.0f && fovY < MoYu::F_PI);
+
+            float tanHalfFov = std::tan(fovY * 0.5f);
+            float range = far - near;
+
+            glm::float4x4 proj(0.0f);
+
+            // X-axis scaling factor
+            proj[0][0] = 1.0f / (aspect * tanHalfFov);
+
+            // Y-axis scaling factor
+            proj[1][1] = 1.0f / tanHalfFov;
+
+            // Z-axis transformation for depth range [0,1] from [-near, -far]
+            proj[2][2] = -far / range;    // -(f/(f-n))
+            proj[2][3] = -far * near / range;  // -(fn/(f-n))
+
+            // Homogeneous w-coordinate transformation
+            proj[3][2] = -1.0f;
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system perspective projection matrix with reversed Z depth range [0,1]
+         *
+         * Maps frustum to NDC space, with reversed depth range [1,0]
+         * - Near plane (-n) maps to depth 1.0
+         * - Far plane (-f) maps to depth 0.0
+         *
+         * @param fovY Vertical field of view (radians)
+         * @param aspect Aspect ratio (width/height)
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Reversed Z perspective projection matrix
+         */
+        glm::float4x4 perspectiveRH_ZO_ReverseZ(float fovY, float aspect, float near, float far) {
+            assert(aspect > 0.0f);
+            assert(far > near && near > 0.0f);
+            assert(fovY > 0.0f && fovY < MoYu::F_PI);
+
+            float tanHalfFov = std::tan(fovY * 0.5f);
+            float range = far - near;
+
+            glm::float4x4 proj(0.0f);
+
+            // X-axis scaling factor
+            proj[0][0] = 1.0f / (aspect * tanHalfFov);
+
+            // Y-axis scaling factor
+            proj[1][1] = 1.0f / tanHalfFov;
+
+            // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
+            proj[2][2] = near / range;    // n/(f-n)
+            proj[2][3] = near * far / range;  // nf/(f-n)
+
+            // Homogeneous w-coordinate transformation
+            proj[3][2] = -1.0f;
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system perspective projection matrix, Z range [0,1]
+         *
+         * Maps frustum to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param fovY Vertical field of view (radians)
+         * @param aspect Aspect ratio (width/height)
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Perspective projection matrix
+         */
+        glm::float4x4 perspectiveFOV(float fovY, float aspect, float near, float far)
+        {
+#if MOYU_REVERSE_DEPTH
+            return perspectiveRH_ZO_ReverseZ(fovY, aspect, near, far);
+#else
+            return perspectiveRH_ZO(fovY, aspect, near, far);
+#endif
+        }
+
+        /**
+         * @brief Right-handed coordinate system Off-Center perspective projection matrix, Z range [0,1]
+         *
+         * Maps asymmetric frustum to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param left near plane left boundary
+         * @param right near plane right boundary
+         * @param bottom near plane bottom boundary
+         * @param top near plane top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Off-Center perspective projection matrix
+         */
+        glm::float4x4 perspectiveOffCenterRH_ZO(float left, float right, float bottom, float top, float near, float far) {
+            assert(near > 0.0f && far > near);
+            assert(right != left && top != bottom);
+
+            glm::float4x4 proj(0.0f);
+            float range = far - near;
+
+            // X-axis scaling factor
+            proj[0][0] = (2.0f * near) / (right - left);
+            proj[2][0] = (right + left) / (right - left);
+
+            // Y-axis scaling factor
+            proj[1][1] = (2.0f * near) / (top - bottom);
+            proj[2][1] = (top + bottom) / (top - bottom);
+
+            // Z-axis transformation for depth range [0,1] from [-near, -far]
+            proj[2][2] = -far / range;    // -(f/(f-n))
+            proj[3][2] = -far * near / range;  // -(fn/(f-n))
+
+            // Homogeneous w-coordinate transformation
+            proj[2][3] = -1.0f;
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system Off-Center perspective projection matrix with reversed Z depth range [0,1]
+         *
+         * Maps asymmetric frustum to NDC space, with reversed depth range [1,0]
+         * - Near plane (-n) maps to depth 1.0
+         * - Far plane (-f) maps to depth 0.0
+         *
+         * @param left near plane left boundary
+         * @param right near plane right boundary
+         * @param bottom near plane bottom boundary
+         * @param top near plane top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Off-Center perspective projection matrix (reversed Z)
+         */
+        glm::float4x4 perspectiveOffCenterRH_ZO_ReverseZ(float left, float right, float bottom, float top, float near, float far) {
+            assert(near > 0.0f && far > near);
+            assert(right != left && top != bottom);
+
+            glm::float4x4 proj(0.0f);
+            float range = far - near;
+
+            // X-axis scaling factor
+            proj[0][0] = (2.0f * near) / (right - left);
+            proj[2][0] = (right + left) / (right - left);
+
+            // Y-axis scaling factor
+            proj[1][1] = (2.0f * near) / (top - bottom);
+            proj[2][1] = (top + bottom) / (top - bottom);
+
+            // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
+            proj[2][2] = near / range;    // n/(f-n)
+            proj[3][2] = near * far / range;  // nf/(f-n)
+
+            // Homogeneous w-coordinate transformation
+            proj[2][3] = -1.0f;
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system Off-Center perspective projection matrix, Z range [0,1]
+         *
+         * Maps asymmetric frustum to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param left near plane left boundary
+         * @param right near plane right boundary
+         * @param bottom near plane bottom boundary
+         * @param top near plane top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Off-Center perspective projection matrix
+         */
+        glm::float4x4 perspective(float left, float right, float bottom, float top, float near, float far)
+        {
+#if MOYU_REVERSE_DEPTH
+            return perspectiveOffCenterRH_ZO_ReverseZ(left, right, bottom, top, near, far);
+#else
+            return perspectiveOffCenterRH_ZO(left, right, bottom, top, near, far);
+#endif
+        }
+
+        glm::float4x4 perspective(float width, float height, float near, float far)
+        {
+            return perspective(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, near, far);
+        }
+
+
+        /**
+         * @brief Right-handed coordinate system orthographic projection matrix, Z range [0,1]
+         *
+         * Maps viewing volume to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param left Viewing volume left boundary
+         * @param right Viewing volume right boundary
+         * @param bottom Viewing volume bottom boundary
+         * @param top Viewing volume top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Orthographic projection matrix
+         */
+        glm::float4x4 orthoRH_ZO(float left, float right, float bottom, float top, float near, float far) {
+            assert(right != left && top != bottom && far != near);
+
+            glm::float4x4 proj(1.0f);
+
+            // X-axis scaling and translation
+            proj[0][0] = 2.0f / (right - left);
+            proj[3][0] = -(right + left) / (right - left);
+
+            // Y-axis scaling and translation
+            proj[1][1] = 2.0f / (top - bottom);
+            proj[3][1] = -(top + bottom) / (top - bottom);
+
+            // Z-axis transformation for depth range [0,1] from [-near, -far]
+            float range = far - near;
+            proj[2][2] = -1.0f / range;    // -1/(f-n)
+            proj[3][2] = -near / range;    // -n/(f-n)
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system orthographic projection matrix, reversed depth, Z range [0,1]
+         *
+         * Maps viewing volume to NDC space, with reversed depth range [1,0]
+         * - Near plane (-n) maps to depth 1.0
+         * - Far plane (-f) maps to depth 0.0
+         *
+         * @param left Viewing volume left boundary
+         * @param right Viewing volume right boundary
+         * @param bottom Viewing volume bottom boundary
+         * @param top Viewing volume top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Orthographic projection matrix (reversed depth)
+         */
+        glm::float4x4 orthoRH_ZO_ReverseZ(float left, float right, float bottom, float top, float near, float far) {
+            assert(right != left && top != bottom && far != near);
+
+            glm::float4x4 proj(1.0f);
+
+            // X-axis scaling and translation
+            proj[0][0] = 2.0f / (right - left);
+            proj[3][0] = -(right + left) / (right - left);
+
+            // Y-axis scaling and translation
+            proj[1][1] = 2.0f / (top - bottom);
+            proj[3][1] = -(top + bottom) / (top - bottom);
+
+            // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
+            float range = far - near;
+            proj[2][2] = 1.0f / range;    // 1/(f-n)
+            proj[3][2] = far / range;     // f/(f-n)
+
+            return proj;
+        }
+
+        /**
+         * @brief Right-handed coordinate system orthographic projection matrix, Z range [0,1]
+         *
+         * Maps viewing volume to NDC space, depth range [0,1]
+         * - Near plane (-n) maps to depth 0.0
+         * - Far plane (-f) maps to depth 1.0
+         *
+         * @param left Viewing volume left boundary
+         * @param right Viewing volume right boundary
+         * @param bottom Viewing volume bottom boundary
+         * @param top Viewing volume top boundary
+         * @param near Near clipping plane distance (positive value)
+         * @param far Far clipping plane distance (positive value)
+         * @return glm::float4x4 Orthographic projection matrix
+         */
+        glm::float4x4 orthographic(float left, float right, float bottom, float top, float near, float far)
+        {
+#if MOYU_REVERSE_DEPTH
+            return orthoRH_ZO_ReverseZ(left, right, bottom, top, near, far);
+#else
+            return orthoRH_ZO(left, right, bottom, top, near, far);
+#endif
+        }
+
+        glm::float4x4 orthographic(float width, float height, float near, float far)
+        {
+            return orthographic(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, near, far);
+        }
+
+
+        /**
+         * @brief Create View Matrix for right-handed coordinate system
+         *
+         * In right-handed coordinate system:
+         * - X-axis points to the right
+         * - Y-axis points upward
+         * - Z-axis points into the screen (camera looks in -Z direction)
+         *
+         * @param eye Camera position (world coordinates)
+         * @param center Camera target point (world coordinates)
+         * @param up Camera up direction vector (usually (0,1,0))
+         * @return glm::float4x4 View Matrix (converts world coordinates to camera coordinates)
+         */
+        glm::float4x4 lookAtRH_(const glm::float3& eye, const glm::float3& center, const glm::float3& up) {
+            // Calculate forward vector (pointing from eye to center)
+            glm::float3 forward = glm::normalize(center - eye);
+
+            // Calculate right vector (perpendicular to up and forward)
+            glm::float3 right = glm::normalize(glm::cross(forward, up));
+
+            // Recalculate up vector (perpendicular to forward and right)
+            glm::float3 newUp = glm::normalize(glm::cross(right, forward));
+
+            // Build rotation matrix
+            glm::float4x4 rotation(1.0f);
+            rotation[0][0] = right.x;
+            rotation[1][0] = right.y;
+            rotation[2][0] = right.z;
+
+            rotation[0][1] = newUp.x;
+            rotation[1][1] = newUp.y;
+            rotation[2][1] = newUp.z;
+
+            rotation[0][2] = -forward.x; // Negative Z-axis
+            rotation[1][2] = -forward.y;
+            rotation[2][2] = -forward.z;
+
+            // Build translation matrix
+            glm::float4x4 translation(1.0f);
+            translation[3][0] = -eye.x;
+            translation[3][1] = -eye.y;
+            translation[3][2] = -eye.z;
+
+            // View Matrix = Rotation * Translation
+            // (Apply translation first, then rotation)
+            return rotation * translation;
+        }
+
+        static glm::float4x4 lookAtRH(const glm::float3& eye, const glm::float3& center, const glm::float3& up)
+        {
+#if MOYU_USE_GLM_VIEW
+            return glm::lookAtRH(eye, center, up);
+#else
+            return lookAtRH_(eye, center, up);
+#endif
+        }
+
+        /**
+         * @brief Create View Matrix for right-handed coordinate system via Euler angles
+         *
+         * @param position Camera position
+         * @param yaw Y-axis rotation angle (radians, positive angle turns right when looking at -Z)
+         * @param pitch X-axis rotation angle (radians, positive angle looks up)
+         * @param roll Z-axis rotation angle (radians, usually 0)
+         * @return glm::float4x4 View Matrix
+         */
+        glm::float4x4 viewMatrixFromEulerAngles(const glm::float3& position, float yaw, float pitch, float roll)
+        {
+            // Calculate forward vector (looking down the -Z axis)
+            glm::float3 forward;
+            forward.x = cos(yaw) * cos(pitch);
+            forward.y = sin(pitch);
+            forward.z = sin(yaw) * cos(pitch);
+            forward = glm::normalize(forward);
+
+            // Calculate right vector (perpendicular to up and forward)
+            glm::float3 right = glm::normalize(glm::cross(forward, glm::float3(0.0f, 1.0f, 0.0f)));
+
+            // Recalculate up vector (perpendicular to forward and right)
+            glm::float3 up = glm::normalize(glm::cross(right, forward));
+
+            // Build View Matrix
+            glm::float4x4 view(1.0f);
+
+            // Assign basis vectors to matrix columns
+            view[0][0] = right.x;
+            view[1][0] = right.y;
+            view[2][0] = right.z;
+
+            view[0][1] = up.x;
+            view[1][1] = up.y;
+            view[2][1] = up.z;
+
+            view[0][2] = -forward.x; // Negative Z-axis
+            view[1][2] = -forward.y;
+            view[2][2] = -forward.z;
+
+            // Apply translation
+            glm::float3 translation = -(glm::mat3(view) * position);
+            view[3][0] = translation.x;
+            view[3][1] = translation.y;
+            view[3][2] = translation.z;
+
+            return view;
+        }
+
+        /**
+         * @brief Create View Matrix for right-handed coordinate system from camera position and quaternion
+         *
+         * In right-handed coordinate system:
+         * - X-axis points to the right
+         * - Y-axis points upward
+         * - Z-axis points into the screen (camera looks in -Z direction)
+         *
+         * @param position Camera position in world coordinate system
+         * @param orientation Quaternion representing camera orientation (rotation from camera local coordinate system to world coordinate system)
+         * @return glm::float4x4 Right-handed coordinate system View Matrix
+         */
+        glm::float4x4 viewMatrixFromQuaternion(const glm::float3& position, const glm::quat& orientation)
+        {
+            // Inverse the orientation (conjugate of quaternion)
+            glm::quat invOrientation = glm::inverse(orientation);
+
+            // Calculate translation: -R^T * position
+            glm::float3 translation = -glm::rotate(invOrientation, position);
+
+            // Build view matrix from quaternion
+            glm::float4x4 viewMatrix = glm::mat4_cast(invOrientation);
+
+            // Apply translation to view matrix
+            viewMatrix[3][0] = translation.x;
+            viewMatrix[3][1] = translation.y;
+            viewMatrix[3][2] = translation.z;
+
+            return viewMatrix;
+        }
+
+        /**
+         * @brief Create transformation matrix from position, rotation and scale (right-handed coordinate system)
+         *
+         * Transformation order: Scale first -> then Rotate -> finally Translate
+         * This is the most commonly used transformation order, avoids scaling affecting rotation axes
+         *
+         * @param position Position vector (x, y, z)
+         * @param rotation Rotation quaternion (represents rotation from local coordinate system to world coordinate system)
+         * @param scale Scale vector (sx, sy, sz)
+         * @return glm::float4x4 4x4 transformation matrix
+         */
+        glm::float4x4 transformDirect(const glm::float3& position, const glm::quat& rotation, const glm::float3& scale)
+        {
+            // Normalize the rotation quaternion
+            glm::quat normalizedRot = glm::normalize(rotation);
+
+            // Calculate squared components for rotation matrix
+            float xx = normalizedRot.x * normalizedRot.x;
+            float yy = normalizedRot.y * normalizedRot.y;
+            float zz = normalizedRot.z * normalizedRot.z;
+            float xy = normalizedRot.x * normalizedRot.y;
+            float xz = normalizedRot.x * normalizedRot.z;
+            float yz = normalizedRot.y * normalizedRot.z;
+            float wx = normalizedRot.w * normalizedRot.x;
+            float wy = normalizedRot.w * normalizedRot.y;
+            float wz = normalizedRot.w * normalizedRot.z;
+
+            // Build transformation matrix
+            glm::float4x4 transform(1.0f);
+
+            // First column (X-axis) with scale
+            transform[0][0] = (1.0f - 2.0f * (yy + zz)) * scale.x;
+            transform[0][1] = (2.0f * (xy + wz)) * scale.x;
+            transform[0][2] = (2.0f * (xz - wy)) * scale.x;
+
+            // Second column (Y-axis) with scale
+            transform[1][0] = (2.0f * (xy - wz)) * scale.y;
+            transform[1][1] = (1.0f - 2.0f * (xx + zz)) * scale.y;
+            transform[1][2] = (2.0f * (yz + wx)) * scale.y;
+
+            // Third column (Z-axis) with scale
+            transform[2][0] = (2.0f * (xz + wy)) * scale.z;
+            transform[2][1] = (2.0f * (yz - wx)) * scale.z;
+            transform[2][2] = (1.0f - 2.0f * (xx + yy)) * scale.z;
+
+            // Fourth column (Translation)
+            transform[3][0] = position.x;
+            transform[3][1] = position.y;
+            transform[3][2] = position.z;
+
+            return transform;
+        }
+
+        /**
+         * @brief Create transformation matrix from position, rotation and scale (right-handed coordinate system)
+         *
+         * Transformation order: Scale first -> then Rotate -> finally Translate
+         * This is the most commonly used transformation order, avoids scaling affecting rotation axes
+         *
+         * @param position Position vector (x, y, z)
+         * @param rotation Rotation quaternion (represents rotation from local coordinate system to world coordinate system)
+         * @param scale Scale vector (sx, sy, sz)
+         * @return glm::float4x4 4x4 transformation matrix
+         */
+        glm::float4x4 transform(const glm::float3& position, const glm::quat& orientation, const glm::float3& scale)
+        {
+            glm::mat t = glm::translate(glm::float4x4(1.0), position);
+            glm::mat r = glm::toMat4(orientation);
+            glm::mat s = glm::scale(glm::float4x4(1.0), scale);
+            glm::mat trs = t * r * s;
+            return trs;
+        }
+
+        /** Building an inverse Matrix4 from orientation / scale / position.
+        @remarks
+        As makeTransform except it build the inverse given the same data as makeTransform, so
+        performing -translation, -rotate, 1/scale in that order.
+        */
+        glm::float4x4 transformInverse(const glm::float3& position, const glm::quat& orientation, const glm::float3& scale)
+        {
+            glm::mat t_inverse = glm::translate(glm::float4x4(1.0), -position);
+            glm::mat r_inverse = glm::toMat4(glm::inverse(orientation));
+            glm::mat s_inverse = glm::scale(glm::float4x4(1.0), 1.0f / scale);
+            glm::mat trs_inverse = s_inverse * r_inverse * t_inverse;
+            return trs_inverse;
+        }
+
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspective(float width, float height, float zNearValue, float zFarValue)
+    //------------------------------------------------------------------------------------------
+
+    namespace MYQuaternion
     {
-        return createPerspectiveOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearValue, zFarValue);
+
+        glm::float4x4 viewMatrixFromEulerAngles(const glm::float3& position, const EulerAngle& eulerAngle)
+        {
+            return MYMatrix4x4::viewMatrixFromEulerAngles(position, eulerAngle.yaw, eulerAngle.pitch, eulerAngle.roll);
+        }
+
+        /**
+         * Convert quaternion to Euler angles (right-handed coordinate system)
+         *
+         * @param q Quaternion
+         * @return Euler angles (degrees)
+         */
+        EulerAngle quaternionToEuler(const glm::quat& q) {
+            // Squared components
+            float sqw = q.w * q.w;
+            float sqx = q.x * q.x;
+            float sqy = q.y * q.y;
+            float sqz = q.z * q.z;
+
+            // Cross products
+            float qxy = 2.0f * q.x * q.y;
+            float qxz = 2.0f * q.x * q.z;
+            float qyz = 2.0f * q.y * q.z;
+            float qxw = 2.0f * q.x * q.w;
+            float qyw = 2.0f * q.y * q.w;
+            float qzw = 2.0f * q.z * q.w;
+
+            float yaw, pitch, roll;
+
+            // Yaw (Y-axis rotation)
+            yaw = glm::atan(qyw + qxz, sqw - sqx - sqy + sqz);
+
+            // Pitch (X-axis rotation)
+            float sinp = qyz - qxw;
+            // Handle singularity
+            if (glm::abs(sinp) >= 1.0f) {
+                pitch = MoYu::gameEngineCopysign(glm::half_pi<float>(), sinp);
+            }
+            else {
+                pitch = glm::asin(sinp);
+            }
+
+            // Roll (Z-axis rotation)
+            roll = glm::atan(qzw + qxy, sqw + sqx - sqy - sqz);
+
+            // Convert to degrees
+            yaw = glm::degrees(yaw);
+            pitch = glm::degrees(pitch);
+            roll = glm::degrees(roll);
+
+            // Normalize to [-180, 180]
+            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;
+            pitch = fmodf(pitch + 180.0f, 360.0f) - 180.0f;
+            roll = fmodf(roll + 180.0f, 360.0f) - 180.0f;
+
+            return EulerAngle(yaw, pitch, roll);
+        }
+
+        /**
+         * Convert Euler angles to quaternion (right-handed coordinate system)
+         *
+         * @param euler Euler angles (degrees)
+         * @return Quaternion
+         */
+        glm::quat eulerToQuaternion(const EulerAngle& euler) {
+            // Convert to radians
+            float yawRad = glm::radians(euler.yaw);
+            float pitchRad = glm::radians(euler.pitch);
+            float rollRad = glm::radians(euler.roll);
+
+            // Calculate trigonometric functions
+            float cy = glm::cos(yawRad * 0.5f);
+            float sy = glm::sin(yawRad * 0.5f);
+            float cp = glm::cos(pitchRad * 0.5f);
+            float sp = glm::sin(pitchRad * 0.5f);
+            float cr = glm::cos(rollRad * 0.5f);
+            float sr = glm::sin(rollRad * 0.5f);
+
+            glm::quat q;
+
+            // YXZ Tait-Bryan angles
+            q.w = cr * cp * cy + sr * sp * sy;
+            q.x = cr * sp * cy + sr * cp * sy;
+            q.y = cr * cp * sy - sr * sp * cy;
+            q.z = sr * cp * cy - cr * sp * sy;
+
+            return glm::normalize(q);
+        }
+
+        /**
+         * Create quaternion from direction vector (right-handed coordinate system)
+         *
+         * @param direction Target direction vector (does not need normalization)
+         * @param up Reference up vector (defaults to world up (0,1,0))
+         * @param forwardReference Reference forward vector (standard for right-handed coordinate system is (0,0,-1))
+         * @return Rotation quaternion, rotates forwardReference to direction
+         */
+        glm::quat directionToQuaternion(
+            const glm::float3& direction,
+            const glm::float3& up,
+            const glm::float3& forwardReference
+        ) {
+            // Check for zero direction vector
+            float dirLength = glm::length(direction);
+            if (dirLength < 0.001f) {
+                return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Return identity quaternion
+            }
+
+            // Normalize input vectors
+            glm::float3 forward = glm::normalize(direction);
+            glm::float3 worldUp = glm::normalize(up);
+            glm::float3 refForward = glm::normalize(forwardReference);
+
+            // Check for parallel vectors
+            float dotProduct = glm::dot(refForward, forward);
+            if (dotProduct > 0.9999f) {
+                return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Return identity quaternion
+            }
+
+            // Handle opposite vectors
+            if (dotProduct < -0.9999f) {
+                // Find an appropriate axis
+                glm::float3 axis;
+                if (glm::abs(refForward.x) < 0.9f) {
+                    axis = glm::normalize(glm::cross(refForward, glm::float3(1.0f, 0.0f, 0.0f)));
+                }
+                else {
+                    axis = glm::normalize(glm::cross(refForward, glm::float3(0.0f, 1.0f, 0.0f)));
+                }
+                // 180 degree rotation
+                return glm::angleAxis(glm::radians(180.0f), axis);
+            }
+
+            // Calculate the right vector
+            glm::float3 right = glm::normalize(glm::cross(worldUp, forward));
+            if (glm::length(right) < 0.001f) {
+                // Use fallback right vector
+                glm::float3 tempRight = glm::float3(1.0f, 0.0f, 0.0f);
+                if (glm::abs(glm::dot(forward, tempRight)) > 0.9f) {
+                    tempRight = glm::float3(0.0f, 0.0f, 1.0f); // Use Z axis instead
+                }
+
+                right = glm::normalize(glm::cross(forward, tempRight));
+                glm::float3 newUp = glm::normalize(glm::cross(right, forward));
+
+                // Build rotation matrix
+                glm::mat3 rotationMatrix(
+                    right,      // Right vector (X-axis)
+                    newUp,      // Up vector (Y-axis) 
+                    forward     // Forward vector (Z-axis)
+                );
+
+                return glm::normalize(glm::quat_cast(glm::float4x4(rotationMatrix)));
+            }
+
+            // Calculate the corrected up vector
+            glm::float3 correctedUp = glm::normalize(glm::cross(forward, right));
+
+            // Build rotation matrix
+            glm::mat3 rotationMatrix(
+                right,         // Right vector (X-axis)
+                correctedUp,   // Up vector (Y-axis)
+                forward        // Forward vector (Z-axis)
+            );
+
+            // Convert to quaternion
+            return glm::normalize(glm::quat_cast(glm::float4x4(rotationMatrix)));
+        }
+
+        /**
+         * Optimized version: Create quaternion from direction vector (right-handed coordinate system, assuming up direction is (0,1,0))
+         * Suitable for common scenarios like FPS/TPS cameras, avoids matrix conversion
+         */
+        glm::quat fastDirectionToQuaternion(const glm::float3& direction) {
+            if (glm::length(direction) < 0.001f) {
+                return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+            }
+
+            glm::float3 forward = glm::normalize(direction);
+            glm::float3 worldUp(0.0f, 1.0f, 0.0f);
+            glm::float3 refForward(0.0f, 0.0f, -1.0f); // Reference forward vector
+
+            // Handle vertical directions
+            if (glm::abs(forward.y) > 0.9999f) {
+                // Handle up/down case
+                glm::float3 right;
+                if (forward.y > 0) {
+                    // Pointing up
+                    right = glm::float3(1.0f, 0.0f, 0.0f);
+                }
+                else {
+                    // Pointing down
+                    right = glm::float3(-1.0f, 0.0f, 0.0f);
+                }
+
+                glm::float3 up = glm::normalize(glm::cross(right, forward));
+                glm::float3 newForward = glm::normalize(glm::cross(up, right));
+
+                glm::mat3 rotMat(right, up, newForward);
+                return glm::normalize(glm::quat_cast(glm::float4x4(rotMat)));
+            }
+
+            // Calculate yaw (Y-axis rotation)
+            float yaw = glm::atan(forward.x, -forward.z);
+
+            // Calculate pitch (X-axis rotation)
+            float pitch = glm::asin(forward.y);
+
+            // Create quaternions
+            glm::quat pitchQuat = glm::angleAxis(pitch, glm::float3(1.0f, 0.0f, 0.0f));
+            glm::quat yawQuat = glm::angleAxis(yaw, glm::float3(0.0f, 1.0f, 0.0f));
+
+            // Combine rotations
+            return glm::normalize(yawQuat * pitchQuat);
+        }
+
+        /**
+         * Get direction vector from quaternion (right-handed coordinate system)
+         *
+         * @param rotation Rotation quaternion
+         * @param forwardReference Reference forward vector (standard for right-handed coordinate system is (0,0,-1))
+         * @return Rotated direction vector
+         */
+        glm::float3 quaternionToDirection(
+            const glm::quat& rotation,
+            const glm::float3& forwardReference
+        ) {
+            // Rotate the reference vector
+            return glm::normalize(glm::rotate(rotation, forwardReference));
+        }
+
+        /**
+         * Optimized version: Quickly get forward vector from quaternion (right-handed coordinate system, standard forward (0,0,-1))
+         * Avoids overhead of general rotation functions
+         */
+        glm::float3 fastQuaternionToForward(const glm::quat& q) {
+            // Fast calculation of forward vector from quaternion (0,0,-1)
+            // x = -2 * (x*z + w*y)
+            // y = 2 * (y*z - w*x)
+            // z = -(1 - 2*(x*x + y*y))
+
+            float x = q.x;
+            float y = q.y;
+            float z = q.z;
+            float w = q.w;
+
+            return glm::float3(
+                -2.0f * (x * z + w * y),
+                2.0f * (y * z - w * x),
+                -(1.0f - 2.0f * (x * x + y * y))
+            );
+        }
+
+        /**
+         * Calculate Euler angles from direction vector (full version)
+         *
+         * @param direction Direction vector (does not need normalization)
+         * @param up Reference up vector (defaults to (0,1,0))
+         * @param forwardReference Reference forward vector (standard is (0,0,-1))
+         * @return Euler angles (unit: degrees)
+         */
+        EulerAngle directionToEuler(
+            const glm::float3& direction,
+            const glm::float3& up,
+            const glm::float3& forwardReference
+        ) {
+            // Normalize the direction vector
+            float length = glm::length(direction);
+            if (length < 0.001f) {
+                return EulerAngle(0.0f, 0.0f, 0.0f);
+            }
+
+            // Normalize direction vector
+            glm::float3 dir = direction / length;
+
+            // Yaw (Y-axis rotation)
+            // yaw = atan2(x, -z) since we're looking down the -Z axis
+            float yaw = glm::degrees(glm::atan(dir.x, -dir.z));
+
+            // Pitch (X-axis rotation)
+            // Clamp to [-1,1] to avoid floating point errors
+            float pitch = glm::degrees(glm::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
+
+            // Roll (Z-axis rotation)
+            // 1. Calculate the right vector
+            glm::float3 right = glm::normalize(glm::cross(up, dir));
+
+            // 2. Calculate the leveled up vector (ignoring roll)
+            glm::float3 levelUp = glm::normalize(glm::cross(dir, right));
+
+            // 3. Calculate roll angle
+            float rollAngle = glm::acos(glm::clamp(glm::dot(levelUp, up), -1.0f, 1.0f));
+
+            // 4. Determine roll direction
+            float rollDirection = glm::dot(glm::cross(levelUp, up), dir);
+            float roll = glm::degrees(rollAngle * ((rollDirection >= 0.0f) ? 1.0f : -1.0f));
+
+            // Normalize angles
+            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;  // [-180, 180]
+            pitch = glm::clamp(pitch, -89.99f, 89.99f);  // Prevent gimbal lock
+            roll = fmodf(roll + 180.0f, 360.0f) - 180.0f; // [-180, 180]
+
+            return EulerAngle(yaw, pitch, roll);
+        }
+
+        /**
+         * Calculate direction vector from Euler angles
+         *
+         * @param euler Euler angles (unit: degrees)
+         * @param forwardReference Reference forward vector (standard is (0,0,-1))
+         * @return Rotated direction vector (unit vector)
+         */
+        glm::float3 eulerToDirection(
+            const EulerAngle& euler,
+            const glm::float3& forwardReference
+        ) {
+            // Convert to radians
+            float yaw = glm::radians(euler.yaw);
+            float pitch = glm::radians(euler.pitch);
+
+            // Calculate direction vector
+            float cosPitch = glm::cos(pitch);
+            glm::float3 direction(
+                glm::sin(yaw) * cosPitch,  // X component
+                glm::sin(pitch),           // Y component
+                -glm::cos(yaw) * cosPitch  // Z component (-Z because forward is -Z axis)
+            );
+
+            // Handle case when cosPitch approaches 0
+            float length = glm::length(direction);
+            if (length < 0.001f) {
+                // When pitch is at +/-90 degrees (Y axis)
+                return glm::float3(0.0f, (pitch > 0.0f) ? 1.0f : -1.0f, 0.0f);
+            }
+
+            return direction / length;
+        }
+
+        /**
+         * High-performance version: Calculate only yaw and pitch from direction vector (no roll)
+         * Suitable for scenarios like FPS/TPS cameras that don't need roll
+         */
+        void fastDirectionToYawPitch(const glm::float3& direction, float& yaw, float& pitch) {
+            // Normalize the direction vector
+            glm::float3 dir = glm::normalize(direction);
+
+            // Calculate yaw and pitch
+            yaw = glm::degrees(glm::atan(dir.x, -dir.z));  // Looking down the -Z axis
+            pitch = glm::degrees(glm::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
+
+            // Normalize angles
+            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;
+            pitch = glm::clamp(pitch, -89.99f, 89.99f);
+        }
+
+        /**
+         * High-performance version: Calculate forward vector from yaw and pitch
+         * Suitable for performance-critical rendering loops
+         */
+        glm::float3 fastYawPitchToForward(float yawDegrees, float pitchDegrees) {
+            float yaw = glm::radians(yawDegrees);
+            float pitch = glm::radians(pitchDegrees);
+
+            float cosPitch = glm::cos(pitch);
+            return glm::float3(
+                glm::sin(yaw) * cosPitch,
+                glm::sin(pitch),
+                -glm::cos(yaw) * cosPitch  // Negative Z because forward is -Z axis
+            );
+        }
+
     }
 
-    glm::float4x4 MYMatrix4x4::createPerspectiveOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue)
-    {
-        glm::float4x4 m = Zero;
+    
+    //------------------------------------------------------------------------------------------
 
-        m[0][0] = 2 * zNearValue / (right - left);
-        m[2][0] = (right + left) / (right - left);
-        m[1][1] = 2 * zNearValue / (top - bottom);
-        m[2][1] = (top + bottom) / (top - bottom);
-        m[2][2] = zNearValue / (zFarValue - zNearValue);
-        m[3][2] = zFarValue * zNearValue / (zFarValue - zNearValue);
-        m[2][3] = -1;
+    void Transform::setFromParent(const Transform& parent, const Transform& world) {
+        glm::float4x4 parentInv = glm::inverse(((Transform&)parent).getMatrix());
+        const glm::float4x4& worldMat = ((Transform&)world).getMatrix();
+        glm::float4x4 localMat = parentInv * worldMat;
 
-        return m;
+        glm::float3 skew;
+        glm::vec4 perspective;
+        glm::decompose(localMat, m_scale, m_rotation, m_position, skew, perspective);
+        m_rotation = glm::normalize(m_rotation);
+
+        m_isDirty = false;
+        m_matrix = localMat;
     }
 
-    glm::float4x4 MYMatrix4x4::createOrthographic(float width, float height, float zNearValue, float zFarValue)
-    {
-        return createOrthographicOffCenter(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, zNearValue, zFarValue);
+    void Transform::recalculateMatrix() {
+        m_matrix = MYMatrix4x4::transformDirect(m_position, m_rotation, m_scale);
+        m_isDirty = false;
     }
 
-    glm::float4x4 MYMatrix4x4::createOrthographicOffCenter(float left, float right, float bottom, float top, float zNearValue, float zFarValue)
-    {
-        glm::float4x4 m = Zero;
-
-        m[0][0] = 2 / (right - left);
-        m[3][0] = -(right + left) / (right - left);
-        m[1][1] = 2 / (top - bottom);
-        m[3][1] = -(top + bottom) / (top - bottom);
-        m[2][2] = 1 / (zFarValue - zNearValue);
-        m[3][2] = zFarValue / (zFarValue - zNearValue);
-        m[3][3] = 1;
-
-        return m;
-    }
-
-    glm::float4x4 MYMatrix4x4::createLookAtMatrix(const glm::float3& eye, const glm::float3& center, const glm::float3& up)
-    {
-        glm::mat lookAtMat = glm::lookAtRH(eye, center, up);
-        return lookAtMat;
-    }
-
-    glm::float4x4 MYMatrix4x4::createViewMatrix(const glm::float3& position, const glm::quat& orientation)
-    {
-        glm::mat r_inverse  = glm::mat4(glm::inverse(orientation));
-        glm::mat t_inverse  = glm::translate(glm::mat4(1.0), -position);
-        glm::mat tr_inverse = r_inverse * t_inverse;
-        return tr_inverse;
-    }
-
-    glm::float4x4 MYMatrix4x4::createWorldMatrix(const glm::float3& position, const glm::quat& orientation, const glm::float3& scale)
-    {
-        glm::mat t = glm::translate(glm::mat4(1.0), position);
-        glm::mat r = glm::toMat4(orientation);
-        glm::mat s = glm::scale(glm::mat4(1.0), scale);
-        glm::mat trs = t * r * s;
-        return trs;
-    }
-
-    glm::float4x4 MYMatrix4x4::makeTransform(const glm::float3& position, const glm::quat& orientation, const glm::float3& scale)
-    {
-        glm::mat t = glm::translate(glm::mat4(1.0), position);
-        glm::mat r = glm::toMat4(orientation);
-        glm::mat s = glm::scale(glm::mat4(1.0), scale);
-        glm::mat trs = t * r * s;
-        return trs;
-    }
-
-    glm::float4x4 MYMatrix4x4::makeInverseTransform(const glm::float3& position, const glm::quat& orientation, const glm::float3& scale)
-    {
-        glm::mat t_inverse = glm::translate(glm::mat4(1.0), -position);
-        glm::mat r_inverse = glm::toMat4(glm::inverse(orientation));
-        glm::mat s_inverse = glm::scale(glm::mat4(1.0), 1.0f / scale);
-        glm::mat trs_inverse = s_inverse * r_inverse * t_inverse;
-        return trs_inverse;
-    }
 
     //------------------------------------------------------------------------------------------
     AABB::AABB(const glm::float3& minpos, const glm::float3& maxpos)
@@ -295,8 +1207,11 @@ namespace MoYu
                  (other.m_min.y > this->m_max.y) || (other.m_max.z < this->m_min.z) || (other.m_min.z > this->m_max.z));
     }
 
-    bool AABB::intersectRay(const glm::float3 rayOrigin, const glm::float3 rayDirection, float& distance)
+    bool AABB::intersectRay(const Ray& ray, float& distance)
     {
+        const glm::float3 rayOrigin = ray.origin;
+        const glm::float3 rayDirection = ray.direction;
+
         float tmin = -FLT_MAX; // set to -FLT_MAX to get first hit on line
         float tmax = FLT_MAX;  // set to max distance ray can travel
 
@@ -347,11 +1262,11 @@ namespace MoYu
         return true;
     }
 
-    glm::vec3 IntersectFrustumPlanes(Plane p0, Plane p1, Plane p2)
+    glm::float3 IntersectFrustumPlanes(Plane p0, Plane p1, Plane p2)
     {
-        glm::vec3 n0 = p0.normal;
-        glm::vec3 n1 = p1.normal;
-        glm::vec3 n2 = p2.normal;
+        glm::float3 n0 = p0.normal;
+        glm::float3 n1 = p1.normal;
+        glm::float3 n2 = p2.normal;
 
         float det = glm::dot(glm::cross(n0, n1), n2);
         return (glm::cross(n2, n1) * p0.offset + glm::cross(n0, n2) * p1.offset - glm::cross(n0, n1) * p2.offset) * (1.0f / det);
@@ -538,11 +1453,11 @@ namespace MoYu
         return plane;
     }
 
-    Plane CameraSpacePlane(glm::float4x4 worldToCamera, glm::vec3 positionWS, glm::vec3 normalWS, float sideSign, float clipPlaneOffset)
+    Plane CameraSpacePlane(glm::float4x4 worldToCamera, glm::float3 positionWS, glm::float3 normalWS, float sideSign, float clipPlaneOffset)
     {
-        glm::vec3 offsetPosWS = positionWS + normalWS * clipPlaneOffset;
-        glm::vec3 posCS = worldToCamera * glm::float4(offsetPosWS, 1);
-        glm::vec3 normalCS = worldToCamera * glm::float4(normalWS, 0) * sideSign;
+        glm::float3 offsetPosWS = positionWS + normalWS * clipPlaneOffset;
+        glm::float3 posCS = worldToCamera * glm::float4(offsetPosWS, 1);
+        glm::float3 normalCS = worldToCamera * glm::float4(normalWS, 0) * sideSign;
         Plane plane;
         plane.normal = normalCS;
         plane.offset = glm::dot(posCS, normalCS);
@@ -583,14 +1498,14 @@ namespace MoYu
     }
 
     // https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
-    float DistanceToOriginAABB(glm::vec3 point, glm::vec3 aabbSize)
+    float DistanceToOriginAABB(glm::float3 point, glm::float3 aabbSize)
     {
         glm::float3 q = abs(point) - glm::float3(aabbSize);
         return glm::length(max(q, 0.0f)) + glm::min(glm::max(q.x, glm::max(q.y, q.z)), 0.0f);
     }
 
     // Optimized version of https://www.sciencedirect.com/topics/computer-science/oriented-bounding-box
-    float DistanceToOBB(OrientedBBox obb, glm::vec3 point)
+    float DistanceToOBB(OrientedBBox obb, glm::float3 point)
     {
         glm::float3 offset = point - obb.center;
         glm::float3 boxForward = normalize(cross(obb.right, obb.up));
@@ -790,4 +1705,4 @@ namespace MoYu
         return glm::float2(RandomFloat(), RandomFloat());
     }
 
-} // namespace MoYuMath
+} // namespace MoYu

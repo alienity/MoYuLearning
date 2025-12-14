@@ -464,11 +464,11 @@ namespace RHI
         }
         bool operator!=(const RHIBufferDesc& o) const { return !(*this == o); }
 
-        UINT            size   = 0;                   // buffer的字节数
-        UINT            number = 0;                   // element的数量
-        UINT32          stride = 0;                   // index/vertex/struct的大小
-        RHIBufferTarget target = RHIBufferTargetNone; // buffer使用来干啥
-        RHIBufferMode mode = RHIBufferModeImmutable;  // 更新模式，是静态的，动态的，或者是可读回的
+        UINT            size   = 0;                   // Size of buffer in bytes
+        UINT            number = 0;                   // Number of elements
+        UINT32          stride = 0;                   // Size of index/vertex/struct
+        RHIBufferTarget target = RHIBufferTargetNone; // Purpose of the buffer
+        RHIBufferMode mode = RHIBufferModeImmutable;  // Update mode: static, dynamic, or readable
     };
 
     struct RHIBufferData
@@ -493,7 +493,7 @@ namespace RHI
     };
     DEFINE_ENUM_FLAG_OPERATORS(RHISurfaceCreateFlags);
 
-    // 最大允许的mipmap数是12
+    // The maximum allowed number of mipmaps is 12
     #define MAXMIPLEVELS 12
 
     enum RHITextureDimension
@@ -650,7 +650,8 @@ namespace RHI
             return *this;
         }
 
-        // 根据Fence是否为空，来判断当前SyncHandle是否是可用的，不可用的时候可以不做检查直接把对象给释放掉
+        // Based on whether the Fence is empty, determine if the current SyncHandle is available. 
+        // When unavailable, the object can be released directly without checking
         explicit operator bool() const noexcept;
 
         [[nodiscard]] auto GetValue() const noexcept -> UINT64;

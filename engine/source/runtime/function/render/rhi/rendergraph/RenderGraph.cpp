@@ -419,7 +419,7 @@ namespace RHI
         InGraphHandle2WritePassIdx& handle2WritePassIdx, 
         RgResourceHandleExt& resource)
     {
-        // 2.1 pass的reads没有被作为其他pass的write写过
+        // 2.1 The reads of the pass have not been written as other pass writes
         if (!handle2WritePassIdx[resource.rgHandle].empty())
         {
             return false;
@@ -428,7 +428,7 @@ namespace RHI
         //if (resource.rgTransFlag == RgBarrierFlag::NoneBarrier)
         //    return true;
 
-        // 2.2 pass的reads跟前面遍历过的pass的reads的handle一样，但是读取状态不一样，也不能要
+        // 2.2 The reads of the pass have the same handle as the reads of the previously traversed passes, but the read state is different, which is also not acceptable
         for (size_t i = 0; i < passInSameLevel.size(); i++)
         {
             PassIdx prevPassIdx = passInSameLevel[i];
@@ -453,7 +453,7 @@ namespace RHI
 
 	void RenderGraph::Setup()
 	{
-		// 准备RgHandle的所有操作数据，看看可以按照Read和Write的顺序，先给所有的pass排个序不
+		// Prepare all operation data for RgHandle, and see if we can sort all passes according to Read and Write order
 
         InGraphPassIdx2ReadWriteHandle mPassIdx2ReadWriteHandle;
         //InGraphHandle2ReadPassIdx      mHandle2ReadPassIdx;
@@ -461,7 +461,7 @@ namespace RHI
 
         std::vector<PassIdx> mInGraphPassIdx(InGraphPass.size());
         
-        // 转换所有Pass的Reads和Writes到Idx
+        // Convert all Pass Reads and Writes to Idx
         for (size_t i = 0; i < InGraphPass.size(); i++)
         {
             RHI::RenderPass* pass = InGraphPass[i];
@@ -488,7 +488,7 @@ namespace RHI
             mInGraphPassIdx[i] = passIdx;
         }
 
-        // 直接遍历所有的pass，找出所有没有readHandle或者readHandle没有被Write的pass
+        // Directly traverse all passes to find all passes without readHandle or whose readHandle has not been Written
         while (!mInGraphPassIdx.empty())
         {
             RenderGraphDependencyLevel dependencyLevel = {};
@@ -502,7 +502,7 @@ namespace RHI
 
                 auto& mPassReads = mPassIdx2ReadWriteHandle[mPassIdx].first;
 
-                // 1. 查找所有reads为空的pass
+                // 1. Find all passes with empty reads
                 bool isPassReadsEmpty = mPassReads.empty();
                 if (isPassReadsEmpty)
                 {
@@ -511,7 +511,7 @@ namespace RHI
                     continue;
                 }
 
-                // 2. 查找所有reads没有被其他pass做Write，或者reads跟其他pass的reads状态不冲突的pass
+                // 2. Find all passes whose reads have not been Written by other passes, or whose reads do not conflict with the reads state of other passes
                 bool isPassReadsClean = true;
                 for (size_t j = 0; j < mPassReads.size(); j++)
                 {
@@ -531,7 +531,7 @@ namespace RHI
                 graphPassIter++;
             }
 
-            // 清理掉pass的writes的Handle的所有对当前Pass的索引状态
+            // Clean up all index states of the Handle for the pass writes to the current Pass
             for (size_t i = 0; i < passInSameLevel.size(); i++)
             {
                 PassIdx mPassIdx = passInSameLevel[i];

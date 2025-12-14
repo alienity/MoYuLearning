@@ -3,17 +3,10 @@
 #include "runtime/core/math/moyu_math2.h"
 #include "runtime/resource/res_type/components/camera.h"
 #include "runtime/function/framework/component/component.h"
+#include "runtime/function/framework/object/EditorCamera.h"
 
 namespace MoYu
 {
-    enum class CameraMode : unsigned char
-    {
-        third_person,
-        first_person,
-        free,
-        invalid
-    };
-
     class CameraComponent : public Component
     {
     public:
@@ -37,10 +30,6 @@ namespace MoYu
 
         CameraComponentRes m_camera_res;
 
-        CameraMode m_camera_mode {CameraMode::invalid};
-
-        glm::float3 m_foward {MYFloat3::Forward};
-        glm::float3 m_up {MYFloat3::Up};
-        glm::float3 m_left{MYFloat3::Left};
+        EditorCamera m_camera;
     };
 } // namespace MoYu
