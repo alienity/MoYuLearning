@@ -43,7 +43,7 @@ set(POST_BUILD_COMMANDS
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${ENGINE_ROOT_DIR}/${ENGINE_SHADER_DIR}" "${BINARY_ROOT_DIR}/${ENGINE_SHADER_DIR}"
 )
 
-add_custom_command(TARGET ${TARGET_NAME} ${POST_BUILD_COMMANDS})
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD ${POST_BUILD_COMMANDS})
 
 #precompile
 #set global vari used by precompile

@@ -1,4 +1,4 @@
-set(tinyexr_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/tinyexr-1.0.5)
+set(tinyexr_SOURCE_DIR_ ${CMAKE_CURRENT_SOURCE_DIR}/tinyexr-1.0.12)
 
 file(GLOB miniz_sources CONFIGURE_DEPENDS  
 "${tinyexr_SOURCE_DIR_}/deps/miniz/miniz.h" 

@@ -1,7 +1,4 @@
-set(EngineRoot "Engine")
-set(ToolRoot "${EngineRoot}/Tool")
+# Add all tools subdirectories
 
-add_subdirectory(image)
-add_subdirectory(imageio)
-add_subdirectory(ibl)
-add_subdirectory(iblprefilter)
+add_subdirectory(cmgen)
+add_subdirectory(mipgen)

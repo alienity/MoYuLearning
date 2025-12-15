@@ -43,7 +43,7 @@ add_subdirectory(3rdparty)
 
 add_subdirectory(source/runtime)
 add_subdirectory(source/editor)
-add_subdirectory(source/tools)
+
 # add_subdirectory(source/meta_parser)
 # add_subdirectory(source/test)
 
@@ -53,3 +53,11 @@ add_subdirectory(source/tools)
 
 # add_dependencies(PilotRuntime "${CODEGEN_TARGET}")
 # add_dependencies("${CODEGEN_TARGET}" "MoYuParser")
+
+
+
+set(LIBS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/libs" CACHE STRING "Location of libs.")
+set(CTOOLS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/tools" CACHE STRING "Location of tools.")
+
+add_subdirectory(source/libs)
+add_subdirectory(source/tools)
