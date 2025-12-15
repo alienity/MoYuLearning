@@ -429,9 +429,9 @@ namespace RHI
         return CViewSubresourceIterator(*this, BeginArray, EndPlane);
     }
 
-	UINT CViewSubresourceSubset::MinSubresource() const { return (*begin()).first; }
+	uint32_t CViewSubresourceSubset::MinSubresource() const { return (*begin()).first; }
 
-    UINT CViewSubresourceSubset::MaxSubresource() const { return (*(--end())).second; }
+    uint32_t CViewSubresourceSubset::MaxSubresource() const { return (*(--end())).second; }
 
     D3D12RenderTargetView::D3D12RenderTargetView(D3D12LinkedDevice*                   Device,
                                                  const D3D12_RENDER_TARGET_VIEW_DESC& Desc,
@@ -465,9 +465,9 @@ namespace RHI
     {
         D3D12_RESOURCE_DESC Desc = Texture->GetDesc();
 
-        UINT ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
-        UINT MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
-        UINT ArraySize  = OptArraySize == -1 ? Desc.DepthOrArraySize : OptArraySize;
+        uint32_t ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
+        uint32_t MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
+        uint32_t ArraySize  = OptArraySize == -1 ? Desc.DepthOrArraySize : OptArraySize;
 
         D3D12_RENDER_TARGET_VIEW_DESC ViewDesc = {};
         ViewDesc.Format = sRGB ? D3D12RHIUtils::MakeSRGB(Desc.Format) : Desc.Format;
@@ -554,9 +554,9 @@ namespace RHI
     {
         D3D12_RESOURCE_DESC Desc = Texture->GetDesc();
 
-        UINT ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
-        UINT MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
-        UINT ArraySize  = OptArraySize == -1 ? Desc.DepthOrArraySize : OptArraySize;
+        uint32_t ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
+        uint32_t MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
+        uint32_t ArraySize  = OptArraySize == -1 ? Desc.DepthOrArraySize : OptArraySize;
 
         D3D12_DEPTH_STENCIL_VIEW_DESC ViewDesc = {};
         ViewDesc.Format                        = [](DXGI_FORMAT Format) {
@@ -629,7 +629,7 @@ namespace RHI
         Descriptor.CreateView(Desc);
     }
 
-    D3D12_CONSTANT_BUFFER_VIEW_DESC D3D12ConstantBufferView::GetDesc(D3D12Buffer* Buffer, UINT Offset, UINT Size)
+    D3D12_CONSTANT_BUFFER_VIEW_DESC D3D12ConstantBufferView::GetDesc(D3D12Buffer* Buffer, uint32_t Offset, uint32_t Size)
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
         CBVDesc.BufferLocation = Buffer->GetGpuVirtualAddress() + Offset;
@@ -655,16 +655,16 @@ namespace RHI
     D3D12ShaderResourceView::D3D12ShaderResourceView(D3D12LinkedDevice* Device,
                                                      D3D12Buffer*       Buffer,
                                                      bool               Raw,
-                                                     UINT               FirstElement,
-                                                     UINT               NumElements,
+                                                     uint32_t               FirstElement,
+                                                     uint32_t               NumElements,
                                                      BOOL               IsNonShaderVisible) :
         D3D12ShaderResourceView(Device, GetDesc(Buffer, Raw, FirstElement, NumElements), Buffer, IsNonShaderVisible)
     {}
 
     D3D12ShaderResourceView::D3D12ShaderResourceView(D3D12LinkedDevice* Device,
                                                      D3D12Buffer*       Buffer,
-                                                     UINT               FirstElement,
-                                                     UINT               NumElements,
+                                                     uint32_t               FirstElement,
+                                                     uint32_t               NumElements,
                                                      BOOL               IsNonShaderVisible) :
         D3D12ShaderResourceView(Device, GetDesc(Buffer, false, FirstElement, NumElements), Buffer, IsNonShaderVisible)
     {}
@@ -721,7 +721,7 @@ namespace RHI
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC
-    D3D12ShaderResourceView::GetDesc(D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements)
+    D3D12ShaderResourceView::GetDesc(D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements)
     {
         BufferResourceType TmpType = Raw ? BufferResourceType::ByteAddressBuffer : BufferResourceType::StructuredBuffer;
         D3D12_SHADER_RESOURCE_VIEW_DESC ViewDesc = GetDesc(Buffer, TmpType, FirstElement, NumElements, DXGI_FORMAT_R32_TYPELESS);
@@ -729,7 +729,7 @@ namespace RHI
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC 
-    D3D12ShaderResourceView::GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, UINT FirstElement, UINT NumElements, DXGI_FORMAT BufferFormat)
+    D3D12ShaderResourceView::GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, uint32_t FirstElement, uint32_t NumElements, DXGI_FORMAT BufferFormat)
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC ViewDesc = {};
         if (ResType == BufferResourceType::StructuredBuffer)
@@ -751,7 +751,7 @@ namespace RHI
             ViewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
             ViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             ViewDesc.Buffer.FirstElement = 0;
-            ViewDesc.Buffer.NumElements = (UINT)m_BufferSize / m_BytesPerPixel;
+            ViewDesc.Buffer.NumElements = (uint32_t)m_BufferSize / m_BytesPerPixel;
             ViewDesc.Buffer.StructureByteStride = 0;
             ViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
         }
@@ -764,7 +764,7 @@ namespace RHI
             ViewDesc.Format = BufferFormat;
             ViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             ViewDesc.Buffer.FirstElement = 0;
-            ViewDesc.Buffer.NumElements = (UINT)m_BufferSize / m_BytesPerPixel;
+            ViewDesc.Buffer.NumElements = (uint32_t)m_BufferSize / m_BytesPerPixel;
             ViewDesc.Buffer.StructureByteStride = m_BytesPerPixel;
             ViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
         }
@@ -776,8 +776,8 @@ namespace RHI
     {
         D3D12_RESOURCE_DESC Desc = Texture->GetDesc();
 
-        UINT MostDetailedMip = OptMostDetailedMip == -1 ? 0 : OptMostDetailedMip;
-        UINT MipLevels       = OptMipLevels == -1 ? Desc.MipLevels : OptMipLevels;
+        uint32_t MostDetailedMip = OptMostDetailedMip == -1 ? 0 : OptMostDetailedMip;
+        uint32_t MipLevels       = OptMipLevels == -1 ? Desc.MipLevels : OptMipLevels;
 
         D3D12_SHADER_RESOURCE_VIEW_DESC ViewDesc = {};
         ViewDesc.Format = [](DXGI_FORMAT Format, bool sRGB) {
@@ -889,8 +889,8 @@ namespace RHI
     D3D12UnorderedAccessView::D3D12UnorderedAccessView(D3D12LinkedDevice* Device,
                                                        D3D12Buffer*       Buffer,
                                                        bool               Raw,
-                                                       UINT               FirstElement,
-                                                       UINT               NumElements,
+                                                       uint32_t               FirstElement,
+                                                       uint32_t               NumElements,
                                                        UINT64             CounterOffsetInBytes,
                                                        BOOL               IsNonShaderVisible) :
         D3D12UnorderedAccessView(Device,
@@ -902,8 +902,8 @@ namespace RHI
 
     D3D12UnorderedAccessView::D3D12UnorderedAccessView(D3D12LinkedDevice* Device,
                                                        D3D12Buffer*       Buffer,
-                                                       UINT               FirstElement,
-                                                       UINT               NumElements,
+                                                       uint32_t               FirstElement,
+                                                       uint32_t               NumElements,
                                                        UINT64             CounterOffsetInBytes,
                                                        BOOL               IsNonShaderVisible) :
         D3D12UnorderedAccessView(Device,
@@ -938,7 +938,7 @@ namespace RHI
     }
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC
-    D3D12UnorderedAccessView::GetDesc(D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes)
+    D3D12UnorderedAccessView::GetDesc(D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes)
     {
         BufferResourceType TmpType = Raw ? BufferResourceType::ByteAddressBuffer : BufferResourceType::StructuredBuffer;
         D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = GetDesc(Buffer, TmpType, FirstElement, NumElements, CounterOffsetInBytes, DXGI_FORMAT_R32_TYPELESS);
@@ -946,7 +946,7 @@ namespace RHI
     }
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC 
-    D3D12UnorderedAccessView::GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes, DXGI_FORMAT BufferFormat)
+    D3D12UnorderedAccessView::GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes, DXGI_FORMAT BufferFormat)
     {
         D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
 
@@ -967,7 +967,7 @@ namespace RHI
             UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
             UAVDesc.Format = DXGI_FORMAT_R32_TYPELESS;
             UAVDesc.Buffer.FirstElement = 0;
-            UAVDesc.Buffer.NumElements = (UINT)m_BufferSize / 4;
+            UAVDesc.Buffer.NumElements = (uint32_t)m_BufferSize / 4;
             UAVDesc.Buffer.StructureByteStride = 0;
             UAVDesc.Buffer.CounterOffsetInBytes = 0;
             UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
@@ -980,7 +980,7 @@ namespace RHI
             UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
             UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
             UAVDesc.Buffer.FirstElement = 0;
-            UAVDesc.Buffer.NumElements = (UINT)m_BufferSize / m_BytesPerPixel;
+            UAVDesc.Buffer.NumElements = (uint32_t)m_BufferSize / m_BytesPerPixel;
             UAVDesc.Buffer.StructureByteStride = m_BytesPerPixel;
             UAVDesc.Buffer.CounterOffsetInBytes = CounterOffsetInBytes;
             UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
@@ -994,8 +994,8 @@ namespace RHI
     {
         D3D12_RESOURCE_DESC Desc = Texture->GetDesc();
 
-        UINT ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
-        UINT MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
+        uint32_t ArraySlice = OptArraySlice == -1 ? 0 : OptArraySlice;
+        uint32_t MipSlice   = OptMipSlice == -1 ? 0 : OptMipSlice;
 
         D3D12_UNORDERED_ACCESS_VIEW_DESC ViewDesc = {};
         ViewDesc.Format                           = Desc.Format;

@@ -16,15 +16,15 @@ cbuffer RootConstants : register(b0, space0)
 
 SamplerState sampler_LinearClamp : register(s10);
 
-// Sobel算子核（3x3）
+// Sobel operator kernel (3x3)
 static const float kernelX[3][3] =
-{ // 水平梯度核（x方向）
+{ // Horizontal gradient kernel (x-direction)
     { -1.0, 0.0, 1.0 },
     { -2.0, 0.0, 2.0 },
     { -1.0, 0.0, 1.0 }
 };
 static const float kernelY[3][3] =
-{ // 垂直梯度核（y方向）
+{ // Vertical gradient kernel (y-direction)
     { -1.0, -2.0, -1.0 },
     { 0.0, 0.0, 0.0 },
     { 1.0, 2.0, 1.0 }
@@ -41,11 +41,11 @@ void GenerateNormalMap(uint3 id : SV_DispatchThreadID)
     
     float2 uv = (id.xy + 0.5f) / float2(SrcWidth, SrcHeight);
     
-    // 获取纹理尺寸的倒数（texel大小）
+    // Get the reciprocal of texture dimensions (texel size)
     float texelSizeX = 1.0 / SrcWidth;
     float texelSizeY = 1.0 / SrcHeight;
     
-    // 初始化梯度和法线分量
+    // Initialize gradient and normal components
     float dx = 0.0, dy = 0.0;
     
     [unroll]
@@ -58,24 +58,24 @@ void GenerateNormalMap(uint3 id : SV_DispatchThreadID)
                 (l - 1) * texelSizeX, // 列偏移：-texelSizeX, 0, +texelSizeX
                 (k - 1) * texelSizeY // 行偏移：-texelSizeY, 0, +texelSizeY
             );
-             // 限制UV在[0,1]范围内（防止越界采样）
+             // Limit UV within [0,1] range (prevent out-of-bounds sampling)
             float2 sampleUV = clamp(uv + offset, 0.0, 1.0);
-            // 采样高度值
+            // Sample height value
             float height = HeightmapTexture.Sample(sampler_LinearClamp, sampleUV).x;
-            // 累加Sobel核的卷积结果
+            // Accumulate convolution result of Sobel kernel
             dx += kernelX[k][l] * height;
             dy += kernelY[k][l] * height;
         }
     }
     
-    // 调整法线强度（根据高度图范围调整，通常0.5~2.0）
+    // Adjust normal strength (adjusted according to height map range, typically 0.5~2.0)
     float heightScale = 1.0;
-    // 计算法线的切线空间分量（x,y为梯度反方向，z为垂直分量）
+    // Calculate tangent space components of normal (x,y are reverse gradient directions, z is vertical component)
     float nx = -dx * heightScale;
     float ny = -dy * heightScale;
-    float nz = sqrt(saturate(1.0 - nx * nx - ny * ny)); // 防止负数开根号
+    float nz = sqrt(saturate(1.0 - nx * nx - ny * ny)); // Prevent square root of negative numbers
     
-    // 将法线向量从[-1,1]转换到[0,1]
+    // Convert normal vector from [-1,1] to [0,1]
     float3 normal;
     normal.x = nx * 0.5 + 0.5;
     normal.y = ny * 0.5 + 0.5;

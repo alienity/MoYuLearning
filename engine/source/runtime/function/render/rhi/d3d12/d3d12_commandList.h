@@ -16,7 +16,7 @@ namespace RHI
     {
         D3D12Resource*        Resource;
         D3D12_RESOURCE_STATES State;
-        UINT                  Subresource;
+        uint32_t                  Subresource;
     };
 
     typedef PendingResourceBarrier CachedResourceBarrier;
@@ -89,11 +89,11 @@ namespace RHI
         const CResourceState& GetAllTrackedResourceState(D3D12Resource* Resource);
 
         D3D12_RESOURCE_STATES GetResourceStateTracked(D3D12Resource* Resource,
-                                                      UINT Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+                                                      uint32_t Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
         void TransitionBarrier(D3D12Resource*        Resource,
                                D3D12_RESOURCE_STATES State,
-                               UINT                  Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+                               uint32_t                  Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
         void AliasingBarrier(D3D12Resource* BeforeResource, D3D12Resource* AfterResource);
 
@@ -101,7 +101,7 @@ namespace RHI
 
         void FlushResourceBarriers();
 
-        bool AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource);
+        bool AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, uint32_t Subresource);
 
     private:
         // Resolve resource barriers that are needed before this command list is executed
@@ -113,7 +113,7 @@ namespace RHI
         void AddTransition(D3D12Resource*        Resource,
                            D3D12_RESOURCE_STATES StateBefore,
                            D3D12_RESOURCE_STATES StateAfter,
-                           UINT                  Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+                           uint32_t                  Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
         void AddAliasing(D3D12Resource* BeforeResource, D3D12Resource* AfterResource);
 
@@ -127,7 +127,7 @@ namespace RHI
         // Friend due to D3D12CommandQueue::ResolveResourceBarrierCommandList
         friend class D3D12CommandQueue;
 
-        static constexpr UINT NumBatches = 16;
+        static constexpr uint32_t NumBatches = 16;
 
         D3D12_COMMAND_LIST_TYPE                            Type;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>  GraphicsCommandList;
@@ -138,7 +138,7 @@ namespace RHI
 #endif
         D3D12ResourceStateTracker ResourceStateTracker;
         D3D12_RESOURCE_BARRIER    ResourceBarriers[NumBatches] = {};
-        UINT                      NumResourceBarriers          = 0;
+        uint32_t                      NumResourceBarriers          = 0;
 
         D3D12_RESOURCE_BARRIER PendingResourceBarriers[NumBatches] = {};
         uint32_t NumPendingResourceBarriers = 0;

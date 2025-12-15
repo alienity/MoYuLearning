@@ -54,7 +54,7 @@ namespace MoYu
             Transform* trans_ptr = static_cast<Transform*>(value_ptr);
 
             glm::vec3 euler;
-            glm::mat4 _quat = glm::mat4_cast(trans_ptr->m_rotation);
+            glm::mat4 _quat = glm::mat4_cast(trans_ptr->getRotation());
             glm::extractEulerAngleYXZ(_quat, euler.y, euler.x, euler.z);
 
             glm::float3 degrees_val = {};
@@ -62,18 +62,24 @@ namespace MoYu
             degrees_val.y = MoYu::radiansToDegrees(euler.y);
             degrees_val.z = MoYu::radiansToDegrees(euler.z);
 
+            glm::float3 position_val = trans_ptr->getPosition();
+            glm::float3 scale_val = trans_ptr->getScale();
+
             bool isDirty = false;
 
-            isDirty |= DrawVecControl("Position", trans_ptr->m_position);
+            isDirty |= DrawVecControl("Position", position_val);
             isDirty |= DrawVecControl("Rotation", degrees_val);
-            isDirty |= DrawVecControl("Scale", trans_ptr->m_scale);
+            isDirty |= DrawVecControl("Scale", scale_val);
 
             glm::float3 newEuler = {};
             newEuler.x = MoYu::degreesToRadians(degrees_val.x);
             newEuler.y = MoYu::degreesToRadians(degrees_val.y);
             newEuler.z = MoYu::degreesToRadians(degrees_val.z);
 
-            trans_ptr->m_rotation = glm::eulerAngleYXZ(newEuler.y, newEuler.x, newEuler.z);
+            trans_ptr->setRotation(glm::eulerAngleYXZ(newEuler.y, newEuler.x, newEuler.z));
+
+            trans_ptr->setPosition(position_val);
+            trans_ptr->setScale(scale_val);
 
             is_dirty |= isDirty;
         };

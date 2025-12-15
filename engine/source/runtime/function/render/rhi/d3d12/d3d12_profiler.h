@@ -74,7 +74,7 @@ namespace RHI
         D3D12Profiler*                                               Profiler;
         INT                                                          Depth;
         std::string_view                                             Name;
-        UINT                                                         Index = UINT_MAX;
+        uint32_t                                                         Index = UINT_MAX;
         D3D12EventNode*                                              Parent;
         std::vector<D3D12EventNode*>                                 Children;
         robin_hood::unordered_map<std::string_view, D3D12EventNode*> Lut;
@@ -83,10 +83,10 @@ namespace RHI
     class D3D12Profiler : public D3D12LinkedDeviceChild
     {
     public:
-        static constexpr UINT MaxProfiles = 1024;
+        static constexpr uint32_t MaxProfiles = 1024;
 
         D3D12Profiler() noexcept = default;
-        explicit D3D12Profiler(D3D12LinkedDevice* Parent, UINT FrameLatency);
+        explicit D3D12Profiler(D3D12LinkedDevice* Parent, uint32_t FrameLatency);
 
         D3D12Profiler(D3D12Profiler&&) noexcept = default;
         D3D12Profiler& operator=(D3D12Profiler&&) noexcept = default;
@@ -106,14 +106,14 @@ namespace RHI
         std::vector<ProfileData> Data;
 
     private:
-        UINT StartProfile(ID3D12GraphicsCommandList* CommandList, std::string_view Name, INT Depth, UINT64 Frequency);
-        void EndProfile(ID3D12GraphicsCommandList* CommandList, UINT Index);
+        uint32_t StartProfile(ID3D12GraphicsCommandList* CommandList, std::string_view Name, INT Depth, UINT64 Frequency);
+        void EndProfile(ID3D12GraphicsCommandList* CommandList, uint32_t Index);
 
     private:
-        UINT                                    FrameLatency;
+        uint32_t                                    FrameLatency;
         std::vector<ProfileData>                Profiles;
-        UINT                                    NumProfiles;
-        UINT                                    FrameIndex;
+        uint32_t                                    NumProfiles;
+        uint32_t                                    FrameIndex;
         Microsoft::WRL::ComPtr<ID3D12QueryHeap> TimestampQueryHeap;
         Microsoft::WRL::ComPtr<ID3D12Resource>  TimestampQueryReadback;
 

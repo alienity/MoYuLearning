@@ -612,7 +612,7 @@ namespace MoYu
     std::shared_ptr<RHI::D3D12Buffer> RenderResource::createDynamicBuffer(void* buffer_data, uint32_t buffer_size, uint32_t buffer_stride, D3D12_RESOURCE_STATES initState)
     {
         assert(buffer_size % buffer_stride == 0);
-        UINT numelement = buffer_size / buffer_stride;
+        uint32_t numelement = buffer_size / buffer_stride;
         std::shared_ptr<RHI::D3D12Buffer> dynamicBuffer =
             RHI::D3D12Buffer::Create(m_Device->GetLinkedDevice(),
                                      RHI::RHIBufferTarget::RHIBufferTargetStructured,
@@ -748,8 +748,8 @@ namespace MoYu
                                     std::max(cube_maps[0]->GetMetadata().width, cube_maps[0]->GetMetadata().height)))) +
                                 1;
 
-        UINT width  = cube_maps[0]->GetMetadata().width;
-        UINT height = cube_maps[0]->GetMetadata().height;
+        uint32_t width  = cube_maps[0]->GetMetadata().width;
+        uint32_t height = cube_maps[0]->GetMetadata().height;
         
         RHI::RHISurfaceCreateFlags texflags = RHI::RHISurfaceCreateFlagNone;
         if (isReadWrite)
@@ -766,7 +766,7 @@ namespace MoYu
 
         m_ResourceUpload->Transition(cube_tex->GetResource(), tex2d_ori_state, D3D12_RESOURCE_STATE_COPY_DEST);
 
-        UINT bytesPerPixel = D3D12RHIUtils::BytesPerPixel(format);
+        uint32_t bytesPerPixel = D3D12RHIUtils::BytesPerPixel(format);
 
         for (size_t i = 0; i < 6; i++)
         {

@@ -93,7 +93,7 @@ MoYu::StaticMeshData LoadModel(std::string filename, MoYu::AABB& bounding_box)
 
 void ProcessNode(aiNode* node, const aiScene* scene, MeshLoaderNode& meshes_)
 {
-    for (UINT i = 0; i < node->mNumMeshes; i++)
+    for (uint32_t i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh*         mesh  = scene->mMeshes[node->mMeshes[i]];
         ModelLoaderMesh mesh_ = ProcessMesh(mesh);
@@ -105,7 +105,7 @@ void ProcessNode(aiNode* node, const aiScene* scene, MeshLoaderNode& meshes_)
     }
 
     meshes_.children_.resize(node->mNumChildren);
-    for (UINT i = 0; i < node->mNumChildren; i++)
+    for (uint32_t i = 0; i < node->mNumChildren; i++)
     {
         ProcessNode(node->mChildren[i], scene, meshes_.children_[i]);
         meshes_.bounding_box_.merge(meshes_.children_[i].bounding_box_);
@@ -120,7 +120,7 @@ ModelLoaderMesh ProcessMesh(aiMesh* mesh)
     std::vector<std::uint32_t> indices;
 
     // Walk through each of the mesh's vertices
-    for (UINT i = 0; i < mesh->mNumVertices; i++)
+    for (uint32_t i = 0; i < mesh->mNumVertices; i++)
     {
         VertexDefine vertex;
 
@@ -152,11 +152,11 @@ ModelLoaderMesh ProcessMesh(aiMesh* mesh)
         bounding_box.merge(glm::float3(vertex.position.x, vertex.position.y, vertex.position.z));
     }
 
-    for (UINT i = 0; i < mesh->mNumFaces; i++)
+    for (uint32_t i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
 
-        for (UINT j = 0; j < face.mNumIndices; j++)
+        for (uint32_t j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
 

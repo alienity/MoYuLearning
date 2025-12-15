@@ -17,10 +17,6 @@ ${THIRD_PARTY_DIR}/embree-4.3.3.x64.windows/bin/tbbmalloc.dll)
 
 option(ENABLE_PHYSICS_DEBUG_RENDERER "Enable Physics Debug Renderer" OFF)
 
-if(ENABLE_PHYSICS_DEBUG_RENDERER)
-  set(JOLT_ASSET_DIR "/jolt-asset")
-endif()
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options("/MP")
     set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT MoYuEditor)

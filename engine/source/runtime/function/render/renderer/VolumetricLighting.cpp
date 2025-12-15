@@ -879,7 +879,7 @@ namespace MoYu
 															   RegGetBufDefCBVIdx(mShaderVariablesVolumetricHandle),
 															   RegGetTexDefUAVIdx(mVBufferDensityHandle) };
 
-			pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+			pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
 			// The shader defines GROUP_SIZE_1D = 8.
 			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.x + 7) / 8, 1);
@@ -944,7 +944,7 @@ namespace MoYu
 															   RegGetTexDefSRVIdx(dilatedMaxZBufferHandle),
 															   RegGetTexDefUAVIdx(mLightBufferHandle) };
 
-			pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+			pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
 			// The shader defines GROUP_SIZE_1D = 8.
 			pContext->Dispatch((fogData.resolution.x + 7) / 8, (fogData.resolution.y + 7) / 8, 1);

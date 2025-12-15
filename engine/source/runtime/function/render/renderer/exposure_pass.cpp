@@ -134,7 +134,7 @@ namespace MoYu
                 computeContext->SetRootSignature(pGenerateHistogramCSSignature.get());
                 computeContext->SetPipelineState(pGenerateHistogramCSPSO.get());
 
-                computeContext->SetConstants(0, (UINT)m_LumaLRColor->GetHeight());
+                computeContext->SetConstants(0, (uint32_t)m_LumaLRColor->GetHeight());
 
                 __declspec(align(16)) struct GenHistogramIndexInput
                 {

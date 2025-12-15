@@ -133,7 +133,7 @@ void Terrain3D::snap(glm::float2 p_cam_xz)
 	// Position cross
 	{
         Transform t  = Transform();
-        t.m_position = glm::floor(p_cam_pos);
+        t.setPosition(glm::floor(p_cam_pos));
 		_data.cross = t;
     }
 
@@ -158,8 +158,8 @@ void Terrain3D::snap(glm::float2 p_cam_xz)
 				//glm::float3 tile_br = tile_tl + tile_size;
 
 				Transform t  = Transform();
-                t.m_scale    = glm::float3(scale, 1, scale);
-                t.m_position = tile_tl;
+                t.setScale(glm::float3(scale, 1, scale));
+                t.setPosition(tile_tl);
 
 				_data.tiles[tile] = t;
 
@@ -168,8 +168,8 @@ void Terrain3D::snap(glm::float2 p_cam_xz)
 		}
 		{
 			Transform t = Transform();
-            t.m_position = snapped_pos;
-            t.m_scale    = glm::float3(scale, 1, scale);
+            t.setPosition(snapped_pos);
+            t.setScale(glm::float3(scale, 1, scale));
 
 			_data.fillers[l] = t;
 		}
@@ -192,9 +192,9 @@ void Terrain3D::snap(glm::float2 p_cam_xz)
 				float angle = MoYu::f::DEG_TO_RAD * (rotations[r]);
 
 				Transform t = Transform();
-                t.m_rotation = glm::toQuat(glm::rotate(-angle, glm::float3(0, 1, 0)));
-                t.m_scale = glm::float3(scale, 1, scale);
-                t.m_position = tile_center;
+                t.setRotation(glm::toQuat(glm::rotate(-angle, glm::float3(0, 1, 0))));
+                t.setScale(glm::float3(scale, 1, scale));
+                t.setPosition(tile_center);
 
 				_data.trims[edge] = t;
 			}
@@ -204,8 +204,8 @@ void Terrain3D::snap(glm::float2 p_cam_xz)
 				glm::float3 next_base = next_snapped_pos - glm::float3((_mesh_size << (l + 1)), 0, (_mesh_size << (l + 1)));
 
 				Transform t = Transform();
-                t.m_scale = glm::float3(scale, 1, scale);
-				t.m_position = next_base;
+                t.setScale(glm::float3(scale, 1, scale));
+				t.setPosition(next_base);
 
 				_data.seams[edge] = t;
 			}

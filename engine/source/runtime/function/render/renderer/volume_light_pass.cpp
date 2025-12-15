@@ -180,10 +180,10 @@ namespace MoYu
 
             struct RootIndexBuffer
             {
-                UINT perFrameBufferIndex;
-                UINT maxDepthBufferIndex;
-                UINT blueNoiseIndex;
-                UINT volume3DIndex;
+                uint32_t perFrameBufferIndex;
+                uint32_t maxDepthBufferIndex;
+                uint32_t blueNoiseIndex;
+                uint32_t volume3DIndex;
             };
 
             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc {};
@@ -195,16 +195,16 @@ namespace MoYu
             srvDesc.Texture2D.PlaneSlice          = 0;
             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
             std::shared_ptr<RHI::D3D12ShaderResourceView> blueNoiseSRV = m_bluenoise->CreateSRV(srvDesc);
-            UINT blueNoiseSRVIndex = blueNoiseSRV->GetIndex();
+            uint32_t blueNoiseSRVIndex = blueNoiseSRV->GetIndex();
 
-            UINT volume3DUAVIndex = RegGetTexDefUAVIdx(volume3DHandle);
+            uint32_t volume3DUAVIndex = RegGetTexDefUAVIdx(volume3DHandle);
 
             RootIndexBuffer rootIndexBuffer = RootIndexBuffer {RegGetBufDefCBVIdx(perframeBufferHandle),
                                                                RegGetTexDefSRVIdx(maxDepthPtyramidHandle),
                                                                blueNoiseSRVIndex,
                                                                volume3DUAVIndex};
 
-            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(volumeWidth, volumeHeight, 8, 8);
 

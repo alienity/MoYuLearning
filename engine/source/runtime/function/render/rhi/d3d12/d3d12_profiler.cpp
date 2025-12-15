@@ -53,7 +53,7 @@ namespace RHI
         }
     }
 
-    D3D12Profiler::D3D12Profiler(D3D12LinkedDevice* Parent, UINT FrameLatency) :
+    D3D12Profiler::D3D12Profiler(D3D12LinkedDevice* Parent, uint32_t FrameLatency) :
         D3D12LinkedDeviceChild(Parent), FrameLatency(FrameLatency), Profiles(MaxProfiles), NumProfiles(0),
         FrameIndex(0), RootNode(this, -1, "", nullptr), CurrentNode(&RootNode)
     {
@@ -82,7 +82,7 @@ namespace RHI
             const UINT64* FrameQueryData =
                 QueryData + static_cast<UINT64>(FrameIndex) * static_cast<UINT64>(MaxProfiles) * 2;
 
-            for (UINT i = 0; i < NumProfiles; ++i)
+            for (uint32_t i = 0; i < NumProfiles; ++i)
             {
                 UINT64 StartTime = FrameQueryData[i * 2 + 0];
                 UINT64 EndTime   = FrameQueryData[i * 2 + 1];
@@ -118,13 +118,13 @@ namespace RHI
         CurrentNode = CurrentNode->Parent;
     }
 
-    UINT D3D12Profiler::StartProfile(ID3D12GraphicsCommandList* CommandList,
+    uint32_t D3D12Profiler::StartProfile(ID3D12GraphicsCommandList* CommandList,
                                      std::string_view           Name,
                                      INT                        Depth,
                                      UINT64                     Frequency)
     {
         assert(NumProfiles < MaxProfiles);
-        UINT ProfileIdx           = NumProfiles++;
+        uint32_t ProfileIdx           = NumProfiles++;
         Profiles[ProfileIdx].Name = Name;
 
         ProfileData& ProfileData = Profiles[ProfileIdx];
@@ -132,7 +132,7 @@ namespace RHI
         assert(ProfileData.QueryFinished == false);
 
         // Insert the start timestamp
-        UINT StartQueryIdx = ProfileIdx * 2;
+        uint32_t StartQueryIdx = ProfileIdx * 2;
         //CommandList->EndQuery(TimestampQueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, StartQueryIdx);
 
         //PIXBeginEvent(CommandList, 0, std::string(Name).c_str());
@@ -145,7 +145,7 @@ namespace RHI
         return ProfileIdx;
     }
 
-    void D3D12Profiler::EndProfile(ID3D12GraphicsCommandList* CommandList, UINT Index)
+    void D3D12Profiler::EndProfile(ID3D12GraphicsCommandList* CommandList, uint32_t Index)
     {
         assert(Index < NumProfiles);
 
@@ -158,8 +158,8 @@ namespace RHI
          //CommandList->ResourceBarrier(1, &barrier);
 
         // Insert the end timestamp
-        UINT StartIndex = Index * 2 + 0;
-        UINT EndIndex   = Index * 2 + 1;
+        uint32_t StartIndex = Index * 2 + 0;
+        uint32_t EndIndex   = Index * 2 + 1;
         //CommandList->EndQuery(TimestampQueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, EndIndex);
 
         // Resolve the data

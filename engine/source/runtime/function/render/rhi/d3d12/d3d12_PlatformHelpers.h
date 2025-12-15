@@ -101,7 +101,7 @@ namespace RHI
 
     // Helper sets a D3D resource name string (used by PIX and debug layer leak reporting).
 #if !defined(NO_D3D12_DEBUG_NAME) && (defined(_DEBUG) || defined(PROFILE))
-    template<UINT TNameLength>
+    template<uint32_t TNameLength>
     inline void SetDebugObjectName(_In_ ID3D12DeviceChild* resource, _In_z_ const char (&name)[TNameLength]) noexcept
     {
         wchar_t wname[MAX_PATH];
@@ -113,17 +113,17 @@ namespace RHI
         }
     }
 
-    template<UINT TNameLength>
+    template<uint32_t TNameLength>
     inline void SetDebugObjectName(_In_ ID3D12DeviceChild* resource, _In_z_ const wchar_t (&name)[TNameLength]) noexcept
     {
         resource->SetName(name);
     }
 #else
-    template<UINT TNameLength>
+    template<uint32_t TNameLength>
     inline void SetDebugObjectName(_In_ ID3D12DeviceChild*, _In_z_ const char (&)[TNameLength]) noexcept
     {}
 
-    template<UINT TNameLength>
+    template<uint32_t TNameLength>
     inline void SetDebugObjectName(_In_ ID3D12DeviceChild*, _In_z_ const wchar_t (&)[TNameLength]) noexcept
     {}
 #endif

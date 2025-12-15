@@ -587,7 +587,7 @@ namespace MoYu
         GetAABB(boundingBox, quadTree.m_rasterSizeX, quadTree.m_rasterSizeY, quadTree.m_desc.MapDims);
 
         float hitDistance = FLT_MAX;
-        if (!boundingBox.intersectRay(rayOrigin, rayDirection, hitDistance))
+        if (!boundingBox.intersectRay(Ray{ rayOrigin, rayDirection }, hitDistance))
             return false;
 
         if (hitDistance > maxDistance)

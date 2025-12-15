@@ -7,7 +7,7 @@ namespace MoYu
     /*
      * returns n! / d!
      */
-    static constexpr float factorial(size_t n, size_t d) {
+    constexpr float factorial(size_t n, size_t d) {
         d = std::max(size_t(1), d);
         n = std::max(size_t(1), n);
         float r = 1.0;
@@ -523,7 +523,7 @@ namespace MoYu
             return rotation * translation;
         }
 
-        static glm::float4x4 lookAtRH(const glm::float3& eye, const glm::float3& center, const glm::float3& up)
+        glm::float4x4 lookAtRH(const glm::float3& eye, const glm::float3& center, const glm::float3& up)
         {
 #if MOYU_USE_GLM_VIEW
             return glm::lookAtRH(eye, center, up);
@@ -1598,8 +1598,8 @@ namespace MoYu
 
     uint32_t Color::R11G11B10F(bool RoundToEven) const
     {
-        static const float kMaxVal   = float(1 << 16);
-        static const float kF32toF16 = (1.0 / (1ull << 56)) * (1.0 / (1ull << 56));
+        const float kMaxVal   = float(1 << 16);
+        const float kF32toF16 = (1.0 / (1ull << 56)) * (1.0 / (1ull << 56));
 
         union
         {
@@ -1635,8 +1635,8 @@ namespace MoYu
 
     uint32_t Color::R9G9B9E5() const
     {
-        static const float kMaxVal = float(0x1FF << 7);
-        static const float kMinVal = float(1.f / (1 << 16));
+        const float kMaxVal = float(0x1FF << 7);
+        const float kMinVal = float(1.f / (1 << 16));
 
         // Clamp RGB to [0, 1.FF*2^16]
         float _r = glm::clamp(r, 0.0f, kMaxVal);

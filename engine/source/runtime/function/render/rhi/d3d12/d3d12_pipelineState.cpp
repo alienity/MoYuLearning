@@ -236,7 +236,7 @@ namespace RHI
                 Desc.SampleMask                         = DefaultSampleMask();
                 Desc.RasterizerState                    = RHITranslateD3D12(Parser.RasterizerState);
                 Desc.DepthStencilState                  = RHITranslateD3D12(Parser.DepthStencilState);
-                Desc.InputLayout     = {Parser.InputElements.data(), static_cast<UINT>(Parser.InputElements.size())};
+                Desc.InputLayout     = {Parser.InputElements.data(), static_cast<uint32_t>(Parser.InputElements.size())};
                 Desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
                 Desc.PrimitiveTopologyType = RHITranslateD3D12(Parser.PrimitiveTopology);
                 Desc.NumRenderTargets      = Parser.RenderTargetState.NumRenderTargets;
@@ -399,15 +399,15 @@ namespace RHI
         return *this;
     }
 
-    RaytracingPipelineStateDesc& RaytracingPipelineStateDesc::SetRaytracingShaderConfig(UINT MaxPayloadSizeInBytes,
-                                                                                        UINT MaxAttributeSizeInBytes)
+    RaytracingPipelineStateDesc& RaytracingPipelineStateDesc::SetRaytracingShaderConfig(uint32_t MaxPayloadSizeInBytes,
+                                                                                        uint32_t MaxAttributeSizeInBytes)
     {
         ShaderConfig.MaxPayloadSizeInBytes   = MaxPayloadSizeInBytes;
         ShaderConfig.MaxAttributeSizeInBytes = MaxAttributeSizeInBytes;
         return *this;
     }
 
-    RaytracingPipelineStateDesc& RaytracingPipelineStateDesc::SetRaytracingPipelineConfig(UINT MaxTraceRecursionDepth)
+    RaytracingPipelineStateDesc& RaytracingPipelineStateDesc::SetRaytracingPipelineConfig(uint32_t MaxTraceRecursionDepth)
     {
         PipelineConfig.MaxTraceRecursionDepth = MaxTraceRecursionDepth;
         return *this;

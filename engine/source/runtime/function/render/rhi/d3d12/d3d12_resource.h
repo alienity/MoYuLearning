@@ -77,7 +77,7 @@ namespace RHI
 
         ID3D12Resource** GetAddressOf() { return m_pResource.GetAddressOf(); }
 
-        UINT   GetVersionID() const { return m_VersionID; }
+        uint32_t   GetVersionID() const { return m_VersionID; }
         UINT64 GetUniqueId() const { return g_GlobalUniqueId; }
 
         void SetResourceName(std::wstring name);
@@ -98,7 +98,7 @@ namespace RHI
         [[nodiscard]] inline DXGI_FORMAT                  GetFormat() const { return m_ResourceDesc.Format; }
 
         [[nodiscard]] inline UINT8           GetPlaneCount() const noexcept { return m_PlaneCount; }
-        [[nodiscard]] inline UINT            GetNumSubresources() const noexcept { return m_NumSubresources; }
+        [[nodiscard]] inline uint32_t            GetNumSubresources() const noexcept { return m_NumSubresources; }
         [[nodiscard]] inline CResourceState& GetResourceState() { return m_ResourceState; }
 
         // https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12#implicit-state-transitions
@@ -122,7 +122,7 @@ namespace RHI
                                                                   D3D12_RESOURCE_STATES InitialResourceState,
                                                                   std::optional<CD3DX12_CLEAR_VALUE> ClearValue) const;
 
-        UINT CalculateNumSubresources() const;
+        uint32_t CalculateNumSubresources() const;
 
     protected:
         // TODO: Add support for custom heap properties for UMA GPUs
@@ -131,14 +131,14 @@ namespace RHI
         std::optional<CD3DX12_CLEAR_VALUE>     m_ClearValue;
         CD3DX12_RESOURCE_DESC                  m_ResourceDesc    = {};
         UINT8                                  m_PlaneCount      = 0;
-        UINT                                   m_NumSubresources = 0;
+        uint32_t                                   m_NumSubresources = 0;
         CResourceState                         m_ResourceState;
         std::wstring                           m_ResourceName;
 
         static UINT64                          g_GlobalUniqueId;
 
         // Used to identify when a resource changes so descriptors can be copied etc.
-        UINT m_VersionID = 0;
+        uint32_t m_VersionID = 0;
     };
 
     class D3D12ASBuffer : public D3D12Resource
@@ -173,9 +173,9 @@ namespace RHI
 
         virtual void Destroy() override;
 
-        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(UINT Index = 0) const;
-        [[nodiscard]] UINT                      GetStride() const { return m_Stride; }
-        [[nodiscard]] UINT                      GetSizeInBytes() const { return m_SizeInBytes; }
+        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress(uint32_t Index = 0) const;
+        [[nodiscard]] uint32_t                      GetStride() const { return m_Stride; }
+        [[nodiscard]] uint32_t                      GetSizeInBytes() const { return m_SizeInBytes; }
         template<typename T>
         [[nodiscard]] T* GetCpuVirtualAddress() const
         {
@@ -193,7 +193,7 @@ namespace RHI
         {
             D3D12_VERTEX_BUFFER_VIEW VertexBufferView = {};
             VertexBufferView.BufferLocation           = m_pResource->GetGPUVirtualAddress();
-            VertexBufferView.SizeInBytes              = static_cast<UINT>(m_ResourceDesc.Width);
+            VertexBufferView.SizeInBytes              = static_cast<uint32_t>(m_ResourceDesc.Width);
             VertexBufferView.StrideInBytes            = m_Stride;
             return VertexBufferView;
         }
@@ -203,13 +203,13 @@ namespace RHI
         {
             D3D12_INDEX_BUFFER_VIEW IndexBufferView = {};
             IndexBufferView.BufferLocation          = m_pResource->GetGPUVirtualAddress();
-            IndexBufferView.SizeInBytes             = static_cast<UINT>(m_ResourceDesc.Width);
+            IndexBufferView.SizeInBytes             = static_cast<uint32_t>(m_ResourceDesc.Width);
             IndexBufferView.Format                  = Format;
             return IndexBufferView;
         }
 
         template<typename T>
-        void CopyData(UINT Index, const T& Data)
+        void CopyData(uint32_t Index, const T& Data)
         {
             assert(m_CpuVirtualAddress && "Invalid CpuVirtualAddress");
             memcpy(&m_CpuVirtualAddress[Index * m_Stride], &Data, sizeof(T));
@@ -224,11 +224,11 @@ namespace RHI
                                                    RHIBufferMode mapplableMode = RHIBufferMode::RHIBufferModeImmutable,
                                                    D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
                                                    BYTE*                 initialData = nullptr,
-                                                   UINT                  dataLen     = 0);
+                                                   uint32_t                  dataLen     = 0);
 
         std::shared_ptr<D3D12Buffer> GetCounterBuffer();
 
-        bool InflateBuffer(BYTE* initialData, UINT dataLen);
+        bool InflateBuffer(BYTE* initialData, uint32_t dataLen);
         void ResetCounterBuffer(D3D12CommandContext* pCommandContext);
 
         std::shared_ptr<D3D12ConstantBufferView>  CreateCBV(D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc, BOOL isNonShaderVisible = FALSE);
@@ -277,8 +277,8 @@ namespace RHI
 
     private:
         D3D12_HEAP_TYPE           m_HeapType    = {};
-        UINT                      m_SizeInBytes = 0;
-        UINT                      m_Stride      = 0;
+        uint32_t                      m_SizeInBytes = 0;
+        uint32_t                      m_Stride      = 0;
         BYTE*                     m_CpuVirtualAddress;
         D3D12_GPU_VIRTUAL_ADDRESS m_GpuVirtualAddress;
         D3D12ScopedPointer        m_ScopedPointer; // Upload heap
@@ -311,7 +311,7 @@ namespace RHI
 
         virtual void Destroy() override;
 
-        [[nodiscard]] UINT GetSubresourceIndex(UINT OptArraySlice = 0, UINT OptMipSlice = 0, UINT OptPlaneSlice = 0) const noexcept;
+        [[nodiscard]] uint32_t GetSubresourceIndex(uint32_t OptArraySlice = 0, uint32_t OptMipSlice = 0, uint32_t OptPlaneSlice = 0) const noexcept;
 
         [[nodiscard]] bool IsTex2DArray() const noexcept { return m_Desc.dim == RHITextureDimension::RHITexDim2DArray; }
         [[nodiscard]] bool IsCubemap() const noexcept { return m_Desc.dim == RHITextureDimension::RHITexDimCube; }
@@ -420,7 +420,7 @@ namespace RHI
         void ExportToFile(const std::wstring& FilePath);
 
     protected:
-        static INT GetMipLevels(UINT width, UINT height, INT32 numMips, RHISurfaceCreateFlags flags);
+        static INT GetMipLevels(uint32_t width, uint32_t height, INT32 numMips, RHISurfaceCreateFlags flags);
 
         std::shared_ptr<D3D12ShaderResourceView>  CreateShaderVisibleSRV(D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc);
         std::shared_ptr<D3D12UnorderedAccessView> CreateShaderVisibleUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc);

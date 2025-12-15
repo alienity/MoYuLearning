@@ -192,7 +192,7 @@ namespace MoYu
 
         float tAspect = width / (float)height;
 
-        rawCameraData.m_project_matrix = MoYu::MYMatrix4x4::createPerspectiveFieldOfView(
+        rawCameraData.m_project_matrix = MoYu::MYMatrix4x4::perspectiveFOV(
             MoYu::f::DEG_TO_RAD * rawCameraData.m_fieldOfViewY, tAspect, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
 
         // Analyze the projection matrix.
@@ -292,7 +292,7 @@ namespace MoYu
                     glm::float3 _forward = forward();
                     glm::float3 _up  = up();
 
-                    view_matrix = MoYu::MYMatrix4x4::createLookAtMatrix(_position, _position + _forward, _up);
+                    view_matrix = MoYu::MYMatrix4x4::lookAtRH(_position, _position + _forward, _up);
                 }
                 break;
             case RenderCameraType::Motor:
@@ -314,7 +314,7 @@ namespace MoYu
             if (!rawCameraData.m_isPerspective)
             {
                 rawCameraData.m_project_matrix = 
-                    MoYu::MYMatrix4x4::createOrthographic(actualWidth, actualHeight, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
+                    MoYu::MYMatrix4x4::orthographic(actualWidth, actualHeight, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
             }
             else
             {
@@ -355,7 +355,7 @@ namespace MoYu
                 float bottom = offset.y - vertical;
 
                 rawCameraData.m_project_matrix = 
-                    MoYu::MYMatrix4x4::createOrthographicOffCenter(left, right, bottom, top, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
+                    MoYu::MYMatrix4x4::orthographic(left, right, bottom, top, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
             }
             else
             {
@@ -388,7 +388,7 @@ namespace MoYu
 
     glm::float4x4 RenderCamera::getLookAtMatrix()
     {
-        return MoYu::MYMatrix4x4::createLookAtMatrix(position(), position() + forward(), up());
+        return MoYu::MYMatrix4x4::lookAtRH(position(), position() + forward(), up());
     }
 
     glm::float4x4 RenderCamera::getWorldToCameraMatrix()
@@ -429,7 +429,7 @@ namespace MoYu
         float ym = extents.w - extents.y;
         float yp = extents.w + extents.y;
 
-        return MoYu::MYMatrix4x4::createPerspectiveOffCenter(xm * cn, xp * cn, ym * cn, yp * cn, cn, cf);
+        return MoYu::MYMatrix4x4::perspective(xm * cn, xp * cn, ym * cn, yp * cn, cn, cf);
     }
 
     static glm::float4x4 Scale(glm::float3 vector)

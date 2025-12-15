@@ -72,33 +72,33 @@ namespace RHI
 
         void CopyBuffer(D3D12Buffer* Dest, D3D12Buffer* Src);
         void CopyBufferRegion(D3D12Buffer* Dest, UINT64 DestOffset, D3D12Buffer* Src, UINT64 SrcOffset, UINT64 NumBytes);
-        void CopySubresource(D3D12Texture* Dest, UINT DestSubIndex, D3D12Texture* Src, UINT SrcSubIndex);
-        void CopyTextureRegion(D3D12Texture* Dest, UINT x, UINT y, UINT z, D3D12Texture* Source, RECT& rect);
-        void ResetCounter(D3D12Buffer* CounterResource, UINT64 CounterOffset = 0, UINT Value = 0);
+        void CopySubresource(D3D12Texture* Dest, uint32_t DestSubIndex, D3D12Texture* Src, uint32_t SrcSubIndex);
+        void CopyTextureRegion(D3D12Texture* Dest, uint32_t x, uint32_t y, uint32_t z, D3D12Texture* Source, RECT& rect);
+        void ResetCounter(D3D12Buffer* CounterResource, UINT64 CounterOffset = 0, uint32_t Value = 0);
 
         // Creates a readback buffer of sufficient size, copies the texture into it,
         // and returns row pitch in bytes.
         //uint32_t ReadbackTexture(ReadbackBuffer* DstBuffer, D3D12Texture* SrcBuffer);
 
-        GraphicsResource ReserveUploadMemory(UINT64 SizeInBytes, UINT Alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+        GraphicsResource ReserveUploadMemory(UINT64 SizeInBytes, uint32_t Alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
         
         std::shared_ptr<D3D12Buffer> ReverveTmpBuffer(UINT64 SizeInBytes);
         std::shared_ptr<D3D12Texture> ReverveTmpTexture(RHIRenderSurfaceBaseDesc SurfaceDesc);
 
         static void InitializeTexture(D3D12LinkedDevice* Parent, D3D12Texture* Dest, std::vector<D3D12_SUBRESOURCE_DATA> Subresources);
-        static void InitializeTexture(D3D12LinkedDevice* Parent, D3D12Texture* Dest, UINT FirstSubresource, std::vector<D3D12_SUBRESOURCE_DATA> Subresources);
+        static void InitializeTexture(D3D12LinkedDevice* Parent, D3D12Texture* Dest, uint32_t FirstSubresource, std::vector<D3D12_SUBRESOURCE_DATA> Subresources);
         static void InitializeBuffer(D3D12LinkedDevice* Parent, D3D12Buffer* Dest, const void* Data, UINT64 NumBytes, UINT64 DestOffset = 0);
-        static void InitializeTextureArraySlice(D3D12LinkedDevice* Parent, D3D12Texture* Dest, UINT SliceIndex, D3D12Texture* Src);
+        static void InitializeTextureArraySlice(D3D12LinkedDevice* Parent, D3D12Texture* Dest, uint32_t SliceIndex, D3D12Texture* Src);
 
         void WriteBuffer(D3D12Buffer* Dest, UINT64 DestOffset, const void* BufferData, UINT64 NumBytes);
         void FillBuffer(D3D12Buffer* Dest, UINT64 DestOffset, DWParam Value, UINT64 NumBytes);
 
-        void TransitionBarrier(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, bool FlushImmediate = false);
+        void TransitionBarrier(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, uint32_t Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, bool FlushImmediate = false);
         void AliasingBarrier(D3D12Resource* BeforeResource, D3D12Resource* AfterResource, bool FlushImmediate = false);
         void InsertUAVBarrier(D3D12Resource* Resource, bool FlushImmediate = false);
         void FlushResourceBarriers();
 
-        bool AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource);
+        bool AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, uint32_t Subresource);
 
         /*
         void InsertTimeStamp( ID3D12QueryHeap* pQueryHeap, uint32_t QueryIdx );
@@ -115,7 +115,7 @@ namespace RHI
 
         void DispatchRays(const D3D12_DISPATCH_RAYS_DESC* pDesc);
 
-        void DispatchMesh(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ);
+        void DispatchMesh(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
 
     //protected:
     //    template<RHI_PIPELINE_STATE_TYPE PsoType>
@@ -150,11 +150,11 @@ namespace RHI
             struct
             {
                 // Viewport
-                UINT           NumViewports                                                        = 0;
+                uint32_t           NumViewports                                                        = 0;
                 D3D12_VIEWPORT Viewports[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
 
                 // Scissor Rect
-                UINT       NumScissorRects                                                        = 0;
+                uint32_t       NumScissorRects                                                        = 0;
                 D3D12_RECT ScissorRects[D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
             } Graphics;
 
@@ -183,9 +183,9 @@ namespace RHI
         void ClearRenderTarget(D3D12RenderTargetView* RenderTargetView, D3D12DepthStencilView* DepthStencilView);
         void ClearRenderTarget(std::vector<D3D12RenderTargetView*> RenderTargetViews, D3D12DepthStencilView* DepthStencilView);
         
-        void BeginQuery(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, UINT HeapIndex);
-        void EndQuery(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, UINT HeapIndex);
-        void ResolveQueryData(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, UINT StartIndex, UINT NumQueries, ID3D12Resource* DestinationBuffer, UINT64 DestinationBufferOffset);
+        void BeginQuery(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, uint32_t HeapIndex);
+        void EndQuery(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, uint32_t HeapIndex);
+        void ResolveQueryData(ID3D12QueryHeap* QueryHeap, D3D12_QUERY_TYPE Type, uint32_t StartIndex, uint32_t NumQueries, ID3D12Resource* DestinationBuffer, UINT64 DestinationBufferOffset);
 
         void SetRootSignature(D3D12RootSignature* RootSignature);
 
@@ -199,45 +199,45 @@ namespace RHI
         void SetViewport(FLOAT TopLeftX, FLOAT TopLeftY, FLOAT Width, FLOAT Height, FLOAT MinDepth = 0.0f, FLOAT MaxDepth = 1.0f);
         void SetViewports(std::vector<RHIViewport> Viewports);
         void SetScissorRect(const RHIRect& ScissorRect);
-        void SetScissorRect(UINT Left, UINT Top, UINT Right, UINT Bottom);
+        void SetScissorRect(uint32_t Left, uint32_t Top, uint32_t Right, uint32_t Bottom);
         void SetScissorRects(std::vector<RHIRect> ScissorRects);
         void SetViewportAndScissorRect(const RHIViewport& vp, const RHIRect& rect);
-        void SetViewportAndScissorRect(UINT x, UINT y, UINT w, UINT h);
-        void SetStencilRef(UINT StencilRef);
+        void SetViewportAndScissorRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+        void SetStencilRef(uint32_t StencilRef);
         void SetBlendFactor(MoYu::Color BlendFactor);
         void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY Topology);
 
-        void SetConstantArray(UINT RootIndex, UINT Offset, UINT NumConstants, const void* pConstants);
-        void SetConstantArray(UINT RootIndex, UINT NumConstants, const void* pConstants);
-        void SetConstant(UINT RootIndex, UINT Offset, DWParam Val);
-        void SetConstants(UINT RootIndex, DWParam X);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
-        void SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
-        void SetDynamicConstantBufferView(UINT RootParameterIndex, UINT64 BufferSize, const void* BufferData);
+        void SetConstantArray(uint32_t RootIndex, uint32_t Offset, uint32_t NumConstants, const void* pConstants);
+        void SetConstantArray(uint32_t RootIndex, uint32_t NumConstants, const void* pConstants);
+        void SetConstant(uint32_t RootIndex, uint32_t Offset, DWParam Val);
+        void SetConstants(uint32_t RootIndex, DWParam X);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y, DWParam Z);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
+        void SetConstantBuffer(uint32_t RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
+        void SetDynamicConstantBufferView(uint32_t RootParameterIndex, UINT64 BufferSize, const void* BufferData);
         template<typename T>
-        void SetDynamicConstantBufferView(UINT RootParameterIndex, const T& Data) { SetConstantBuffer(RootParameterIndex, sizeof(T), &Data); }
-        void SetBufferSRV(UINT RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset = 0);
-        void SetBufferUAV(UINT RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset = 0);
-        void SetDescriptorTable(UINT RootIndex, D3D12_GPU_DESCRIPTOR_HANDLE FirstHandle);
+        void SetDynamicConstantBufferView(uint32_t RootParameterIndex, const T& Data) { SetConstantBuffer(RootParameterIndex, sizeof(T), &Data); }
+        void SetBufferSRV(uint32_t RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset = 0);
+        void SetBufferUAV(uint32_t RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset = 0);
+        void SetDescriptorTable(uint32_t RootIndex, D3D12_GPU_DESCRIPTOR_HANDLE FirstHandle);
 
-        void SetDynamicDescriptor(UINT RootIndex, UINT Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
-        void SetDynamicDescriptors(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
-        void SetDynamicSampler(UINT RootIndex, UINT Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
-        void SetDynamicSamplers(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+        void SetDynamicDescriptor(uint32_t RootIndex, uint32_t Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
+        void SetDynamicDescriptors(uint32_t RootIndex, uint32_t Offset, uint32_t Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+        void SetDynamicSampler(uint32_t RootIndex, uint32_t Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
+        void SetDynamicSamplers(uint32_t RootIndex, uint32_t Offset, uint32_t Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
 
         void SetIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& IBView);
-        void SetVertexBuffer(UINT Slot, const D3D12_VERTEX_BUFFER_VIEW& VBView);
-        void SetVertexBuffers(UINT StartSlot, UINT Count, const D3D12_VERTEX_BUFFER_VIEW VBViews[]);
-        void SetDynamicVB(UINT Slot, UINT64 NumVertices, UINT64 VertexStride, const void* VBData);
+        void SetVertexBuffer(uint32_t Slot, const D3D12_VERTEX_BUFFER_VIEW& VBView);
+        void SetVertexBuffers(uint32_t StartSlot, uint32_t Count, const D3D12_VERTEX_BUFFER_VIEW VBViews[]);
+        void SetDynamicVB(uint32_t Slot, UINT64 NumVertices, UINT64 VertexStride, const void* VBData);
         void SetDynamicIB(UINT64 IndexCount, const UINT16* IBData);
-        void SetDynamicSRV(UINT RootIndex, UINT64 BufferSize, const void* BufferData);
+        void SetDynamicSRV(uint32_t RootIndex, UINT64 BufferSize, const void* BufferData);
 
-        void Draw(UINT VertexCount, UINT VertexStartOffset = 0);
-        void DrawIndexed(UINT IndexCount, UINT StartIndexLocation = 0, INT BaseVertexLocation = 0);
-        void DrawInstanced(UINT VertexCount, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation);
-        void DrawIndexedInstanced(UINT IndexCount, UINT InstanceCount, UINT StartIndexLocation, INT  BaseVertexLocation, UINT StartInstanceLocation);
+        void Draw(uint32_t VertexCount, uint32_t VertexStartOffset = 0);
+        void DrawIndexed(uint32_t IndexCount, uint32_t StartIndexLocation = 0, INT BaseVertexLocation = 0);
+        void DrawInstanced(uint32_t VertexCount, uint32_t InstanceCount, uint32_t StartVertexLocation, uint32_t StartInstanceLocation);
+        void DrawIndexedInstanced(uint32_t IndexCount, uint32_t InstanceCount, uint32_t StartIndexLocation, INT  BaseVertexLocation, uint32_t StartInstanceLocation);
         void DrawIndirect(D3D12Buffer* ArgumentBuffer, UINT64 ArgumentBufferOffset = 0);
         void ExecuteIndirect(D3D12CommandSignature* CommandSig, D3D12Buffer* ArgumentBuffer, UINT64 ArgumentStartOffset = 0,
             UINT32 MaxCommands = 1, D3D12Buffer* CommandCounterBuffer = nullptr, UINT64 CounterOffset = 0);
@@ -253,30 +253,30 @@ namespace RHI
 
         void SetRootSignature(D3D12RootSignature* RootSignature);
 
-        void SetConstantArray(UINT RootIndex, UINT NumConstants, const void* pConstants);
-        void SetConstant(UINT RootIndex, UINT Offset, DWParam Val);
-        void SetConstants(UINT RootIndex, DWParam X);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z);
-        void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
-        void SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
-        void SetDynamicConstantBufferView(UINT RootParameterIndex, UINT64 BufferSize, const void* BufferData);
+        void SetConstantArray(uint32_t RootIndex, uint32_t NumConstants, const void* pConstants);
+        void SetConstant(uint32_t RootIndex, uint32_t Offset, DWParam Val);
+        void SetConstants(uint32_t RootIndex, DWParam X);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y, DWParam Z);
+        void SetConstants(uint32_t RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
+        void SetConstantBuffer(uint32_t RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
+        void SetDynamicConstantBufferView(uint32_t RootParameterIndex, UINT64 BufferSize, const void* BufferData);
         template<typename T>
-        void SetDynamicConstantBufferView(UINT RootParameterIndex, const T& Data)
+        void SetDynamicConstantBufferView(uint32_t RootParameterIndex, const T& Data)
         {
             SetDynamicConstantBufferView(RootParameterIndex, sizeof(T), &Data);
         }
-        void SetDynamicSRV(UINT RootIndex, UINT64 BufferSize, const void* BufferData);
-        void SetBufferSRV(UINT RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset = 0);
-        void SetBufferUAV(UINT RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset = 0);
-        void SetDescriptorTable(UINT RootIndex, D3D12_GPU_DESCRIPTOR_HANDLE FirstHandle);
+        void SetDynamicSRV(uint32_t RootIndex, UINT64 BufferSize, const void* BufferData);
+        void SetBufferSRV(uint32_t RootIndex, D3D12Buffer* BufferSRV, UINT64 Offset = 0);
+        void SetBufferUAV(uint32_t RootIndex, D3D12Buffer* BufferUAV, UINT64 Offset = 0);
+        void SetDescriptorTable(uint32_t RootIndex, D3D12_GPU_DESCRIPTOR_HANDLE FirstHandle);
 
-        void SetDynamicDescriptor(UINT RootIndex, UINT Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
-        void SetDynamicDescriptors(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
-        void SetDynamicSampler(UINT RootIndex, UINT Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
-        void SetDynamicSamplers(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+        void SetDynamicDescriptor(uint32_t RootIndex, uint32_t Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
+        void SetDynamicDescriptors(uint32_t RootIndex, uint32_t Offset, uint32_t Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+        void SetDynamicSampler(uint32_t RootIndex, uint32_t Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
+        void SetDynamicSamplers(uint32_t RootIndex, uint32_t Offset, uint32_t Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
         
-        void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ);
+        void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
         void Dispatch1D(UINT64 ThreadCountX, UINT64 GroupSizeX = 64);
         void Dispatch2D(UINT64 ThreadCountX, UINT64 ThreadCountY, UINT64 GroupSizeX = 8, UINT64 GroupSizeY = 8);
         void Dispatch3D(UINT64 ThreadCountX, UINT64 ThreadCountY, UINT64 ThreadCountZ, UINT64 GroupSizeX, UINT64 GroupSizeY, UINT64 GroupSizeZ);

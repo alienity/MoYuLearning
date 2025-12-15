@@ -13,7 +13,7 @@ namespace RHI
         auto begin() noexcept { return RaytracingGeometryDescs.begin(); }
         auto end() noexcept { return RaytracingGeometryDescs.end(); }
 
-        [[nodiscard]] UINT Size() const noexcept { return static_cast<UINT>(RaytracingGeometryDescs.size()); }
+        [[nodiscard]] uint32_t Size() const noexcept { return static_cast<uint32_t>(RaytracingGeometryDescs.size()); }
 
         [[nodiscard]] D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS GetInputsDesc() const
         {
@@ -254,7 +254,7 @@ namespace RHI
     public:
         virtual ~IRaytracingShaderTable() = default;
 
-        UINT GetNumShaderRecords() const { return NumShaderRecords; }
+        uint32_t GetNumShaderRecords() const { return NumShaderRecords; }
 
         virtual UINT64 GetTotalSizeInBytes() const = 0;
         virtual UINT64 GetSizeInBytes() const      = 0;
@@ -263,7 +263,7 @@ namespace RHI
         virtual void Write(BYTE* Dst) const = 0;
 
     protected:
-        UINT NumShaderRecords = 0;
+        uint32_t NumShaderRecords = 0;
     };
 
     template<typename T>
@@ -318,7 +318,7 @@ namespace RHI
     {
     public:
         template<typename T>
-        D3D12RaytracingShaderTable<T>* AddRayGenerationShaderTable(UINT NumRayGenerationShaders)
+        D3D12RaytracingShaderTable<T>* AddRayGenerationShaderTable(uint32_t NumRayGenerationShaders)
         {
             assert(RayGenerationShaderTable == nullptr);
             auto Table               = new D3D12RaytracingShaderTable<T>(NumRayGenerationShaders);
@@ -327,7 +327,7 @@ namespace RHI
         }
 
         template<typename T>
-        D3D12RaytracingShaderTable<T>* AddMissShaderTable(UINT NumMissShaders)
+        D3D12RaytracingShaderTable<T>* AddMissShaderTable(uint32_t NumMissShaders)
         {
             assert(MissShaderTable == nullptr);
             auto Table      = new D3D12RaytracingShaderTable<T>(NumMissShaders);
@@ -336,7 +336,7 @@ namespace RHI
         }
 
         template<typename T>
-        D3D12RaytracingShaderTable<T>* AddHitGroupShaderTable(UINT NumHitGroups)
+        D3D12RaytracingShaderTable<T>* AddHitGroupShaderTable(uint32_t NumHitGroups)
         {
             assert(HitGroupShaderTable == nullptr);
             auto Table          = new D3D12RaytracingShaderTable<T>(NumHitGroups);
@@ -350,7 +350,7 @@ namespace RHI
         // Call this after shader records for the tables have been filled out to upload the records to GPU table
         void WriteToGpu(ID3D12GraphicsCommandList* CommandList) const;
 
-        [[nodiscard]] D3D12_DISPATCH_RAYS_DESC GetDesc(UINT RayGenerationShaderIndex, UINT BaseMissShaderIndex) const;
+        [[nodiscard]] D3D12_DISPATCH_RAYS_DESC GetDesc(uint32_t RayGenerationShaderIndex, uint32_t BaseMissShaderIndex) const;
 
     private:
         std::unique_ptr<IRaytracingShaderTable> RayGenerationShaderTable;

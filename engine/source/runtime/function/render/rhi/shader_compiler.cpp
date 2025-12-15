@@ -32,7 +32,7 @@ std::string DxcException::GetError() const
         DXCERR(E_NOINTERFACE);
         default: {
             char Buffer[64] = {};
-            sprintf_s(Buffer, "HRESULT of 0x%08X", static_cast<UINT>(ErrorCode));
+            sprintf_s(Buffer, "HRESULT of 0x%08X", static_cast<uint32_t>(ErrorCode));
             Error = Buffer;
         }
         break;

@@ -217,13 +217,13 @@ namespace MoYu
 
             struct RootIndexBuffer
             {
-                UINT perFrameBufferIndex;
-                UINT cameraMotionVectorsTextureIndex;
-                UINT mainColorBufferIndex;
-                UINT depthBufferIndex;
-                UINT historyReadIndex;
-                UINT historyWriteIndex;
-                UINT aaOutIndex;
+                uint32_t perFrameBufferIndex;
+                uint32_t cameraMotionVectorsTextureIndex;
+                uint32_t mainColorBufferIndex;
+                uint32_t depthBufferIndex;
+                uint32_t historyReadIndex;
+                uint32_t historyWriteIndex;
+                uint32_t aaOutIndex;
             };
 
             RootIndexBuffer rootIndexBuffer = RootIndexBuffer {RegGetBufDefCBVIdx(perframeBufferHandle),
@@ -234,7 +234,7 @@ namespace MoYu
                                                                RegGetTexDefUAVIdx(taaTextureWrite),
                                                                RegGetTexDefUAVIdx(aaOutputHandle)};
 
-            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch2D(colorDesc.Width, colorDesc.Height, 8, 8);
 

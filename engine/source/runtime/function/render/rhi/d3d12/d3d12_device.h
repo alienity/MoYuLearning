@@ -60,7 +60,7 @@ namespace RHI
         }
         [[nodiscard]] auto GetDStorageFence() noexcept -> D3D12Fence* { return m_DStorageFence.get(); }
         [[nodiscard]] auto GetAllNodeMask() const noexcept -> D3D12NodeMask { return m_AllNodeMask; }
-        [[nodiscard]] auto GetSizeOfDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type) const noexcept -> UINT
+        [[nodiscard]] auto GetSizeOfDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type) const noexcept -> uint32_t
         {
             return m_DescriptorSizeCache[Type];
         }
@@ -101,7 +101,7 @@ namespace RHI
         [[nodiscard]] D3D12RaytracingPipelineState CreateRaytracingPipelineState(RaytracingPipelineStateDesc& Desc);
 
     private:
-        using TDescriptorSizeCache = std::array<UINT, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES>;
+        using TDescriptorSizeCache = std::array<uint32_t, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES>;
 
         static void ReportLiveObjects();
         static void OnDeviceRemoved(PVOID Context, BOOLEAN);

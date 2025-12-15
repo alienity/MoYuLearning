@@ -122,8 +122,8 @@ namespace MoYu
         glm::float3 m_translation = sun_to_earth_distance * m_direction;
          
         glm::float4x4 sunLightViewMat =
-            MoYu::MYMatrix4x4::createLookAtMatrix(m_translation, glm::float3(0, 0, 0), MYFloat3::Up);
-        glm::float4x4 sunLightProjMat = MYMatrix4x4::createOrthographic(
+            MoYu::MYMatrix4x4::lookAtRH(m_translation, glm::float3(0, 0, 0), MYFloat3::Up);
+        glm::float4x4 sunLightProjMat = MYMatrix4x4::orthographic(
             volumeCloudShadowBounds.x, volumeCloudShadowBounds.y, shadow_near_plane, shadow_far_plane);
 
         real_resource->m_FrameUniforms.volumeCloudUniform.cloud_shadow_view_matrix = sunLightViewMat;

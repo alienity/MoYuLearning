@@ -85,7 +85,7 @@ namespace MoYu
         m_render_camera = std::make_shared<RenderCamera>(true);
 
         m_render_camera->updateCameraData(true, 
-            MoYu::MYMatrix4x4::createLookAtMatrix(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up), 
+            MoYu::MYMatrix4x4::lookAtRH(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up), 
             g_WindowConfig.width, g_WindowConfig.height, 
             global_rendering_res.m_camera_config.m_z_near,
             global_rendering_res.m_camera_config.m_z_far,

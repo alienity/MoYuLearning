@@ -338,7 +338,7 @@ namespace RHI
         return Resource;
     }
 
-    UINT D3D12Resource::CalculateNumSubresources() const
+    uint32_t D3D12Resource::CalculateNumSubresources() const
     {
         if (m_ResourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER)
         {
@@ -422,7 +422,7 @@ namespace RHI
         m_UAVHandleMap.clear();
     }
 
-    D3D12_GPU_VIRTUAL_ADDRESS D3D12Buffer::GetGpuVirtualAddress(UINT Index) const
+    D3D12_GPU_VIRTUAL_ADDRESS D3D12Buffer::GetGpuVirtualAddress(uint32_t Index) const
     {
         //return m_pResource->GetGPUVirtualAddress() + static_cast<UINT64>(Index) * m_Stride;
         return m_GpuVirtualAddress + static_cast<UINT64>(Index) * m_Stride;
@@ -436,7 +436,7 @@ namespace RHI
                                                      RHIBufferMode         mapplableMode,
                                                      D3D12_RESOURCE_STATES initState,
                                                      BYTE*                 initialData,
-                                                     UINT                  dataLen)
+                                                     uint32_t                  dataLen)
     {
 
         ASSERT(mapplableMode == RHIBufferMode::RHIBufferModeDynamic ||
@@ -455,7 +455,7 @@ namespace RHI
         D3D12_HEAP_TYPE heapType =
             mapplable ? D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
 
-        UINT sizeInBytes = numElements * elementSize;
+        uint32_t sizeInBytes = numElements * elementSize;
 
         std::shared_ptr<D3D12Buffer> pBufferD3D12 =
             std::make_shared<D3D12Buffer>(Parent, sizeInBytes, elementSize, heapType, resourceFlag, initState);
@@ -503,7 +503,7 @@ namespace RHI
 
     std::shared_ptr<D3D12Buffer> D3D12Buffer::GetCounterBuffer() { return this->p_CounterBufferD3D12; }
 
-    bool D3D12Buffer::InflateBuffer(BYTE* initialData, UINT dataLen)
+    bool D3D12Buffer::InflateBuffer(BYTE* initialData, uint32_t dataLen)
     {
         if (this->m_Data.m_Data != nullptr)
         {
@@ -834,7 +834,7 @@ namespace RHI
         m_UAVHandleMap.clear();
     }
 
-    UINT D3D12Texture::GetSubresourceIndex(UINT OptArraySlice, UINT OptMipSlice, UINT OptPlaneSlice) const noexcept
+    uint32_t D3D12Texture::GetSubresourceIndex(uint32_t OptArraySlice, uint32_t OptMipSlice, uint32_t OptPlaneSlice) const noexcept
     {
         return D3D12CalcSubresource(
             OptMipSlice, OptArraySlice, OptPlaneSlice, m_ResourceDesc.MipLevels, m_ResourceDesc.DepthOrArraySize);
@@ -1010,7 +1010,7 @@ namespace RHI
         {
             for (size_t i = 0; i < initDatas.size(); i++)
             {
-                UINT firstSubResource = pSurfaceD3D12->GetSubresourceIndex(i, 0, 0);
+                uint32_t firstSubResource = pSurfaceD3D12->GetSubresourceIndex(i, 0, 0);
                 std::vector<D3D12_SUBRESOURCE_DATA> subresources = {initDatas[i]};
                 D3D12CommandContext::InitializeTexture(Parent, pSurfaceD3D12.get(), firstSubResource, subresources);
             }
@@ -1072,7 +1072,7 @@ namespace RHI
                                                               std::vector<D3D12_SUBRESOURCE_DATA> initDatas)
     {
         CD3DX12_CLEAR_VALUE inClearValue = clearValue != std::nullopt ? clearValue.value() : CD3DX12_CLEAR_VALUE();
-        UINT cubeFaces = 6;
+        uint32_t cubeFaces = 6;
         RHIRenderSurfaceBaseDesc desc = {width, height, cubeFaces, sampleCount, numMips, flags, RHITexDimCube, format, inClearValue, true, false};
         return Create(Parent, desc, name, initState, initDatas);
     }
@@ -1091,8 +1091,8 @@ namespace RHI
                                                                    std::vector<D3D12_SUBRESOURCE_DATA> initDatas)
     {
         CD3DX12_CLEAR_VALUE inClearValue = clearValue != std::nullopt ? clearValue.value() : CD3DX12_CLEAR_VALUE();
-        UINT cubeFaces = 6;
-        UINT cubeArrayFaces = cubeFaces * arraySize;
+        uint32_t cubeFaces = 6;
+        uint32_t cubeArrayFaces = cubeFaces * arraySize;
         RHIRenderSurfaceBaseDesc desc = {width, height, cubeArrayFaces, sampleCount, numMips, flags, RHITexDimCubeArray, format, inClearValue, true, false};
         return Create(Parent, desc, name, initState, initDatas);
     }
@@ -1111,7 +1111,7 @@ namespace RHI
                                                          D3D12_SUBRESOURCE_DATA             initData)
     {
         CD3DX12_CLEAR_VALUE inClearValue = clearValue != std::nullopt ? clearValue.value() : CD3DX12_CLEAR_VALUE();
-        UINT cubeFaces = 6;
+        uint32_t cubeFaces = 6;
         RHIRenderSurfaceBaseDesc desc = {width, height, depth, sampleCount, numMips, flags, RHITexDim3D, format, inClearValue, true, false};
         std::vector<D3D12_SUBRESOURCE_DATA> subDatas = {};
         if (initData.pData != nullptr) subDatas.push_back(initData);
@@ -1238,7 +1238,7 @@ namespace RHI
 
     }
 
-    INT D3D12Texture::GetMipLevels(UINT width, UINT height, INT32 numMips, RHISurfaceCreateFlags flags)
+    INT D3D12Texture::GetMipLevels(uint32_t width, uint32_t height, INT32 numMips, RHISurfaceCreateFlags flags)
     {
         INT mipLevels = MoYu::Min(numMips, MAXMIPLEVELS);
         if (flags & RHISurfaceCreateMipmap)

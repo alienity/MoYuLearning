@@ -118,7 +118,7 @@ namespace RHI
             return;
 
         // For all the used pages, fence them
-        UINT                 numReady     = 0;
+        uint32_t                 numReady     = 0;
         LinearAllocatorPage* readyPages   = nullptr;
         LinearAllocatorPage* unreadyPages = nullptr;
         LinearAllocatorPage* nextPage     = nullptr;

@@ -64,7 +64,7 @@ namespace RHI
         uint32_t                   DescriptorSize,
         DescriptorHandle           DestHandleStart,
         ID3D12GraphicsCommandList* CmdList,
-        void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(UINT, D3D12_GPU_DESCRIPTOR_HANDLE))
+        void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE))
     {
         uint32_t StaleParamCount = 0;
         uint32_t TableSize[DescriptorHandleCache::kMaxNumDescriptorTables];
@@ -94,13 +94,13 @@ namespace RHI
         m_StaleRootParamsBitMap = 0;
 
         static const uint32_t       kMaxDescriptorsPerCopy  = 16;
-        UINT                        NumDestDescriptorRanges = 0;
+        uint32_t                        NumDestDescriptorRanges = 0;
         D3D12_CPU_DESCRIPTOR_HANDLE pDestDescriptorRangeStarts[kMaxDescriptorsPerCopy];
-        UINT                        pDestDescriptorRangeSizes[kMaxDescriptorsPerCopy];
+        uint32_t                        pDestDescriptorRangeSizes[kMaxDescriptorsPerCopy];
 
-        UINT                        NumSrcDescriptorRanges = 0;
+        uint32_t                        NumSrcDescriptorRanges = 0;
         D3D12_CPU_DESCRIPTOR_HANDLE pSrcDescriptorRangeStarts[kMaxDescriptorsPerCopy];
-        UINT                        pSrcDescriptorRangeSizes[kMaxDescriptorsPerCopy];
+        uint32_t                        pSrcDescriptorRangeSizes[kMaxDescriptorsPerCopy];
 
         DescriptorHandle DestHandleStartArray[DescriptorHandleCache::kMaxNumDescriptorTables];
         
@@ -184,7 +184,7 @@ namespace RHI
     void DynamicDescriptorHeap::CopyAndBindStagedTables(
         DescriptorHandleCache&     HandleCache,
         ID3D12GraphicsCommandList* CmdList,
-        void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(UINT, D3D12_GPU_DESCRIPTOR_HANDLE))
+        void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE))
     {
         uint32_t NeededSize = HandleCache.ComputeStagedSize();
         HandleCache.CopyAndBindStaleTables(
@@ -212,9 +212,9 @@ namespace RHI
     }
 
     void
-    DynamicDescriptorHeap::DescriptorHandleCache::StageDescriptorHandles(UINT                              RootIndex,
-                                                                         UINT                              Offset,
-                                                                         UINT                              NumHandles,
+    DynamicDescriptorHeap::DescriptorHandleCache::StageDescriptorHandles(uint32_t                              RootIndex,
+                                                                         uint32_t                              Offset,
+                                                                         uint32_t                              NumHandles,
                                                                          const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
     {
         ASSERT(((1 << RootIndex) & m_RootDescriptorTablesBitMap) != 0);
@@ -222,7 +222,7 @@ namespace RHI
 
         DescriptorTableCache&        TableCache = m_RootDescriptorTable[RootIndex];
         D3D12_CPU_DESCRIPTOR_HANDLE* CopyDest   = TableCache.TableStart + Offset;
-        for (UINT i = 0; i < NumHandles; ++i)
+        for (uint32_t i = 0; i < NumHandles; ++i)
             CopyDest[i] = Handles[i];
         TableCache.AssignedHandlesBitMap |= ((1 << NumHandles) - 1) << Offset;
         m_StaleRootParamsBitMap |= (1 << RootIndex);
@@ -231,7 +231,7 @@ namespace RHI
     void DynamicDescriptorHeap::DescriptorHandleCache::ParseRootSignature(D3D12_DESCRIPTOR_HEAP_TYPE Type,
                                                                           const D3D12RootSignature*  RootSig)
     {
-        UINT CurrentOffset = 0;
+        uint32_t CurrentOffset = 0;
 
         ASSERT(RootSig->GetNumParameters() <= 16);
 
@@ -245,7 +245,7 @@ namespace RHI
         {
             TableParams ^= (1 << RootIndex);
 
-            UINT TableSize = RootSig->GetDescriptorTableSize(RootIndex);
+            uint32_t TableSize = RootSig->GetDescriptorTableSize(RootIndex);
             ASSERT(TableSize > 0);
 
             DescriptorTableCache& RootDescriptorTable = m_RootDescriptorTable[RootIndex];

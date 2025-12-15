@@ -22,23 +22,23 @@
 #include "../../ShaderLibrary/Common.hlsl"
 #endif
 
-//最大的LOD级别是5
+//The maximum LOD level is 5
 #define MAX_TERRAIN_LOD 5
 #define MAX_NODE_ID 34124
 
-// 在 Max LOD 下，世界由5x5个Node组成
+// At Max LOD, the world consists of 5x5 Nodes
 #define MAX_LOD_NODE_COUNT 5
 
-//一个PatchMesh由16x16网格组成
+// A PatchMesh consists of 16x16 grids
 #define PATCH_MESH_GRID_COUNT 16
 
-//一个PatchMesh边长8米
+// A PatchMesh has a side length of 8 meters
 #define PATCH_MESH_SIZE 8
 
-//一个Node拆成8x8个Patch
+// A Node is divided into 8x8 Patches
 #define PATCH_COUNT_PER_NODE 8
 
-//PatchMesh一个格子的大小为0.5x0.5
+// A PatchMesh grid cell size is 0.5x0.5
 #define PATCH_MESH_GRID_SIZE 0.5
 #define SECTOR_COUNT_WORLD 160
 
@@ -75,22 +75,22 @@ struct TerrainRenderData
 };
 
 /*
-* 对于WorldLodParams
-- nodeSize为Node的边长(米)
-- patchExtent等于nodeSize/16
-- nodeCount等于WorldSize/nodeSize
-- sectorCountPerNode等于2^lod
+* For WorldLodParams
+- nodeSize is the Node side length (meters)
+- patchExtent equals nodeSize/16
+- nodeCount equals WorldSize/nodeSize
+- sectorCountPerNode equals 2^lod
  */
 struct TerrainConsData
 {
     float4x4 TerrainModelMatrix;
     float4x4 CameraViewProj;
-    float3 CameraPositionWS; // 相机世界空间坐标
-    int BoundsHeightRedundance; //包围盒在高度方向留出冗余空间，应对MinMaxHeightTexture的精度不足
-    float3 WorldSize; //世界大小
+    float3 CameraPositionWS; // Camera world space coordinates
+    int BoundsHeightRedundance; // Bounding box reserves redundant space in height direction to cope with insufficient precision of MinMaxHeightTexture
+    float3 WorldSize; // World size
     float _HizDepthBias;
     float4 HizDepthMapSize;
-    float4 NodeEvaluationC; //节点评价系数。x为距离系数
+    float4 NodeEvaluationC; // Node evaluation coefficient. x is the distance coefficient
     float4 WorldLodParams[MAX_TERRAIN_LOD+1]; // (nodeSize,patchExtent,nodeCount,sectorCountPerNode)
     uint NodeIDOffsetOfLOD[MAX_TERRAIN_LOD+1];
 };

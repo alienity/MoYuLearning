@@ -828,8 +828,8 @@ void BakingLab::RenderAA()
     context->PSSetSamplers(0, 1, samplers);
 
     ID3D11Buffer* vbs[1] = { nullptr };
-    UINT strides[1] = { 0 };
-    UINT offsets[1] = { 0 };
+    uint32_t strides[1] = { 0 };
+    uint32_t offsets[1] = { 0 };
     context->IASetVertexBuffers(0, 1, vbs, strides, offsets);
     context->IASetInputLayout(nullptr);
     context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
@@ -881,8 +881,8 @@ void BakingLab::RenderBackgroundVelocity()
     context->DSSetShader(nullptr, nullptr, 0);
 
     ID3D11Buffer* vbs[1] = { nullptr };
-    UINT strides[1] = { 0 };
-    UINT offsets[1] = { 0 };
+    uint32_t strides[1] = { 0 };
+    uint32_t offsets[1] = { 0 };
     context->IASetVertexBuffers(0, 1, vbs, strides, offsets);
     context->IASetInputLayout(nullptr);
     context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);

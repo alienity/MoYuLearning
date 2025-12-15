@@ -943,7 +943,7 @@ namespace RHI
                 // DXERR(DXGI_ERROR_WAS_STILL_DRAWING); // Already defined
             default: {
                 char Buffer[64] = {};
-                sprintf_s(Buffer, "HRESULT of 0x%08X", static_cast<UINT>(ErrorCode));
+                sprintf_s(Buffer, "HRESULT of 0x%08X", static_cast<uint32_t>(ErrorCode));
                 Error = Buffer;
             }
             break;

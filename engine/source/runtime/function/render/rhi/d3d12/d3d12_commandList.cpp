@@ -106,7 +106,7 @@ namespace RHI
         return ResourceState;
     }
 
-    D3D12_RESOURCE_STATES D3D12CommandListHandle::GetResourceStateTracked(D3D12Resource* Resource, UINT Subresource)
+    D3D12_RESOURCE_STATES D3D12CommandListHandle::GetResourceStateTracked(D3D12Resource* Resource, uint32_t Subresource)
     {
         CResourceState& ResourceState = ResourceStateTracker.GetResourceState(Resource);
         return ResourceState.GetSubresourceState(Subresource);
@@ -114,7 +114,7 @@ namespace RHI
 
     void D3D12CommandListHandle::TransitionBarrier(D3D12Resource*        Resource,
                                                    D3D12_RESOURCE_STATES State,
-                                                   UINT Subresource /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
+                                                   uint32_t Subresource /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
     {
         CResourceState& ResourceState = ResourceStateTracker.GetResourceState(Resource);
         // First use on the command list
@@ -130,7 +130,7 @@ namespace RHI
             if (Subresource == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES && !ResourceState.IsUniform())
             {
                 // First transition all of the subresources if they are different than the State
-                UINT i = 0;
+                uint32_t i = 0;
                 for (D3D12_RESOURCE_STATES SubresourceState : ResourceState)
                 {
                     if (SubresourceState != State)
@@ -230,7 +230,7 @@ namespace RHI
     }
 
     bool
-    D3D12CommandListHandle::AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, UINT Subresource)
+    D3D12CommandListHandle::AssertResourceState(D3D12Resource* Resource, D3D12_RESOURCE_STATES State, uint32_t Subresource)
     {
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES
         if (DebugCommandList)
@@ -341,7 +341,7 @@ namespace RHI
     void D3D12CommandListHandle::AddTransition(D3D12Resource*        Resource,
                                                D3D12_RESOURCE_STATES StateBefore,
                                                D3D12_RESOURCE_STATES StateAfter,
-                                               UINT Subresource /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
+                                               uint32_t Subresource /*= D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES*/)
     {
         ResourceStateTracker.AddCachedResourceBarrier(CachedResourceBarrier{ Resource, StateAfter, Subresource });
         Add(CD3DX12_RESOURCE_BARRIER::Transition(Resource->GetResource(), StateBefore, StateAfter, Subresource));

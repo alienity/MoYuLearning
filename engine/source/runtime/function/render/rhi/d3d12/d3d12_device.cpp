@@ -277,7 +277,7 @@ namespace RHI
 
     void D3D12Device::InternalCreateDxgiFactory(bool Debug)
     {
-        UINT FactoryFlags = Debug ? DXGI_CREATE_FACTORY_DEBUG : 0;
+        uint32_t FactoryFlags = Debug ? DXGI_CREATE_FACTORY_DEBUG : 0;
         // Create DXGIFactory
         VERIFY_D3D12_API(CreateDXGIFactory2(FactoryFlags, IID_PPV_ARGS(&m_Factory6)));
     }
@@ -369,7 +369,7 @@ namespace RHI
         // Enumerate hardware for an adapter that supports D3D12
         Microsoft::WRL::ComPtr<ID3D12Device> Device;
         Microsoft::WRL::ComPtr<IDXGIAdapter3> AdapterIterator;
-        UINT                                  AdapterId = 0;
+        uint32_t                                  AdapterId = 0;
         while (SUCCEEDED(m_Factory6->EnumAdapterByGpuPreference(
             AdapterId, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(AdapterIterator.ReleaseAndGetAddressOf()))))
         {

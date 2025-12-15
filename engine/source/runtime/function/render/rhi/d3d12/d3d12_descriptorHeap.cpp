@@ -245,7 +245,7 @@ namespace RHI
         return Handle;
     }
 
-    UINT DescriptorHeapAllocation::GetDescriptorHeapOffsetIndex(UINT32 Offset) const
+    uint32_t DescriptorHeapAllocation::GetDescriptorHeapOffsetIndex(UINT32 Offset) const
     {
         ASSERT(Offset >= 0 && Offset < m_NumHandles);
         ASSERT(m_DescriptorHandleOffsetIndex != InvalidDescriptorHandleOffsetIndex);
@@ -397,7 +397,7 @@ namespace RHI
                 //         m_HeapDesc.NumDescriptors,
                 //         "). Increasing the number of descriptors in the heap");
             }
-            m_HeapDesc.NumDescriptors = std::max(m_HeapDesc.NumDescriptors, static_cast<UINT>(Count));
+            m_HeapDesc.NumDescriptors = std::max(m_HeapDesc.NumDescriptors, static_cast<uint32_t>(Count));
             // Create a new descriptor heap manager. Note that this constructor creates a new D3D12 descriptor
             // heap and references the entire heap. Pool index is used as manager ID
             m_HeapPool.emplace_back(std::move(DescriptorHeapAllocationManager(this, m_HeapPool.size(), m_HeapDesc)));

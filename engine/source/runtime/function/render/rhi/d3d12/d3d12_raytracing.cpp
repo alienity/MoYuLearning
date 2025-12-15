@@ -27,7 +27,7 @@ namespace RHI
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS Inputs = {};
         Inputs.Type     = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
         Inputs.Flags    = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-        Inputs.NumDescs = static_cast<UINT>(RaytracingInstanceDescs.size());
+        Inputs.NumDescs = static_cast<uint32_t>(RaytracingInstanceDescs.size());
 
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO PrebuildInfo = {};
         Device->GetRaytracingAccelerationStructurePrebuildInfo(&Inputs, &PrebuildInfo);
@@ -53,7 +53,7 @@ namespace RHI
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS Inputs = {};
         Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
         Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
-        Inputs.NumDescs = static_cast<UINT>(RaytracingInstanceDescs.size());
+        Inputs.NumDescs = static_cast<uint32_t>(RaytracingInstanceDescs.size());
         Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
         Inputs.InstanceDescs = InstanceDescs;
 
@@ -398,7 +398,7 @@ namespace RHI
 
         assert(GpuPages.size() < 32);
         D3D12_RESOURCE_BARRIER Barriers[32] = {};
-        UINT                   NumBarriers  = 0;
+        uint32_t                   NumBarriers  = 0;
 
         for (const auto& Page : GpuPages)
         {
@@ -557,8 +557,8 @@ namespace RHI
         CommandList->CopyBufferRegion(pSBTBuffer->GetResource(), 0, pSBTUploadBuffer->GetResource(), 0, SizeInBytes);
     }
 
-    D3D12_DISPATCH_RAYS_DESC D3D12RaytracingShaderBindingTable::GetDesc(UINT RayGenerationShaderIndex,
-                                                                        UINT BaseMissShaderIndex) const
+    D3D12_DISPATCH_RAYS_DESC D3D12RaytracingShaderBindingTable::GetDesc(uint32_t RayGenerationShaderIndex,
+                                                                        uint32_t BaseMissShaderIndex) const
     {
         UINT64 RayGenerationShaderTableSizeInBytes = RayGenerationShaderTable->GetSizeInBytes();
         UINT64 MissShaderTableSizeInBytes          = MissShaderTable->GetSizeInBytes();

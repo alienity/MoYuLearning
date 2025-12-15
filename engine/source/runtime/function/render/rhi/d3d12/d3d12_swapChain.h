@@ -64,7 +64,7 @@ namespace RHI
         // Calling this function to ensure the correct color space for the different pixel formats.
         void EnsureSwapChainColorSpace(BitDepth BitDepth, bool EnableST2084);
 
-        [[nodiscard]] D3D12Texture* GetBackBuffer(UINT Index);
+        [[nodiscard]] D3D12Texture* GetBackBuffer(uint32_t Index);
         [[nodiscard]] D3D12Texture* GetCurrentBackBufferResource();
 
         [[nodiscard]] RHIViewport GetViewport() const noexcept;
@@ -72,7 +72,7 @@ namespace RHI
 
         RHI::D3D12SyncHandle GetSyncHandle() const noexcept;
 
-        void Resize(UINT Width, UINT Height);
+        void Resize(uint32_t Width, uint32_t Height);
 
         void Present(bool VSync, IPresent& Present);
 
@@ -81,12 +81,12 @@ namespace RHI
 
     private:
         HWND WindowHandle   = nullptr;
-        UINT Width          = 0;
-        UINT Height         = 0;
+        uint32_t Width          = 0;
+        uint32_t Height         = 0;
         bool TearingSupport = false;
         RECT WindowBounds   = {};
 
-        UINT m_CurrentBackBufferIndex = 0;
+        uint32_t m_CurrentBackBufferIndex = 0;
 
         Microsoft::WRL::ComPtr<IDXGISwapChain4> p_SwapChain4;
         std::shared_ptr<D3D12Texture> p_BackBuffers[SWAP_CHAIN_BUFFER_COUNT];

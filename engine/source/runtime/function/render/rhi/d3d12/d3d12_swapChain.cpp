@@ -64,7 +64,7 @@ namespace RHI
         // app window (i.e. the output for which the intersection area is the
         // greatest).
 
-        UINT                                Index = 0;
+        uint32_t                                Index = 0;
         Microsoft::WRL::ComPtr<IDXGIOutput> OutputIterator;
         Microsoft::WRL::ComPtr<IDXGIOutput> BestOutput;
         float                               BestIntersectArea = -1;
@@ -137,7 +137,7 @@ namespace RHI
 
         if (CurrentColorSpace != ColorSpace)
         {
-            UINT ColorSpaceSupport = 0;
+            uint32_t ColorSpaceSupport = 0;
             if (SUCCEEDED(p_SwapChain4->CheckColorSpaceSupport(ColorSpace, &ColorSpaceSupport)) &&
                 (ColorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) ==
                     DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
@@ -148,11 +148,11 @@ namespace RHI
         }
     }
 
-    D3D12Texture* D3D12SwapChain::GetBackBuffer(UINT Index) { return p_BackBuffers[Index].get(); }
+    D3D12Texture* D3D12SwapChain::GetBackBuffer(uint32_t Index) { return p_BackBuffers[Index].get(); }
 
     D3D12Texture* D3D12SwapChain::GetCurrentBackBufferResource()
     {
-        //UINT backBufferIndex = p_SwapChain4->GetCurrentBackBufferIndex();
+        //uint32_t backBufferIndex = p_SwapChain4->GetCurrentBackBufferIndex();
         return p_BackBuffers[m_CurrentBackBufferIndex].get();
     }
 
@@ -168,7 +168,7 @@ namespace RHI
 
     RHI::D3D12SyncHandle D3D12SwapChain::GetSyncHandle() const noexcept { return m_SyncHandle; }
 
-    void D3D12SwapChain::Resize(UINT Width, UINT Height)
+    void D3D12SwapChain::Resize(uint32_t Width, uint32_t Height)
     {
         if (m_SyncHandle)
         {
@@ -197,7 +197,7 @@ namespace RHI
 
         EnsureSwapChainColorSpace(CurrentBitDepth, EnableST2084);
 
-        for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
+        for (uint32_t i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
         {
             Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
             VERIFY_D3D12_API(p_SwapChain4->GetBuffer(i, IID_PPV_ARGS(&Resource)));
@@ -211,8 +211,8 @@ namespace RHI
     {
         Present.PrePresent();
         {
-            UINT    SyncInterval = VSync ? 1u : 0u;
-            UINT    PresentFlags = (TearingSupport && !VSync) ? DXGI_PRESENT_ALLOW_TEARING : 0u;
+            uint32_t    SyncInterval = VSync ? 1u : 0u;
+            uint32_t    PresentFlags = (TearingSupport && !VSync) ? DXGI_PRESENT_ALLOW_TEARING : 0u;
             HRESULT Result       = p_SwapChain4->Present(SyncInterval, PresentFlags);
         }
         Present.PostPresent();

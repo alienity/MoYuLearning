@@ -21,7 +21,7 @@ namespace RHI
         // The actual address will be solved when generating the actual root signature
         CD3DX12_ROOT_PARAMETER1& Parameter = Parameters.emplace_back();
         Parameter.InitAsDescriptorTable(DescriptorTable.size(), nullptr);
-        DescriptorTableIndices.push_back(static_cast<UINT>(DescriptorTables.size()));
+        DescriptorTableIndices.push_back(static_cast<uint32_t>(DescriptorTables.size()));
         DescriptorTables.push_back(DescriptorTable);
         return *this;
     }
@@ -114,9 +114,9 @@ namespace RHI
             }
         }
 
-        D3D12_ROOT_SIGNATURE_DESC1 Desc = {static_cast<UINT>(Parameters.size()),
+        D3D12_ROOT_SIGNATURE_DESC1 Desc = {static_cast<uint32_t>(Parameters.size()),
                                            Parameters.data(),
-                                           static_cast<UINT>(StaticSamplers.size()),
+                                           static_cast<uint32_t>(StaticSamplers.size()),
                                            StaticSamplers.data(),
                                            Flags};
         return Desc;
@@ -167,7 +167,7 @@ namespace RHI
 
         memset(m_DescriptorTableSize, 0, sizeof(m_DescriptorTableSize));
 
-        for (UINT i = 0; i < ApiDesc.Desc_1_1.NumParameters; ++i)
+        for (uint32_t i = 0; i < ApiDesc.Desc_1_1.NumParameters; ++i)
         {
             const D3D12_ROOT_PARAMETER1& RootParameter = ApiDesc.Desc_1_1.pParameters[i];
             if (RootParameter.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
@@ -188,7 +188,7 @@ namespace RHI
                 }
 
                 // Calculate total number of descriptors in the descriptor table.
-                for (UINT j = 0; j < DescriptorTable1.NumDescriptorRanges; ++j)
+                for (uint32_t j = 0; j < DescriptorTable1.NumDescriptorRanges; ++j)
                 {
                     m_DescriptorTableSize[i] += DescriptorTable1.pDescriptorRanges[j].NumDescriptors;
                 }
@@ -209,7 +209,7 @@ namespace RHI
         }
     }
 
-    UINT D3D12RootSignature::GetDescriptorTableSize(UINT RootParameterIndex) const noexcept
+    uint32_t D3D12RootSignature::GetDescriptorTableSize(uint32_t RootParameterIndex) const noexcept
     {
         ASSERT(RootParameterIndex < MOYU_RHI_D3D12_GLOBAL_ROOT_DESCRIPTOR_TABLE_LIMIT);
         return m_DescriptorTableSize[RootParameterIndex];

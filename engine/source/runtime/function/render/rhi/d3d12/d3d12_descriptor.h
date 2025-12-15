@@ -106,18 +106,18 @@ namespace RHI
         {
             return BeginMip == EndMip || BeginArray == EndArray || BeginPlane == EndPlane;
         }
-        [[nodiscard]] UINT ArraySize() const { return ArraySlices; }
+        [[nodiscard]] uint32_t ArraySize() const { return ArraySlices; }
 
-        [[nodiscard]] UINT MinSubresource() const;
-        [[nodiscard]] UINT MaxSubresource() const;
+        [[nodiscard]] uint32_t MinSubresource() const;
+        [[nodiscard]] uint32_t MaxSubresource() const;
 
     private:
         void Reduce()
         {
             if (BeginMip == 0 && EndMip == MipLevels && BeginArray == 0 && EndArray == ArraySlices)
             {
-                UINT startSubresource = D3D12CalcSubresource(0, 0, BeginPlane, MipLevels, ArraySlices);
-                UINT endSubresource   = D3D12CalcSubresource(0, 0, EndPlane, MipLevels, ArraySlices);
+                uint32_t startSubresource = D3D12CalcSubresource(0, 0, BeginPlane, MipLevels, ArraySlices);
+                uint32_t endSubresource   = D3D12CalcSubresource(0, 0, EndPlane, MipLevels, ArraySlices);
 
                 // Only coalesce if the full-resolution UINTs fit in the UINT8s used
                 // for storage here
@@ -147,7 +147,7 @@ namespace RHI
     // ViewSubset.begin(); it != ViewSubset.end(); ++it )
     // {
     //      // StartSubresource and EndSubresource members of the iterator describe
-    //      the contiguous range. for( UINT SubresourceIndex =
+    //      the contiguous range. for( uint32_t SubresourceIndex =
     //      it.StartSubresource(); SubresourceIndex < it.EndSubresource();
     //      SubresourceIndex++ )
     //      {
@@ -203,7 +203,7 @@ namespace RHI
             return !(CViewSubresourceIterator == *this);
         }
 
-        [[nodiscard]] UINT StartSubresource() const
+        [[nodiscard]] uint32_t StartSubresource() const
         {
             return D3D12CalcSubresource(ViewSubresourceSubset.BeginMip,
                                         CurrentArraySlice,
@@ -211,7 +211,7 @@ namespace RHI
                                         ViewSubresourceSubset.MipLevels,
                                         ViewSubresourceSubset.ArraySlices);
         }
-        [[nodiscard]] UINT EndSubresource() const
+        [[nodiscard]] uint32_t EndSubresource() const
         {
             return D3D12CalcSubresource(ViewSubresourceSubset.EndMip,
                                         CurrentArraySlice,
@@ -219,7 +219,7 @@ namespace RHI
                                         ViewSubresourceSubset.MipLevels,
                                         ViewSubresourceSubset.ArraySlices);
         }
-        [[nodiscard]] std::pair<UINT, UINT> operator*() const
+        [[nodiscard]] std::pair<uint32_t, uint32_t> operator*() const
         {
             return std::make_pair(StartSubresource(), EndSubresource());
         }
@@ -315,7 +315,7 @@ namespace RHI
             ASSERT(IsValid());
             return m_DescriptorHeapAllocation.GetGpuHandle(0);
         }
-        [[nodiscard]] UINT GetIndex() const noexcept
+        [[nodiscard]] uint32_t GetIndex() const noexcept
         {
             ASSERT(IsValid());
             return m_DescriptorHeapAllocation.GetDescriptorHeapOffsetIndex(0);
@@ -387,7 +387,7 @@ namespace RHI
         [[nodiscard]] bool                        IsValid() const noexcept { return Descriptor.IsValid(); }
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCpuHandle() const noexcept { return Descriptor.GetCpuHandle(); }
         [[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle() const noexcept { return Descriptor.GetGpuHandle(); }
-        [[nodiscard]] UINT                        GetIndex() const noexcept { return Descriptor.GetIndex(); }
+        [[nodiscard]] uint32_t                        GetIndex() const noexcept { return Descriptor.GetIndex(); }
         [[nodiscard]] ViewDesc                    GetDesc() const noexcept { return Desc; }
         [[nodiscard]] D3D12Resource*              GetResource() const noexcept { return Resource; }
 
@@ -452,7 +452,7 @@ namespace RHI
         [[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetGpuHandle() const noexcept { return D3D12View::GetGpuHandle(); }
 
     public:
-        static D3D12_CONSTANT_BUFFER_VIEW_DESC GetDesc(D3D12Buffer* Buffer, UINT Offset, UINT Size);
+        static D3D12_CONSTANT_BUFFER_VIEW_DESC GetDesc(D3D12Buffer* Buffer, uint32_t Offset, uint32_t Size);
     };
 
     enum BufferResourceType
@@ -468,8 +468,8 @@ namespace RHI
         D3D12ShaderResourceView() noexcept = default;
         D3D12ShaderResourceView(D3D12LinkedDevice* Device, const D3D12_SHADER_RESOURCE_VIEW_DESC& Desc, D3D12Resource* Resource, BOOL IsNonShaderVisible = FALSE);
         D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12ASBuffer* ASBuffer, BOOL IsNonShaderVisible = FALSE);
-        D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements, BOOL IsNonShaderVisible = FALSE);
-        D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, UINT FirstElement, UINT NumElements, BOOL IsNonShaderVisible = FALSE);
+        D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements, BOOL IsNonShaderVisible = FALSE);
+        D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, uint32_t FirstElement, uint32_t NumElements, BOOL IsNonShaderVisible = FALSE);
         D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, BOOL IsNonShaderVisible = FALSE);
         D3D12ShaderResourceView(D3D12LinkedDevice* Device, D3D12Texture* Texture, bool sRGB,  INT OptMostDetailedMip = -1, INT OptMipLevels = -1, BOOL IsNonShaderVisible = FALSE);
 
@@ -483,8 +483,8 @@ namespace RHI
 
     public:
         static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12ASBuffer* ASBuffer);
-        static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements);
-        static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, UINT FirstElement, UINT NumElements, DXGI_FORMAT BufferFormat = DXGI_FORMAT_R32_TYPELESS);
+        static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements);
+        static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, uint32_t FirstElement, uint32_t NumElements, DXGI_FORMAT BufferFormat = DXGI_FORMAT_R32_TYPELESS);
 
         static D3D12_SHADER_RESOURCE_VIEW_DESC GetDesc(D3D12Texture* Texture, bool sRGB, INT OptMostDetailedMip, INT OptMipLevels);
     };
@@ -494,8 +494,8 @@ namespace RHI
     public:
         D3D12UnorderedAccessView() noexcept = default;
         D3D12UnorderedAccessView(D3D12LinkedDevice* Device, const D3D12_UNORDERED_ACCESS_VIEW_DESC& Desc, D3D12Resource* Resource, D3D12Resource* CounterResource = nullptr, BOOL IsNonShaderVisible = FALSE);
-        D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes, BOOL IsNonShaderVisible = FALSE);
-        D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes, BOOL IsNonShaderVisible = FALSE);
+        D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes, BOOL IsNonShaderVisible = FALSE);
+        D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes, BOOL IsNonShaderVisible = FALSE);
         D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Buffer* Buffer, BOOL IsNonShaderVisible = FALSE);
         D3D12UnorderedAccessView(D3D12LinkedDevice* Device, D3D12Texture* Texture, INT OptArraySlice = -1, INT OptMipSlice = -1, BOOL IsNonShaderVisible = FALSE);
 
@@ -507,8 +507,8 @@ namespace RHI
             return D3D12View::GetViewSubresourceSubset();
         }
     public:
-        static D3D12_UNORDERED_ACCESS_VIEW_DESC GetDesc(D3D12Buffer* Buffer, bool Raw, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes);
-        static D3D12_UNORDERED_ACCESS_VIEW_DESC GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, UINT FirstElement, UINT NumElements, UINT64 CounterOffsetInBytes, DXGI_FORMAT BufferFormat = DXGI_FORMAT_R32_TYPELESS);
+        static D3D12_UNORDERED_ACCESS_VIEW_DESC GetDesc(D3D12Buffer* Buffer, bool Raw, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes);
+        static D3D12_UNORDERED_ACCESS_VIEW_DESC GetDesc(D3D12Buffer* Buffer, BufferResourceType ResType, uint32_t FirstElement, uint32_t NumElements, UINT64 CounterOffsetInBytes, DXGI_FORMAT BufferFormat = DXGI_FORMAT_R32_TYPELESS);
         static D3D12_UNORDERED_ACCESS_VIEW_DESC GetDesc(D3D12Texture* Texture, INT OptArraySlice = -1, INT OptMipSlice = -1);
         
     private:

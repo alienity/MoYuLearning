@@ -161,7 +161,7 @@ endif()
 
 add_library(spdlog::spdlog ALIAS spdlog)
 
-target_compile_definitions(spdlog PUBLIC SPDLOG_COMPILED_LIB)
+target_compile_definitions(spdlog PUBLIC SPDLOG_COMPILED_LIB _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 target_include_directories(spdlog PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                                          "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 target_link_libraries(spdlog PUBLIC Threads::Threads)
@@ -193,7 +193,7 @@ if(SPDLOG_FMT_EXTERNAL OR SPDLOG_FMT_EXTERNAL_HO)
         find_package(fmt CONFIG REQUIRED)
     endif()
     target_compile_definitions(spdlog PUBLIC SPDLOG_FMT_EXTERNAL)
-    target_compile_definitions(spdlog_header_only INTERFACE SPDLOG_FMT_EXTERNAL)
+    target_compile_definitions(spdlog_header_only INTERFACE SPDLOG_FMT_EXTERNAL _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
 
     # use external fmt-header-nly
     if(SPDLOG_FMT_EXTERNAL_HO)

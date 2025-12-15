@@ -33,7 +33,7 @@ namespace RHI
             Desc.Type                          = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
         }
 
-        void AddVertexBufferView(UINT Slot)
+        void AddVertexBufferView(uint32_t Slot)
         {
             D3D12_INDIRECT_ARGUMENT_DESC& Desc = Parameters.emplace_back();
             Desc.Type                          = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
@@ -46,7 +46,7 @@ namespace RHI
             Desc.Type                          = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW;
         }
 
-        void AddConstant(UINT RootParameterIndex, UINT DestOffsetIn32BitValues, UINT Num32BitValuesToSet)
+        void AddConstant(uint32_t RootParameterIndex, uint32_t DestOffsetIn32BitValues, uint32_t Num32BitValuesToSet)
         {
             D3D12_INDIRECT_ARGUMENT_DESC& Desc    = Parameters.emplace_back();
             Desc.Type                             = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
@@ -56,7 +56,7 @@ namespace RHI
             RequiresRootSignature                 = true;
         }
 
-        void AddConstantBufferView(UINT RootParameterIndex)
+        void AddConstantBufferView(uint32_t RootParameterIndex)
         {
             D3D12_INDIRECT_ARGUMENT_DESC& Desc         = Parameters.emplace_back();
             Desc.Type                                  = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
@@ -64,7 +64,7 @@ namespace RHI
             RequiresRootSignature                      = true;
         }
 
-        void AddShaderResourceView(UINT RootParameterIndex)
+        void AddShaderResourceView(uint32_t RootParameterIndex)
         {
             D3D12_INDIRECT_ARGUMENT_DESC& Desc         = Parameters.emplace_back();
             Desc.Type                                  = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW;
@@ -72,7 +72,7 @@ namespace RHI
             RequiresRootSignature                      = true;
         }
 
-        void AddUnorderedAccessView(UINT RootParameterIndex)
+        void AddUnorderedAccessView(uint32_t RootParameterIndex)
         {
             D3D12_INDIRECT_ARGUMENT_DESC& Desc          = Parameters.emplace_back();
             Desc.Type                                   = D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW;

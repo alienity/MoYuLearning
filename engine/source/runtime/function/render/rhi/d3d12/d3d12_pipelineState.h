@@ -163,10 +163,10 @@ namespace RHI
 
         RaytracingPipelineStateDesc& SetGlobalRootSignature(ID3D12RootSignature* GlobalRootSignature);
 
-        RaytracingPipelineStateDesc& SetRaytracingShaderConfig(UINT MaxPayloadSizeInBytes,
-                                                               UINT MaxAttributeSizeInBytes);
+        RaytracingPipelineStateDesc& SetRaytracingShaderConfig(uint32_t MaxPayloadSizeInBytes,
+                                                               uint32_t MaxAttributeSizeInBytes);
 
-        RaytracingPipelineStateDesc& SetRaytracingPipelineConfig(UINT MaxTraceRecursionDepth);
+        RaytracingPipelineStateDesc& SetRaytracingPipelineConfig(uint32_t MaxTraceRecursionDepth);
 
         D3D12_STATE_OBJECT_DESC Build();
 

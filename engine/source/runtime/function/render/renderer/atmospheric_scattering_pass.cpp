@@ -522,7 +522,7 @@ namespace MoYu
                              deltaMultipleScattering3DSRV->GetIndex(),
                              deltaIrradiance2DSRV->GetIndex(),
                              deltaScatteringDensity3DUAV->GetIndex(),
-                             scattering_order};
+                             (int)scattering_order};
 
                     pContext->SetRootSignature(pComputeScatteringDensitySignature.get());
                     pContext->SetPipelineState(pComputeScatteringDensityPSO.get());
@@ -584,7 +584,7 @@ namespace MoYu
                              deltaMultipleScattering3DSRV->GetIndex(),
                              deltaIrradiance2DUAV->GetIndex(),
                              irradiance2DUAV->GetIndex(),
-                             scattering_order - 1};
+                             (int)(scattering_order - 1)};
 
                     pContext->SetRootSignature(pComputeIdirectIrradianceSignature.get());
                     pContext->SetPipelineState(pComputeIdirectIrradiancePSO.get());
@@ -641,7 +641,7 @@ namespace MoYu
                              deltaScatteringDensity3DSRV->GetIndex(),
                              deltaMultipleScattering3DUAV->GetIndex(),
                              scattering3DUAV->GetIndex(),
-                             scattering_order};
+                             (int)scattering_order};
 
                     pContext->SetRootSignature(pComputeMultipleScatteringSignature.get());
                     pContext->SetPipelineState(pComputeMultipleScatteringPSO.get());

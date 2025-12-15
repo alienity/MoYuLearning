@@ -24,12 +24,12 @@ namespace RHI
         void CleanupUsedHeaps();
 
         // Copy multiple handles into the cache area reserved for the specified root parameter.
-        void SetGraphicsDescriptorHandles(UINT RootIndex, UINT Offset, UINT NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
+        void SetGraphicsDescriptorHandles(uint32_t RootIndex, uint32_t Offset, uint32_t NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
         {
             m_GraphicsHandleCache.StageDescriptorHandles(RootIndex, Offset, NumHandles, Handles);
         }
 
-        void SetComputeDescriptorHandles(UINT RootIndex, UINT Offset, UINT NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
+        void SetComputeDescriptorHandles(uint32_t RootIndex, uint32_t Offset, uint32_t NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
         {
             m_ComputeHandleCache.StageDescriptorHandles(RootIndex, Offset, NumHandles, Handles);
         }
@@ -102,20 +102,20 @@ namespace RHI
                   UINT32                     DescriptorSize,
                   DescriptorHandle           DestHandleStart,
                   ID3D12GraphicsCommandList* CmdList,
-                  void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(UINT, D3D12_GPU_DESCRIPTOR_HANDLE));
+                  void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE));
 
             DescriptorTableCache        m_RootDescriptorTable[kMaxNumDescriptorTables];
             D3D12_CPU_DESCRIPTOR_HANDLE m_HandleCache[kMaxNumDescriptors];
 
             void UnbindAllValid();
-            void StageDescriptorHandles(UINT RootIndex, UINT Offset, UINT NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+            void StageDescriptorHandles(uint32_t RootIndex, uint32_t Offset, uint32_t NumHandles, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
             void ParseRootSignature(D3D12_DESCRIPTOR_HEAP_TYPE Type, const D3D12RootSignature* RootSig);
         };
 
         DescriptorHandleCache m_GraphicsHandleCache;
         DescriptorHandleCache m_ComputeHandleCache;
 
-        DescriptorHandle Allocate(UINT Count)
+        DescriptorHandle Allocate(uint32_t Count)
         {
             DescriptorHeapAllocation descAllocation = m_DynamicSubAllocManager->Allocate(Count);
             DescriptorHandle ret = descAllocation.GetDescriptorHandle();
@@ -129,7 +129,7 @@ namespace RHI
         void CopyAndBindStagedTables(
             DescriptorHandleCache&     HandleCache,
             ID3D12GraphicsCommandList* CmdList,
-            void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(UINT, D3D12_GPU_DESCRIPTOR_HANDLE));
+            void (STDMETHODCALLTYPE ID3D12GraphicsCommandList::*SetFunc)(uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE));
 
         // Mark all descriptors in the cache as stale and in need of re-uploading.
         void UnbindAllValid(void);

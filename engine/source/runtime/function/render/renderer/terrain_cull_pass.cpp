@@ -1452,7 +1452,7 @@ namespace MoYu
                                                                RegGetTexDefSRVIdx(terrainMaxHeightMapHandle),
                                                                RegGetBufDefUAVIdx(camVisableClipmapHandle)};
 
-            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch1D(256, 8);
         });
@@ -1526,7 +1526,7 @@ namespace MoYu
                                                                        RegGetTexDefSRVIdx(terrainMaxHeightMapHandle),
                                                                        RegGetBufDefUAVIdx(dirVisableClipmapHandles[i])};
 
-                    pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+                    pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
                     pContext->Dispatch1D(256, 8);
                 }
@@ -1605,10 +1605,10 @@ namespace MoYu
 
             struct RootIndexBuffer
             {
-                UINT meshPerFrameBufferIndex;
-                UINT terrainPatchNodeIndex;
-                UINT terrainPatchNodeCountIndex;
-                UINT terrainVisNodeIdxIndex;
+                uint32_t meshPerFrameBufferIndex;
+                uint32_t terrainPatchNodeIndex;
+                uint32_t terrainPatchNodeCountIndex;
+                uint32_t terrainVisNodeIdxIndex;
             };
 
             RootIndexBuffer rootIndexBuffer =
@@ -1617,7 +1617,7 @@ namespace MoYu
                                  RegGetBufCounterSRVIdx(terrainPatchNodeHandle),
                                  RegGetBufDefUAVIdx(mainCamVisiableIndexHandle)};
 
-            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+            pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
             pContext->Dispatch1D(4096, 128);
         });
@@ -1665,21 +1665,21 @@ namespace MoYu
 
                     struct RootIndexBuffer
                     {
-                        UINT cascadeLevel;
-                        UINT meshPerFrameBufferIndex;
-                        UINT terrainPatchNodeIndex;
-                        UINT terrainPatchNodeCountIndex;
-                        UINT terrainVisNodeIdxIndex;
+                        uint32_t cascadeLevel;
+                        uint32_t meshPerFrameBufferIndex;
+                        uint32_t terrainPatchNodeIndex;
+                        uint32_t terrainPatchNodeCountIndex;
+                        uint32_t terrainVisNodeIdxIndex;
                     };
 
                     RootIndexBuffer rootIndexBuffer =
-                        RootIndexBuffer {(UINT)i,
+                        RootIndexBuffer {(uint32_t)i,
                                          RegGetBufDefCBVIdx(perframeBufferHandle),
                                          RegGetBufDefSRVIdx(terrainPatchNodeHandle),
                                          RegGetBufCounterSRVIdx(terrainPatchNodeHandle),
                                          RegGetBufDefUAVIdx(dirShadowPatchNodeVisiableIndexHandles[i])};
 
-                    pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+                    pContext->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
 
                     pContext->Dispatch1D(4096, 128);
                 }

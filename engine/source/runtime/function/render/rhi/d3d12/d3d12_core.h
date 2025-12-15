@@ -406,17 +406,17 @@ namespace RHI
     struct DWParam
     {
         DWParam(FLOAT f) : Float(f) {}
-        DWParam(UINT u) : Uint(u) {}
+        DWParam(uint32_t u) : Uint(u) {}
         DWParam(INT i) : Int(i) {}
 
         void operator=(FLOAT f) { Float = f; }
-        void operator=(UINT u) { Uint = u; }
+        void operator=(uint32_t u) { Uint = u; }
         void operator=(INT i) { Int = i; }
 
         union
         {
             FLOAT Float;
-            UINT  Uint;
+            uint32_t  Uint;
             INT   Int;
         };
     };
@@ -464,8 +464,8 @@ namespace RHI
         }
         bool operator!=(const RHIBufferDesc& o) const { return !(*this == o); }
 
-        UINT            size   = 0;                   // Size of buffer in bytes
-        UINT            number = 0;                   // Number of elements
+        uint32_t            size   = 0;                   // Size of buffer in bytes
+        uint32_t            number = 0;                   // Number of elements
         UINT32          stride = 0;                   // Size of index/vertex/struct
         RHIBufferTarget target = RHIBufferTargetNone; // Purpose of the buffer
         RHIBufferMode mode = RHIBufferModeImmutable;  // Update mode: static, dynamic, or readable
@@ -595,13 +595,13 @@ namespace RHI
 	struct D3D12NodeMask
     {
         D3D12NodeMask() noexcept : NodeMask(1) {}
-        constexpr D3D12NodeMask(UINT NodeMask) : NodeMask(NodeMask) {}
+        constexpr D3D12NodeMask(uint32_t NodeMask) : NodeMask(NodeMask) {}
 
-        operator UINT() const noexcept { return NodeMask; }
+        operator uint32_t() const noexcept { return NodeMask; }
 
         static D3D12NodeMask FromIndex(std::uint32_t GpuIndex) { return {1u << GpuIndex}; }
 
-        UINT NodeMask;
+        uint32_t NodeMask;
     };
 
     class D3D12Device;
@@ -737,7 +737,7 @@ namespace RHI
         }
 
         void
-        AddVertexLayoutElement(std::string_view SemanticName, UINT SemanticIndex, DXGI_FORMAT Format, UINT InputSlot)
+        AddVertexLayoutElement(std::string_view SemanticName, uint32_t SemanticIndex, DXGI_FORMAT Format, uint32_t InputSlot)
         {
             D3D12_INPUT_ELEMENT_DESC& Desc = InputElements.emplace_back();
             Desc.SemanticName              = SemanticName.data();
@@ -755,7 +755,7 @@ namespace RHI
 	template<typename TFunc>
     struct D3D12ScopedMap
     {
-        D3D12ScopedMap(ID3D12Resource* Resource, UINT Subresource, D3D12_RANGE ReadRange, TFunc Func) :
+        D3D12ScopedMap(ID3D12Resource* Resource, uint32_t Subresource, D3D12_RANGE ReadRange, TFunc Func) :
             Resource(Resource)
         {
             void* Data = nullptr;

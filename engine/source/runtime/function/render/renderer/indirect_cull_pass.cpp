@@ -663,11 +663,11 @@ namespace MoYu
 
                     struct RootIndexBuffer
                     {
-                        UINT perFrameBufferIndex;
-                        UINT renderDataPerDrawIndex;
-                        UINT propertiesPerMaterialIndex;
-                        UINT opaqueSortIndexDisBufferIndex;
-                        UINT transSortIndexDisBufferIndex;
+                        uint32_t perFrameBufferIndex;
+                        uint32_t renderDataPerDrawIndex;
+                        uint32_t propertiesPerMaterialIndex;
+                        uint32_t opaqueSortIndexDisBufferIndex;
+                        uint32_t transSortIndexDisBufferIndex;
                     };
 
                     RootIndexBuffer rootIndexBuffer =
@@ -677,7 +677,7 @@ namespace MoYu
                                          RegGetBufDefUAVIdx(opaqueDrawHandle.indirectIndexBufferHandle),
                                          RegGetBufDefUAVIdx(transparentDrawHandle.indirectIndexBufferHandle)};
 
-                    pAsyncCompute->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(UINT), &rootIndexBuffer);
+                    pAsyncCompute->SetConstantArray(0, sizeof(RootIndexBuffer) / sizeof(uint32_t), &rootIndexBuffer);
                     pAsyncCompute->Dispatch1D(numMeshes, 128);
 
 #ifdef MOYU_RHI_D3D12_DEBUG_RESOURCE_STATES

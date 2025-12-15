@@ -5,7 +5,7 @@ namespace RHI
 {
     D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc::Build() noexcept
     {
-        UINT ByteStride = 0;
+        uint32_t ByteStride = 0;
 
         for (const auto& Parameter : Parameters)
         {
@@ -41,7 +41,7 @@ namespace RHI
 
         D3D12_COMMAND_SIGNATURE_DESC Desc = {};
         Desc.ByteStride                   = ByteStride;
-        Desc.NumArgumentDescs             = static_cast<UINT>(Parameters.size());
+        Desc.NumArgumentDescs             = static_cast<uint32_t>(Parameters.size());
         Desc.pArgumentDescs               = Parameters.data();
         Desc.NodeMask                     = 1;
         return Desc;

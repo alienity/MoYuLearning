@@ -783,8 +783,8 @@ namespace MoYu
         bool intersects(const AABB& other);
         bool intersectRay(const Ray& ray, float& distance);
         
-        const glm::float3& getCenter() const { return (m_max + m_min) * 0.5f; }
-        const glm::float3& getHalfExtent() const { return (m_max - m_min) * 0.5f; }
+        const glm::float3 getCenter() const { return (m_max + m_min) * 0.5f; }
+        const glm::float3 getHalfExtent() const { return (m_max - m_min) * 0.5f; }
         const glm::float3& getMinCorner() const { return m_min; }
         const glm::float3& getMaxCorner() const { return m_max; }
 

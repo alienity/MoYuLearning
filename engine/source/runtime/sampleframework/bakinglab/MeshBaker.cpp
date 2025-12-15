@@ -1099,8 +1099,8 @@ static void ExtractBakePoints(const BakeInputData& bakeInput, std::vector<BakePo
         context->IASetInputLayout(inputLayout);
 
         ID3D11Buffer* vertexBuffers[1] = { mesh.VertexBuffer() };
-        UINT vertexStrides[1] = { mesh.VertexStride() };
-        UINT offsets[1] = { 0 };
+        uint32_t vertexStrides[1] = { mesh.VertexStride() };
+        uint32_t offsets[1] = { 0 };
         context->IASetVertexBuffers(0, 1, vertexBuffers, vertexStrides, offsets);
         context->IASetIndexBuffer(mesh.IndexBuffer(), mesh.IndexBufferFormat(), 0);
         context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1128,8 +1128,8 @@ static void ExtractBakePoints(const BakeInputData& bakeInput, std::vector<BakePo
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     ID3D11Buffer* vertexBuffers[1] = { nullptr };
-    UINT vertexStrides[1] = { 0 };
-    UINT offsets[1] = { 0 };
+    uint32_t vertexStrides[1] = { 0 };
+    uint32_t offsets[1] = { 0 };
     context->IASetVertexBuffers(0, 1, vertexBuffers, vertexStrides, offsets);
 
     ID3D11ShaderResourceView* srViews[NumTargets];

@@ -158,13 +158,13 @@ namespace RHI
 
     GPUDescriptorHeap* D3D12LinkedDevice::GetSamplerDescriptorHeap() noexcept { return m_SamplerDescriptorHeap.get(); }
 
-    D3D12CommandContext* D3D12LinkedDevice::GetCommandContext(UINT ThreadIndex /*= 0*/)
+    D3D12CommandContext* D3D12LinkedDevice::GetCommandContext(uint32_t ThreadIndex /*= 0*/)
     {
         assert(ThreadIndex < m_AvailableCommandContexts.size());
         return m_AvailableCommandContexts[ThreadIndex].get();
     }
 
-    D3D12CommandContext* D3D12LinkedDevice::GetAsyncComputeCommandContext(UINT ThreadIndex /*= 0*/)
+    D3D12CommandContext* D3D12LinkedDevice::GetAsyncComputeCommandContext(uint32_t ThreadIndex /*= 0*/)
     {
         assert(ThreadIndex < m_AvailableAsyncCommandContexts.size());
         return m_AvailableAsyncCommandContexts[ThreadIndex].get();

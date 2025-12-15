@@ -101,7 +101,7 @@ cbuffer RootConstants : register(b0, space0)
     uint appendFinalNodeListBufferIndex;
     uint nodeDescriptorsBufferIndex;
 
-    uint PassLOD; //表示TraverseQuadTree kernel执行的LOD级别
+    uint PassLOD; // Indicates the LOD level at which the TraverseQuadTree kernel executes
 };
 
 [numthreads(1,1,1)]
@@ -212,7 +212,7 @@ TerrainRenderPatch CreatePatch(
     return patch;
 }
 
-//返回一个node节点覆盖的Sector范围
+// Return the Sector range covered by a node
 uint4 GetSectorBounds(TerrainConsData inConsBuffer, uint3 nodeLoc)
 {
     uint sectorCountPerNode = GetSectorCountPerNode(inConsBuffer, nodeLoc.z);
@@ -236,37 +236,37 @@ void SetLodTrans(inout TerrainRenderPatch patch, TerrainConsData inConsBuffer, T
     int4 lodTrans = int4(0,0,0,0);
     if(patchOffset.x == 0)
     {
-        //左边缘
+        // Left edge
         lodTrans.x = GetLod(inConsBuffer, LodMap, sectorBounds.xy + int2(-1, 0)) - lod;
     }
 
     if(patchOffset.y == 0)
     {
-        //下边缘
+        // Bottom edge
         lodTrans.y = GetLod(inConsBuffer, LodMap, sectorBounds.xy + int2(0, -1)) - lod;
     }
 
     if(patchOffset.x == 7)
     {
-        //右边缘
+        // Right edge
         lodTrans.z = GetLod(inConsBuffer, LodMap, sectorBounds.zw + int2(1, 0)) - lod;
     }
 
     if(patchOffset.y == 7)
     {
-        //上边缘
+        // Top edge
         lodTrans.w = GetLod(inConsBuffer, LodMap, sectorBounds.zw + int2(0, 1)) - lod;
     }
     patch.lodTrans = (uint4)max(0, lodTrans);
 }
 
-//将世界坐标转为uv+depth
+// Convert world coordinates to uv+depth
 float3 TransformWorldToUVD(float3 positionWS, float4x4 _HizCameraMatrixVP)
 {
     float4 positionHS = mul(_HizCameraMatrixVP, float4(positionWS, 1.0));
     float3 uvd = positionHS.xyz / positionHS.w;
     uvd.xy = (uvd.xy + 1) * 0.5;
-    //点可能跑到摄像机背后去，深度会变成负数，需要特殊处理一下
+    // Point may go behind the camera, depth will become negative, needs special handling
     if(uvd.z < 0)
     {
 // #if _REVERSE_Z
@@ -323,7 +323,7 @@ float SampleHiz(float2 uv, float mip, float2 mipTexSize, Texture2D<float> _HizMa
     return _HizMap.mips[mip][coord].r; 
 }
 
-//Hiz Cull
+// Hiz Cull
 bool HizOcclusionCull(
     TerrainPatchBounds bounds,
     float4x4 _HizCameraMatrixVP,
@@ -450,10 +450,10 @@ void BuildPatches(uint3 id : SV_DispatchThreadID, uint3 groupId: SV_GroupID, uin
     
     uint3 nodeLoc = FinalNodeList[groupId.x];
     uint2 patchOffset = groupThreadId.xy;
-    //生成Patch
+    // Generate Patch
     TerrainRenderPatch patch = CreatePatch(InConsBuffer, MinHeightTexture, MaxHeightTexture, nodeLoc, patchOffset);
 
-    //裁剪
+    // Culling
     TerrainPatchBounds bounds = GetPatchBounds(InConsBuffer, patch);
     if(Cull(InConsBuffer, bounds, hizDepthMap))
     {

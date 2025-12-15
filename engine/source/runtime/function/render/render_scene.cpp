@@ -97,8 +97,8 @@ namespace MoYu
 
                 glm::float3 m_new_translation = m_translation - direction * m_directional_light.m_shadowOffset[i];
                 
-                glm::float4x4 dirLightViewMat = MYMatrix4x4::createLookAtMatrix(m_new_translation, m_new_translation + direction, MYFloat3::Up);
-                glm::float4x4 dirLightProjMat = MYMatrix4x4::createOrthographic(shadow_bounds_width_scale, shadow_bounds_height_scale, shadow_near_plane, shwoow_far_plane_scale);
+                glm::float4x4 dirLightViewMat = MYMatrix4x4::lookAtRH(m_new_translation, m_new_translation + direction, MYFloat3::Up);
+                glm::float4x4 dirLightProjMat = MYMatrix4x4::orthographic(shadow_bounds_width_scale, shadow_bounds_height_scale, shadow_near_plane, shwoow_far_plane_scale);
                 glm::float4x4 dirLightViewProjMat = dirLightProjMat * dirLightViewMat;
                 
                 m_directional_light.m_shadow_view_mat[i] = dirLightViewMat;
@@ -168,8 +168,8 @@ namespace MoYu
             float _spotNearPlane  = sceneLight.spot_light.m_shadow_near_plane;
             float _spotFarPlane   = sceneLight.spot_light.m_shadow_far_plane;
             
-            glm::float4x4 spotLightViewMat = MYMatrix4x4::createLookAtMatrix(m_translation, m_translation + direction, MYFloat3::Up);
-            glm::float4x4 spotLightProjMat = MYMatrix4x4::createPerspectiveFieldOfView(_spotOutRadians, 1, _spotNearPlane, _spotFarPlane);
+            glm::float4x4 spotLightViewMat = MYMatrix4x4::lookAtRH(m_translation, m_translation + direction, MYFloat3::Up);
+            glm::float4x4 spotLightProjMat = MYMatrix4x4::perspectiveFOV(_spotOutRadians, 1, _spotNearPlane, _spotFarPlane);
             glm::float4x4 spotLightViewProjMat = spotLightProjMat * spotLightViewMat;
 
             InternalSpotLight* pInternalSpotLight;
@@ -338,18 +338,18 @@ namespace MoYu
 
         const glm::float3 direction = rotation * MYFloat3::Forward;
 
-        const glm::float4x4 viewMatrix = MYMatrix4x4::createLookAtMatrix(position, position + direction, MYFloat3::Up);
+        const glm::float4x4 viewMatrix = MYMatrix4x4::lookAtRH(position, position + direction, MYFloat3::Up);
         const glm::float4x4 viewMatrixInv = glm::inverse(viewMatrix);
 
         glm::float4x4 projMatrix = MYMatrix4x4::Identity;
         if (sceneCamera.m_projType == CameraProjType::Perspective)
         {
-            projMatrix = MYMatrix4x4::createPerspective(
+            projMatrix = MYMatrix4x4::perspective(
                 sceneCamera.m_width, sceneCamera.m_height, sceneCamera.m_znear, sceneCamera.m_zfar);
         }
         else
         {
-            projMatrix = MYMatrix4x4::createOrthographic(
+            projMatrix = MYMatrix4x4::orthographic(
                 sceneCamera.m_width, sceneCamera.m_height, sceneCamera.m_znear, sceneCamera.m_zfar);
         }
 

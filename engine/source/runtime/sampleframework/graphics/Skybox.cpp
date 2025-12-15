@@ -169,7 +169,7 @@ void Skybox::Initialize(ID3D11Device* device_)
     D3D11_BLEND_DESC blendDesc;
     blendDesc.AlphaToCoverageEnable = false;
     blendDesc.IndependentBlendEnable = false;
-    for (UINT i = 0; i < 8; ++i)
+    for (uint32_t i = 0; i < 8; ++i)
     {
         blendDesc.RenderTarget[i].BlendEnable = false;
         blendDesc.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
@@ -227,13 +227,13 @@ void Skybox::RenderCommon(ID3D11DeviceContext* context,
     context->PSSetSamplers(0, 1, &(samplerState.GetInterfacePtr()));
 
     // Get the viewports
-    UINT numViewports = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    uint32_t numViewports = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
     D3D11_VIEWPORT oldViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
     context->RSGetViewports(&numViewports, oldViewports);
 
     // Set a viewport with MinZ pushed back
     D3D11_VIEWPORT newViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-    for(UINT i = 0; i < numViewports; ++i)
+    for(uint32_t i = 0; i < numViewports; ++i)
     {
         newViewports[i] = oldViewports[0];
         newViewports[i].MinDepth = 1.0f;
@@ -245,8 +245,8 @@ void Skybox::RenderCommon(ID3D11DeviceContext* context,
     context->IASetInputLayout(inputLayout);
 
     // Set the vertex buffer
-    UINT stride = sizeof(XMFLOAT3);
-    UINT offset = 0;
+    uint32_t stride = sizeof(XMFLOAT3);
+    uint32_t offset = 0;
     ID3D11Buffer* vertexBuffers[1] = { vertexBuffer.GetInterfacePtr() };
     context->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
 

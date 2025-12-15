@@ -51,8 +51,8 @@ namespace RHI
 
     D3D12SyncHandle D3D12CommandQueue::ExecuteCommandLists(std::vector<D3D12CommandListHandle*> CommandListHandles, bool WaitForCompletion)
     {
-        UINT               NumCommandLists       = 0;
-        UINT               NumBarrierCommandList = 0;
+        uint32_t               NumCommandLists       = 0;
+        uint32_t               NumBarrierCommandList = 0;
         ID3D12CommandList* CommandLists[32]      = {};
 
         // Resolve resource barriers
@@ -104,7 +104,7 @@ namespace RHI
             }
 
             m_ResourceBarrierCommandListHandle->Open(m_ResourceBarrierCommandAllocator.Get());
-            (*m_ResourceBarrierCommandListHandle)->ResourceBarrier(static_cast<UINT>(ResourceBarriers.size()), ResourceBarriers.data());
+            (*m_ResourceBarrierCommandListHandle)->ResourceBarrier(static_cast<uint32_t>(ResourceBarriers.size()), ResourceBarriers.data());
             m_ResourceBarrierCommandListHandle->Close();
         }
 
