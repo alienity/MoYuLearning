@@ -171,7 +171,8 @@ endif()
 
 if(NOT TARGET basisu)
     set(EXAMPLES OFF)
-    add_subdirectory(basis_universal-before_xuastc)
+    add_subdirectory(basis_universal-before_xuastc basis_universal-before_xuastc)
+    set_target_properties(basisu_encoder PROPERTIES FOLDER "Libs")
     set_target_properties(basisu PROPERTIES FOLDER ${third_party_folder}/basis_universal-before_xuastc)
 endif()
 
@@ -239,11 +240,11 @@ if(NOT TARGET nlohmann_json)
     # nlohmann json is header-only, no build required
 endif()
 
-if(NOT TARGET WIL)
-    set(WIL_BUILD_TESTS OFF)
-    add_subdirectory(wil)
-    set_target_properties(WIL PROPERTIES FOLDER ${third_party_folder}/wil)
-endif()
+# if(NOT TARGET WIL)
+#     set(WIL_BUILD_TESTS OFF)
+#     add_subdirectory(wil)
+#     set_target_properties(WIL PROPERTIES FOLDER ${third_party_folder}/wil)
+# endif()
 
 # if(NOT TARGET directxtex)
 #     include(directxtex.cmake)

@@ -157,7 +157,7 @@ namespace gvpp {
         case AttrType::GRAPH:
             return GAttrs;
         default:
-            return GvAttributesI();
+            return GAttrs;  // Return GAttrs as default instead of temporary object
         }
     }
 
@@ -171,7 +171,7 @@ namespace gvpp {
         case AttrType::GRAPH:
             return GAttrs;
         default:
-            return GvAttributesI();
+            return GAttrs;  // Return GAttrs as default instead of temporary object
         }
     }
 
