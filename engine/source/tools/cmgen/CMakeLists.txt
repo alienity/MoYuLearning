@@ -36,24 +36,10 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0 /Zc:__cplusplus")
 endif()
 
-## =================================================================================================
-## Licenses
-## ==================================================================================================
-#set(MODULE_LICENSES getopt libpng tinyexr libz)
-#set(GENERATION_ROOT ${CMAKE_CURRENT_BINARY_DIR}/generated)
-#list_licenses(${GENERATION_ROOT}/licenses/licenses.inc ${MODULE_LICENSES})
-#target_include_directories(${TARGET} PRIVATE ${GENERATION_ROOT})
+# ==================================================================================================
+# Installation
+# ==================================================================================================
+install(TARGETS ${TARGET} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/tools)
 
-## ==================================================================================================
-## Installation
-## ==================================================================================================
-#install(TARGETS ${TARGET} RUNTIME DESTINATION bin)
-
-## ==================================================================================================
-## Tests
-## ==================================================================================================
-#if (NOT ANDROID)
-#    add_executable(test_${TARGET} tests/test_cmgen.cpp)
-#    target_link_libraries(test_${TARGET} PRIVATE imageio gtest)
-#    set_target_properties(test_${TARGET} PROPERTIES FOLDER Tests)
-#endif()
+# 创建bin/tools目录（如果不存在）
+install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/tools)
