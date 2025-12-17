@@ -6,7 +6,7 @@
 
 #include "DgmlBuilder.h"
 #include "RenderGraphRegistry.h"
-#include "runtime/core/base/robin_hood.h"
+#include <robin_hood.h>
 #include "runtime/platform/system/system_core.h"
 #include "runtime/platform/system/delegate.h"
 #include "runtime/function/render/rhi/rhi.h"

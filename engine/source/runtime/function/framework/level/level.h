@@ -1,8 +1,8 @@
 #pragma once
 
 #include "runtime/function/framework/object/object_id_allocator.h"
-#include "runtime/core/base/robin_hood.h"
 
+#include <robin_hood.h>
 #include <memory>
 #include <string>
 #include <unordered_map>

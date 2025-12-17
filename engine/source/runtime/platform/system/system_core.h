@@ -17,7 +17,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-#include "runtime/core/base/robin_hood.h"
+#include <robin_hood.h>
 
 // clang-format off
 // Decimal SI units

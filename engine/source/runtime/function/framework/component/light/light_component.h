@@ -20,19 +20,19 @@ namespace MoYu
 
         void tick(float delta_time) override;
 
-        // for editor
+        // For editor
         LightComponentRes& getLightComponent() { return m_light_res_buffer[m_next_index]; }
 
     private:
-        //// Editor直接编辑这个，作为当前帧的修改对象，修改后一定要设置SetDirtyFlag
+        //// Directly edited by editor, used as modification target for current frame. Must call SetDirtyFlag after modification.
         //LightComponentRes m_light_res;
         
         bool isLightTypeInit();
 
-        // 假设1是当前帧，2是下一帧
-        // 1是空，2是有Light的，添加光源
-        // 1是有Light的，2是空，删除光源
-        // 1和2都有Light，参数不同，更新光源
+        // Assume 1 is the current frame, 2 is the next frame
+        // 1 is empty, 2 has Light, add light source
+        // 1 has Light, 2 is empty, remove light source
+        // Both 1 and 2 have Light with different parameters, update light source
         LightComponentRes m_light_res_buffer[2] {};
         uint32_t m_current_index {0};
         uint32_t m_next_index {1};

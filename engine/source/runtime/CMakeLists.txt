@@ -1,4 +1,3 @@
-
 # PackageProject.cmake will be used to make our target installable
 set(TARGET_NAME PilotRuntime)
 
@@ -148,6 +147,11 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${THIRD_PARTY_DIR}/eigen-master>
 )
 
+# Include robin_hood hashing library
+target_include_directories(
+  ${TARGET_NAME} 
+  PUBLIC $<BUILD_INTERFACE:${THIRD_PARTY_DIR}/robin_hood_hashing>
+)
 
 # ---- Create an installable target ----
 # this allows users to install and find the library via `find_package()`.

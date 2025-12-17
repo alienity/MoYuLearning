@@ -1,7 +1,7 @@
 #pragma once
 
 #include "runtime/resource/res_type/common/world.h"
-#include "runtime/core/base/robin_hood.h"
+#include <robin_hood.h>
 
 #include "runtime/resource/res_type/components/material.h"
 
