@@ -1,11 +1,5 @@
 add_subdirectory(${LIBS_DIR}/ibl ibl)
 
-# Add abseil-cpp library
-set(ABSL_BUILD_TESTING OFF)
-set(ABSL_BUILD_TEST_HELPERS OFF)
-set(BUILD_TESTING OFF)
-# Note: abseil is actually a third-party library, should be moved to 3rdparty
-
 # Disable tests for all subprojects
 set(BUILD_TESTING OFF)
 set(SKIP_TESTS ON)

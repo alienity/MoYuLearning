@@ -87,17 +87,40 @@ if(NOT TARGET gvpp)
 	set_target_properties(gvpp PROPERTIES FOLDER ${third_party_folder}/gvpp)
 endif()
 
+# Add zlib library
+set(SKIP_INSTALL_ALL ON)
+set(ZLIB_BUILD_EXAMPLES OFF)
+set(BUILD_SHARED_LIBS OFF)
+
+if(NOT TARGET zlibstatic)
+    add_subdirectory(zlib-1.3.1)
+    set_target_properties(zlibstatic PROPERTIES FOLDER ${third_party_folder}/zlib-1.3.1)
+endif()
+
+# Ensure zlib is built before libpng and assimp
+if(NOT TARGET zlibstatic)
+    message(FATAL_ERROR "zlibstatic target not found. zlib must be built before libpng and assimp.")
+endif()
+
+# Set ZLIB variables globally to ensure all libraries use our zlibstatic target
+set(ZLIB_FOUND TRUE)
+set(ZLIB_LIBRARIES zlibstatic)
+set(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zlib-1.3.1 ${CMAKE_CURRENT_BINARY_DIR}/zlib-1.3.1)
+
 if(NOT TARGET assimp)
     option(BUILD_SHARED_LIBS "" OFF)
-    option(ASSIMP_BUILD_ZLIB "" ON)
+    option(ASSIMP_BUILD_ZLIB "" OFF)
     option(ASSIMP_BUILD_TESTS "" OFF)
     option(ASSIMP_INJECT_DEBUG_POSTFIX "" OFF)
+    # Set ZLIB variables to ensure assimp uses our zlibstatic target
+    set(ZLIB_FOUND TRUE)
+    set(ZLIB_LIBRARIES zlibstatic)
+    set(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zlib-1.3.1 ${CMAKE_CURRENT_BINARY_DIR}/zlib-1.3.1)
     add_subdirectory(assimp-5.2.4)
     set_target_properties(uninstall PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4)
     set_target_properties(assimp PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4)
     set_target_properties(assimp_cmd PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4)
     set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4)
-    set_target_properties(zlibstatic PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4)
 endif()
 
 if(NOT TARGET Jolt)
@@ -172,7 +195,7 @@ endif()
 if(NOT TARGET basisu)
     set(EXAMPLES OFF)
     add_subdirectory(basis_universal-before_xuastc basis_universal-before_xuastc)
-    set_target_properties(basisu_encoder PROPERTIES FOLDER "Libs")
+    set_target_properties(basisu_encoder PROPERTIES FOLDER "${third_party_folder}/basisu_encoder")
     set_target_properties(basisu PROPERTIES FOLDER ${third_party_folder}/basis_universal-before_xuastc)
 endif()
 
@@ -190,22 +213,6 @@ endif()
 if(NOT TARGET getopt)
     add_subdirectory(getopt)
     set_target_properties(getopt PROPERTIES FOLDER ${third_party_folder}/getopt)
-endif()
-
-# Add zlib library
-set(SKIP_INSTALL_ALL ON)
-set(ZLIB_BUILD_EXAMPLES OFF)
-set(BUILD_SHARED_LIBS OFF)
-
-if(NOT TARGET zlibstatic)
-    # Check if zlib is built by assimp
-    if(NOT TARGET assimp)
-        add_subdirectory(zlib-1.3.1)
-        set_target_properties(zlibstatic PROPERTIES FOLDER ${third_party_folder}/zlib-1.3.1)
-    else()
-        # Use zlib from assimp
-        set_target_properties(zlibstatic PROPERTIES FOLDER ${third_party_folder}/assimp-5.2.4/contrib/zlib)
-    endif()
 endif()
 
 # Add libpng library

@@ -35,7 +35,7 @@ set_target_properties(${TARGET} PROPERTIES FOLDER Libs)
 
 target_link_libraries(${TARGET} PUBLIC image math png_static tinyexr basisu_encoder utils)
 
-target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/libs/basis_universal-before_xuastc/encoder)
+target_include_directories(${TARGET} PRIVATE ${THIRD_PARTY_DIR}/basis_universal-before_xuastc/encoder)
 
 target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/libs/lpng1653)
 target_include_directories(${TARGET} PRIVATE ${CMAKE_BINARY_DIR}/cmake/libs/lpng1653)

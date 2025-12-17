@@ -39,13 +39,6 @@ add_library(${TARGET} STATIC ${PUBLIC_HDRS} ${PRIVATE_HDRS} ${SRCS})
 target_include_directories(${TARGET} PUBLIC ${PUBLIC_HDR_DIR})
 set_target_properties(${TARGET} PROPERTIES FOLDER Libs)
 
-## 正确链接math库和Async++库
-#target_link_libraries(${TARGET} math Async++)
-#
-## 添加包含目录以支持async++
-#target_include_directories(${TARGET} PRIVATE 
-#    ${CMAKE_SOURCE_DIR}/libs/asyncplusplus/include
-#)
 
 # 链接需要的库
 target_link_libraries(${TARGET} 
@@ -68,5 +61,5 @@ endif()
 # ==================================================================================================
 # Installation
 # ==================================================================================================
-install(TARGETS ${TARGET} ARCHIVE DESTINATION lib)
-install(DIRECTORY ${PUBLIC_HDR_DIR}/ibl DESTINATION include)
+# install(TARGETS ${TARGET} ARCHIVE DESTINATION lib)
+# install(DIRECTORY ${PUBLIC_HDR_DIR}/ibl DESTINATION include)
