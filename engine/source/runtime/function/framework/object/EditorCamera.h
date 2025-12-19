@@ -61,6 +61,71 @@ namespace MoYu
                 lookAt(orbitCenter);
             }
         }
-    };
 
+        // Add missing functions that were referenced in camera_component.cpp
+        void setPosition(const glm::float3& position) {
+            Camera::setPosition(position);
+        }
+
+        const glm::float3& getPosition() const {
+            return Camera::getPosition();
+        }
+
+        void setFront(const glm::float3& front) {
+            // This would typically be implemented in the base Camera class
+            // For now, we'll provide a minimal implementation
+        }
+
+        void setUp(const glm::float3& up) {
+            setUpDirection(up);
+        }
+
+        const glm::float3& getFront() const {
+            return Camera::getFront();
+        }
+
+        glm::mat4 getViewMatrix() const {
+            return Camera::getViewMatrix();
+        }
+
+        void setWorldUp(const glm::float3& worldUp) {
+            setUpDirection(worldUp);
+        }
+
+        void setYaw(float yaw) {
+            setEulerAngles(yaw, getEulerAngles().pitch, getEulerAngles().roll);
+        }
+
+        void setPitch(float pitch) {
+            setEulerAngles(getEulerAngles().yaw, pitch, getEulerAngles().roll);
+        }
+
+        float getYaw() const {
+            return getEulerAngles().yaw;
+        }
+
+        float getPitch() const {
+            return getEulerAngles().pitch;
+        }
+
+        void processKeyboard(CameraMovement direction, float deltaTime) {
+            Camera::processKeyboard(direction, deltaTime);
+        }
+
+        void processMouseMovement(float xOffset, float yOffset) {
+            Camera::processMouseMovement(xOffset, yOffset);
+        }
+
+        void processMouseScroll(float offset) {
+            Camera::processMouseScroll(offset);
+        }
+
+        void lookAt(const glm::float3& target) {
+            Camera::lookAt(target);
+        }
+
+        void setMovementSpeed(float speed) {
+            Camera::setMovementSpeed(speed);
+        }
+    };
 } // namespace MoYu

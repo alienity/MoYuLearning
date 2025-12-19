@@ -12,14 +12,14 @@ namespace MoYu
 {
     enum DefaultMeshType
     {
-        Capsule,
-        Cone,
-        Convexmesh,
-        Cube,
-        Cylinder,
-        Sphere,
-        Triangle,
-        Square,
+        CAPSULE,
+        CONE,
+        CONVEXMESH,
+        CUBE,
+        CYLINDER,
+        SPHERE,
+        TRIANGLE,
+        SQUARE,
     };
 
     std::string              DefaultMeshTypeToName(DefaultMeshType type);
@@ -29,18 +29,19 @@ namespace MoYu
     {
     public:
         MeshRendererComponent() { m_component_name = "MeshRendererComponent"; };
+        virtual ~MeshRendererComponent() = default;
 
-        void reset();
+        virtual void reset();
 
-        void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
+        virtual void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
 
-        void save(ComponentDefinitionRes& out_component_res) override;
+        virtual void save(ComponentDefinitionRes& out_component_res) override;
 
-        void tick(float delta_time) override;
+        virtual void tick(float delta_time) override;
 
-        void updateMeshRendererRes(const MeshRendererComponentRes& res);
-        void updateMeshRes(std::string mesh_file_path);
-        void updateMaterial(std::string material_path, std::string serialized_json_str = "");
+        virtual void updateMeshRendererRes(const MeshRendererComponentRes& res);
+        virtual void updateMeshRes(std::string mesh_file_path);
+        virtual void updateMaterial(std::string material_path, std::string serialized_json_str = "");
 
         // for editor
         SceneMesh& getSceneMesh() { return m_scene_mesh; }

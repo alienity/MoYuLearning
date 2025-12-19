@@ -8,6 +8,7 @@
 #include <deque>
 #include <optional>
 #include <string>
+#include <mutex>
 
 namespace MoYu
 {
@@ -64,6 +65,9 @@ namespace MoYu
         uint8_t        m_logic_swap_data_index {LogicSwapDataType};
         uint8_t        m_render_swap_data_index {RenderSwapDataType};
         RenderSwapData m_swap_data[SwapDataTypeCount];
+
+        // Thread synchronization
+        std::mutex m_swap_mutex;
 
         bool isReadyToSwap() const;
         void swap();

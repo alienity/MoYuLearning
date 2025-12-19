@@ -1,6 +1,7 @@
 ﻿#include "runtime/engine.h"
 
 #include "runtime/core/base/macro.h"
+#include "runtime/function/thread/thread_pool.h"
 
 #include "runtime/function/framework/world/world_manager.h"
 #include "runtime/function/framework/material/material_manager.h"
@@ -26,6 +27,9 @@ namespace MoYu
     {
         LOG_INFO("engine shutdown");
 
+        // Stop game thread before shutting down systems
+        stopGameThread();
+
         g_runtime_global_context.shutdownSystems();
     }
 
@@ -34,13 +38,80 @@ namespace MoYu
 
     void PilotEngine::run()
     {
+        // Initialize thread pools
+        m_game_thread_pool = std::make_unique<ThreadPool>(1);
+        m_render_thread_pool = std::make_unique<ThreadPool>(1);
+
+        // Start game thread
+        startGameThread();
+
         std::shared_ptr<WindowSystem> window_system = g_runtime_global_context.m_window_system;
         ASSERT(window_system);
 
-        while (!window_system->shouldClose())
+        while (!window_system->shouldClose() && !m_exit_requested.load())
         {
             const float delta_time = calculateDeltaTime();
-            tickOneFrame(delta_time);
+            
+            // Process render tasks in render thread
+            auto render_future = m_render_thread_pool->enqueue([this, delta_time]() {
+                // Exchange data between logic and render contexts
+                g_runtime_global_context.m_render_system->swapLogicRenderData();
+                
+                rendererTick();
+                
+                g_runtime_global_context.m_window_system->pollEvents();
+            });
+            
+            // Wait for render to complete
+            render_future.wait();
+            
+            // Update window title
+            g_runtime_global_context.m_window_system->setTile(
+                std::string("MoYu - " + std::to_string(getFPS()) + " FPS").c_str());
+
+            calculateFPS(delta_time);
+        }
+
+        // Stop threads before exiting
+        stopGameThread();
+    }
+
+    void PilotEngine::startGameThread()
+    {
+        m_game_thread_running.store(true);
+        m_game_thread_future = m_game_thread_pool->enqueue([this]() {
+            gameThreadFunc();
+        });
+    }
+
+    void PilotEngine::stopGameThread()
+    {
+        m_game_thread_running.store(false);
+        m_exit_requested.store(true);
+        
+        if (m_game_thread_future.valid()) {
+            m_game_thread_future.wait();
+        }
+        
+        if (m_game_thread_pool) {
+            m_game_thread_pool->stop();
+        }
+        
+        if (m_render_thread_pool) {
+            m_render_thread_pool->stop();
+        }
+    }
+
+    void PilotEngine::gameThreadFunc()
+    {
+        // Game thread main loop
+        while (m_game_thread_running.load() && !m_exit_requested.load())
+        {
+            const float delta_time = calculateDeltaTime();
+            logicalTick(delta_time);
+            
+            // Sleep briefly to prevent excessive CPU usage
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 

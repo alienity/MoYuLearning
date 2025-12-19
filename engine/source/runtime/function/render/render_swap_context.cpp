@@ -22,12 +22,19 @@ namespace MoYu
 
     void GameObjectResourceDesc::popProcessObject() { m_game_object_descs.pop_front(); }
 
-    RenderSwapData& RenderSwapContext::getLogicSwapData() { return m_swap_data[m_logic_swap_data_index]; }
+    RenderSwapData& RenderSwapContext::getLogicSwapData() { 
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
+        return m_swap_data[m_logic_swap_data_index]; 
+    }
 
-    RenderSwapData& RenderSwapContext::getRenderSwapData() { return m_swap_data[m_render_swap_data_index]; }
+    RenderSwapData& RenderSwapContext::getRenderSwapData() { 
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
+        return m_swap_data[m_render_swap_data_index]; 
+    }
 
     void RenderSwapContext::swapLogicRenderData()
     {
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
         if (isReadyToSwap())
         {
             swap();
@@ -43,16 +50,19 @@ namespace MoYu
 
     void RenderSwapContext::resetGameObjectResourceSwapData()
     {
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
         m_swap_data[m_render_swap_data_index].m_game_object_resource_desc.reset();
     }
 
     void RenderSwapContext::resetGameObjectToDelete()
     {
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
         m_swap_data[m_render_swap_data_index].m_game_object_to_delete.reset();
     }
 
     void RenderSwapContext::resetCameraSwapData()
     {
+        std::lock_guard<std::mutex> lock(m_swap_mutex);
         m_swap_data[m_render_swap_data_index].m_camera_swap_data.reset();
     }
 

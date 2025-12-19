@@ -1,5 +1,7 @@
 #pragma once
 #include "runtime/resource/res_type/common_serializer.h"
+#include "runtime/core/math/moyu_math2.h"
+#include <glm/glm.hpp>
 
 namespace MoYu
 {
@@ -27,6 +29,8 @@ namespace MoYu
         float   shadow_near_plane {0.1f};
         float   shadow_far_plane {200.0f};
         glm::float2 shadowmap_size {2048, 2048};
+        
+        glm::float3 direction {0.0f, -1.0f, 0.0f};
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DirectionLightParameter,
                                                     color,
@@ -44,7 +48,8 @@ namespace MoYu
                                                     shadow_bounds,
                                                     shadow_near_plane,
                                                     shadow_far_plane,
-                                                    shadowmap_size)
+                                                    shadowmap_size,
+                                                    direction)
 
     struct PointLightParameter
     {
@@ -52,8 +57,25 @@ namespace MoYu
         float intensity {1.0f};
 
         float falloff_radius {5.0f};
+        
+        glm::float3 position {0.0f, 0.0f, 0.0f};
+        
+        bool    shadows {false};
+        glm::float2 shadow_bounds {32, 32};
+        float   shadow_near_plane {0.1f};
+        float   shadow_far_plane {32.0f};
+        glm::float2 shadowmap_size {256, 256};
     };
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PointLightParameter, color, intensity, falloff_radius)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PointLightParameter, 
+                                       color, 
+                                       intensity, 
+                                       falloff_radius, 
+                                       position,
+                                       shadows,
+                                       shadow_bounds,
+                                       shadow_near_plane,
+                                       shadow_far_plane,
+                                       shadowmap_size)
 
     struct SpotLightParameter
     {
@@ -70,6 +92,9 @@ namespace MoYu
         float   shadow_near_plane {0.1f};
         float   shadow_far_plane {32.0f};
         glm::float2 shadowmap_size {256, 256};
+        
+        glm::float3 position {0.0f, 0.0f, 0.0f};
+        glm::float3 direction {0.0f, -1.0f, 0.0f};
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SpotLightParameter,
                                        color,
@@ -81,7 +106,9 @@ namespace MoYu
                                        shadow_bounds,
                                        shadow_near_plane,
                                        shadow_far_plane,
-                                       shadowmap_size)
+                                       shadowmap_size,
+                                       position,
+                                       direction)
 
     struct LightComponentRes
     {

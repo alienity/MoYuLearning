@@ -12,21 +12,22 @@ namespace MoYu
     public:
         CameraComponent() { m_component_name = "CameraComponent"; };
 
-        void reset();
+        virtual void reset();
 
-        void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
+        virtual void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
 
-        void save(ComponentDefinitionRes& out_component_res) override;
+        virtual void save(ComponentDefinitionRes& out_component_res) override;
 
-        void tick(float delta_time) override;
+        virtual void tick(float delta_time) override;
 
         // for editor
-        CameraComponentRes& getCameraComponent() { return m_camera_res; }
+        virtual CameraComponentRes& getCameraComponent() { return m_camera_res; }
 
     private:
-        void tickFirstPersonCamera(float delta_time);
-        void tickThirdPersonCamera(float delta_time);
-        void tickFreeCamera(float delta_time);
+        virtual void tickFirstPersonCamera(float delta_time);
+        virtual void tickThirdPersonCamera(float delta_time);
+        virtual void tickFreeCamera(float delta_time);
+        virtual void updateCameraSwapData();
 
         CameraComponentRes m_camera_res;
 

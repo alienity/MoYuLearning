@@ -13,6 +13,7 @@
 #include "runtime/function/render/render_system.h"
 
 #include "runtime/resource/res_type/components/light.h"
+#include "runtime/function/framework/object/Light.h"
 
 namespace MoYu
 {
@@ -31,6 +32,74 @@ namespace MoYu
 
         m_light_res_buffer[m_current_index] = {};
         m_light_res_buffer[m_next_index]    = light_res;
+        
+        // Create the appropriate light type based on the loaded data
+        if (light_res.m_LightParamName == DirectionLightParameterName)
+        {
+            m_light = std::make_shared<DirectionalLight>();
+            DirectionalLight* dirLight = static_cast<DirectionalLight*>(m_light.get());
+            
+            // Set properties from the loaded data
+            Color color = light_res.m_DirectionLightParam.color;
+            dirLight->setColor(color);
+            dirLight->setIntensity(light_res.m_DirectionLightParam.intensity);
+            dirLight->setShadowsEnabled(light_res.m_DirectionLightParam.shadows);
+            
+            glm::vec3 direction(
+                light_res.m_DirectionLightParam.direction.x,
+                light_res.m_DirectionLightParam.direction.y,
+                light_res.m_DirectionLightParam.direction.z
+            );
+            dirLight->setDirection(direction);
+            dirLight->setMaxShadowDistance(light_res.m_DirectionLightParam.maxShadowDistance);
+        }
+        else if (light_res.m_LightParamName == PointLightParameterName)
+        {
+            m_light = std::make_shared<PointLight>();
+            PointLight* pointLight = static_cast<PointLight*>(m_light.get());
+            
+            // Set properties from the loaded data
+            Color color = light_res.m_PointLightParam.color;
+            pointLight->setColor(color);
+            pointLight->setIntensity(light_res.m_PointLightParam.intensity);
+            pointLight->setShadowsEnabled(light_res.m_PointLightParam.shadows);
+            
+            glm::vec3 position(
+                light_res.m_PointLightParam.position.x,
+                light_res.m_PointLightParam.position.y,
+                light_res.m_PointLightParam.position.z
+            );
+            pointLight->setPosition(position);
+            pointLight->setRadius(light_res.m_PointLightParam.falloff_radius);
+        }
+        else if (light_res.m_LightParamName == SpotLightParameterName)
+        {
+            m_light = std::make_shared<SpotLight>();
+            SpotLight* spotLight = static_cast<SpotLight*>(m_light.get());
+            
+            // Set properties from the loaded data
+            Color color = light_res.m_SpotLightParam.color;
+            spotLight->setColor(color);
+            spotLight->setIntensity(light_res.m_SpotLightParam.intensity);
+            spotLight->setShadowsEnabled(light_res.m_SpotLightParam.shadows);
+            
+            glm::vec3 position(
+                light_res.m_SpotLightParam.position.x,
+                light_res.m_SpotLightParam.position.y,
+                light_res.m_SpotLightParam.position.z
+            );
+            spotLight->setPosition(position);
+            
+            glm::vec3 direction(
+                light_res.m_SpotLightParam.direction.x,
+                light_res.m_SpotLightParam.direction.y,
+                light_res.m_SpotLightParam.direction.z
+            );
+            spotLight->setDirection(direction);
+            
+            spotLight->setSpotAngle(light_res.m_SpotLightParam.spotAngle);
+            spotLight->setInnerSpotPercent(light_res.m_SpotLightParam.innerSpotPercent);
+        }
 
         markInit();
     }
@@ -52,15 +121,16 @@ namespace MoYu
                                                MoYu::GComponentID  transform_component_id,
                                                TransformComponent* m_transform_component_ptr,
                                                MoYu::GComponentID  light_component_id,
-                                               LightComponentRes*  m_light_res_ptr)
+                                               LightComponentRes*  m_light_res_ptr,
+                                               std::shared_ptr<Light> light)
     {
-        glm::float4x4 transform_matrix = m_transform_component_ptr->getMatrixWorld();
+        glm::mat4 transform_matrix = m_transform_component_ptr->getMatrixWorld();
 
-        glm::float3     m_scale;
+        glm::vec3     m_scale;
         glm::quat m_orientation;
-        glm::float3     m_translation;
-        glm::float3     m_skew;
-        glm::float4     m_perspective;
+        glm::vec3     m_translation;
+        glm::vec3     m_skew;
+        glm::vec4     m_perspective;
         glm::decompose(transform_matrix, m_scale, m_orientation, m_translation, m_skew, m_perspective);
 
         SceneTransform scene_transform     = {};
@@ -97,7 +167,7 @@ namespace MoYu
             direction_light.m_shadowmap_size    = m_light_res_ptr->m_DirectionLightParam.shadowmap_size;
 
             scene_light.direction_light = direction_light;
-            scene_light.m_light_type    = LightType::DirectionLight;
+            scene_light.m_light_type    = LightType::DIRECTIONAL;
         }
         else if (m_light_res_ptr->m_LightParamName == PointLightParameterName)
         {
@@ -106,9 +176,14 @@ namespace MoYu
             point_light.m_color     = m_light_res_ptr->m_PointLightParam.color;
             point_light.m_intensity = m_light_res_ptr->m_PointLightParam.intensity;
             point_light.m_radius    = m_light_res_ptr->m_PointLightParam.falloff_radius;
+            point_light.m_shadowmap = m_light_res_ptr->m_PointLightParam.shadows;
+            point_light.m_shadow_bounds = m_light_res_ptr->m_PointLightParam.shadow_bounds;
+            point_light.m_shadow_near_plane = m_light_res_ptr->m_PointLightParam.shadow_near_plane;
+            point_light.m_shadow_far_plane = m_light_res_ptr->m_PointLightParam.shadow_far_plane;
+            point_light.m_shadowmap_size = m_light_res_ptr->m_PointLightParam.shadowmap_size;
 
             scene_light.point_light  = point_light;
-            scene_light.m_light_type = LightType::PointLight;
+            scene_light.m_light_type = LightType::POINT;
         }
         else if (m_light_res_ptr->m_LightParamName == SpotLightParameterName)
         {
@@ -126,7 +201,7 @@ namespace MoYu
             spot_light.m_shadowmap_size    = m_light_res_ptr->m_SpotLightParam.shadowmap_size;
 
             scene_light.spot_light   = spot_light;
-            scene_light.m_light_type = LightType::SpotLight;
+            scene_light.m_light_type = LightType::SPOT;
         }
 
         GameObjectComponentDesc light_component_desc = {};
@@ -147,7 +222,7 @@ namespace MoYu
         RenderSwapContext& render_swap_context = g_runtime_global_context.m_render_system->getSwapContext();
         RenderSwapData& logic_swap_data = render_swap_context.getLogicSwapData();
 
-        TransformComponent* m_transform_component_ptr = m_obj_ptr->getTransformComponent().lock().get();
+        TransformComponent* m_transform_component_ptr = m_obj_ptr->getTransformComponent().get();
 
         MoYu::GObjectID    game_object_id         = m_obj_ptr->getID();
         MoYu::GComponentID transform_component_id = m_transform_component_ptr->getComponentId();
@@ -159,7 +234,8 @@ namespace MoYu
                                                                               transform_component_id,
                                                                               m_transform_component_ptr,
                                                                               light_component_id,
-                                                                              &m_light_res_buffer[m_next_index]);
+                                                                              &m_light_res_buffer[m_next_index],
+                                                                              m_light);
 
             logic_swap_data.addDeleteGameObject({game_object_id, {light_component_desc}});
 
@@ -167,21 +243,13 @@ namespace MoYu
         }
         else if (m_transform_component_ptr->isMatrixDirty() || this->isDirty())
         {
-            //if (!this->isLightTypeInit())
-            //{
-            //    GameObjectComponentDesc _light_to_erase = component2SwapData(game_object_id,
-            //                                                                 transform_component_id,
-            //                                                                 m_transform_component_ptr,
-            //                                                                 light_component_id,
-            //                                                                 &m_light_res_buffer[m_current_index]);
-            //    logic_swap_data.addDeleteGameObject({game_object_id, {_light_to_erase}});
-            //}
             {
                 GameObjectComponentDesc light_component_desc = component2SwapData(game_object_id,
                                                                                   transform_component_id,
                                                                                   m_transform_component_ptr,
                                                                                   light_component_id,
-                                                                                  &m_light_res_buffer[m_next_index]);
+                                                                                  &m_light_res_buffer[m_next_index],
+                                                                                  m_light);
                 logic_swap_data.addDirtyGameObject({game_object_id, {light_component_desc}});
             }
             markIdle();

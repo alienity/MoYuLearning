@@ -49,12 +49,12 @@ namespace MoYu
 
         GComponentID getComponentId() { return m_id; }
 
-        std::string getTypeName() { return m_component_name; }
+        static std::string getTypeName() { return m_component_name; }
 
         bool m_tick_in_editor_mode {false};
 
     protected:
-        std::string m_component_name;
+        static std::string m_component_name;
 
         std::weak_ptr<GObject> m_object;
 

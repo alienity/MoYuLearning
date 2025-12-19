@@ -10,10 +10,8 @@
 
 namespace MoYu
 {
-    //class Character;
     class GObject;
     class ObjectInstanceRes;
-    //class PhysicsScene;
 
     using LevelObjectsMap = robin_hood::unordered_map<GObjectID, std::shared_ptr<GObject>>;
 

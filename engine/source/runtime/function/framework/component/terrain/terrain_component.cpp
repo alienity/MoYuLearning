@@ -145,7 +145,7 @@ namespace MoYu
         RenderSwapContext& render_swap_context = g_runtime_global_context.m_render_system->getSwapContext();
         RenderSwapData& logic_swap_data = render_swap_context.getLogicSwapData();
 
-        TransformComponent* m_transform_component_ptr = m_obj_ptr->getTransformComponent().lock().get();
+        TransformComponent* m_transform_component_ptr = m_obj_ptr->getTransformComponent().get();
 
         MoYu::GObjectID game_object_id = m_obj_ptr->getID();
         MoYu::GComponentID transform_component_id = m_transform_component_ptr->getComponentId();
