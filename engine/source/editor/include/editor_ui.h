@@ -16,7 +16,7 @@
 
 namespace MoYu
 {
-    class PilotEditor;
+    class MoYuEditor;
     class WindowSystem;
     class RenderSystem;
 

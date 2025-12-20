@@ -15,15 +15,15 @@ int main(int argc, char** argv)
     std::filesystem::path executable_path(argv[0]);
     std::filesystem::path config_file_path = executable_path.parent_path() / "MoYuEditor.ini";
 
-    MoYu::PilotEngine* engine = new MoYu::PilotEngine();
+    MoYu::MoYuEngine* engine = new MoYu::MoYuEngine();
 
     engine->startEngine(config_file_path.generic_string());
     engine->initialize();
 
-    MoYu::PilotEditor* editor = new MoYu::PilotEditor();
+    MoYu::MoYuEditor* editor = new MoYu::MoYuEditor();
     editor->initialize(engine);
 
-    editor->run();
+    engine->run();
 
     editor->clear();
 

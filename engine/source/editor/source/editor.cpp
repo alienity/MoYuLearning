@@ -17,7 +17,7 @@ namespace MoYu
         g_editor_tick_component_types.insert(component_type_name);
     }
 
-    PilotEditor::PilotEditor()
+    MoYuEditor::MoYuEditor()
     {
         registerEdtorTickComponent("TransformComponent");
         registerEdtorTickComponent("MeshRendererComponent");
@@ -26,43 +26,44 @@ namespace MoYu
         registerEdtorTickComponent("TerrainComponent");
     }
 
-    PilotEditor::~PilotEditor() {}
+    MoYuEditor::~MoYuEditor() {}
 
-    void PilotEditor::initialize(PilotEngine* engine_runtime)
+    void MoYuEditor::initialize(MoYuEngine* engine_runtime)
     {
         assert(engine_runtime);
 
         g_is_editor_mode = true;
         m_engine_runtime = engine_runtime;
 
-        EditorGlobalContextInitInfo init_info = {g_runtime_global_context.m_window_system.get(),
-                                                 g_runtime_global_context.m_render_system.get(),
-                                                 engine_runtime};
+        auto& window_system = g_runtime_global_context.m_window_system;
+        auto& render_system = g_runtime_global_context.m_render_system;
+
+        EditorGlobalContextInitInfo init_info = { window_system.get(), render_system.get(), engine_runtime};
         g_editor_global_context.initialize(init_info);
-        g_editor_global_context.m_scene_manager->setEditorCamera(
-            g_runtime_global_context.m_render_system->getRenderCamera());
+        g_editor_global_context.m_scene_manager->setEditorCamera(render_system->getRenderCamera());
         
-        m_editor_ui                   = std::make_shared<EditorUI>();
-        WindowUIInitInfo ui_init_info = {g_runtime_global_context.m_window_system,
-                                         g_runtime_global_context.m_render_system};
+        m_editor_ui = std::make_shared<EditorUI>();
+        WindowUIInitInfo ui_init_info = { window_system, render_system };
         m_editor_ui->initialize(ui_init_info);
+
+        engine_runtime->setMainLoopDelegate([this](float delta_time) { logicalTick(delta_time); });
+        engine_runtime->setRenderDelegate([this]() { return rendererTick(); });
     }
 
-    void PilotEditor::clear() { g_editor_global_context.clear(); }
+    void MoYuEditor::clear() { g_editor_global_context.clear(); }
 
-    void PilotEditor::run()
+    void MoYuEditor::logicalTick(float delta_time)
     {
         assert(m_engine_runtime);
         assert(m_editor_ui);
-        float delta_time;
-        while (true)
-        {
-            m_editor_ui->preRender();
-            delta_time = m_engine_runtime->calculateDeltaTime();
-            g_editor_global_context.m_scene_manager->tick(delta_time);
-            g_editor_global_context.m_input_manager->tick(delta_time);
-            if (!m_engine_runtime->tickOneFrame(delta_time))
-                return;
-        }
+
+        g_editor_global_context.m_scene_manager->tick(delta_time);
+        g_editor_global_context.m_input_manager->tick(delta_time);
     }
+
+    void MoYuEditor::rendererTick()
+    {
+        m_editor_ui->preRender();
+    }
+
 } // namespace MoYu

@@ -18,40 +18,40 @@ namespace MoYu
 
         void save(ComponentDefinitionRes& out_component_res) override;
 
-        void markToErase() override {};
+        virtual void markToErase() override {};
 
-        glm::float3 getPosition() const { return m_transform_buffer[m_current_index].getPosition(); }
-        glm::float3 getScale() const { return m_transform_buffer[m_current_index].getScale(); }
-        glm::quat   getRotation() const { return m_transform_buffer[m_current_index].getRotation(); }
+        virtual glm::float3 getPosition() const { return m_transform_buffer[m_current_index].getPosition(); }
+        virtual glm::float3 getScale() const { return m_transform_buffer[m_current_index].getScale(); }
+        virtual glm::quat   getRotation() const { return m_transform_buffer[m_current_index].getRotation(); }
 
-        void setPosition(const glm::float3& new_translation);
-        void setScale(const glm::float3& new_scale);
-        void setRotation(const glm::quat& new_rotation);
-        void setRotation(const glm::float3& new_eulerAngles);
+        virtual void setPosition(const glm::float3& new_translation);
+        virtual void setScale(const glm::float3& new_scale);
+        virtual void setRotation(const glm::quat& new_rotation);
+        virtual void setRotation(const glm::float3& new_eulerAngles);
 
-        const Transform& getTransformConst() const { return m_transform_buffer[m_current_index]; }
+        virtual const Transform& getTransformConst() const { return m_transform_buffer[m_current_index]; }
 
         // for editor
-        Transform& getTransform() { return m_transform_buffer[m_next_index]; }
+        virtual Transform& getTransform() { return m_transform_buffer[m_next_index]; }
 
-        const glm::float4x4 getMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
+        virtual const glm::float4x4 getMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
 
-        const glm::float4x4 getMatrixWorld();
+        virtual const glm::float4x4 getMatrixWorld();
         
         // Get local transformation matrix (relative to parent node)
-        const glm::float4x4 getLocalMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
+        virtual const glm::float4x4 getLocalMatrix() const { return ((Transform&)m_transform_buffer[m_current_index]).getMatrix(); }
 
-        const bool isMatrixDirty() const;
+        virtual const bool isMatrixDirty() const;
 
         void preTick(float delta_time) override;
         void tick(float delta_time) override;
         void lateTick(float delta_time) override;
 
         // New: Get the status of whether the world matrix needs to be updated
-        bool isWorldTransformDirty() const { return m_world_transform_dirty; }
+        virtual bool isWorldTransformDirty() const { return m_world_transform_dirty; }
         
         // New: Mark world transform as dirty
-        void markWorldTransformDirty();
+        virtual void markWorldTransformDirty();
 
     private:
         Transform m_transform_buffer[2];

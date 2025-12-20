@@ -11,7 +11,7 @@ namespace MoYu
     public:
         LocalVolumetricFogComponent() { m_component_name = "LocalVolumetricFogComponent"; };
 
-        void reset();
+        virtual void reset();
 
         void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
 
@@ -19,10 +19,10 @@ namespace MoYu
 
         void tick(float delta_time) override;
 
-        void updateLocalFogRendererRes(const LocalVolumeFogComponentRes& res);
+        virtual void updateLocalFogRendererRes(const LocalVolumeFogComponentRes& res);
 
         // for editor
-        LocalVolumeFogComponentRes& getSceneLocalFog() { return m_scene_local_fog_res; }
+        virtual LocalVolumeFogComponentRes& getSceneLocalFog() { return m_scene_local_fog_res; }
 
     private:
         LocalVolumeFogComponentRes m_scene_local_fog_res;

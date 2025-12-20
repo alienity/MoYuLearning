@@ -7,23 +7,24 @@
 namespace MoYu
 {
     class EditorUI;
-    class PilotEngine;
+    class MoYuEngine;
 
-    class PilotEditor
+    class MoYuEditor
     {
         friend class EditorUI;
 
     public:
-        PilotEditor();
-        virtual ~PilotEditor();
+        MoYuEditor();
+        virtual ~MoYuEditor();
 
-        void initialize(PilotEngine* engine_runtime);
+        void initialize(MoYuEngine* engine_runtime);
         void clear();
 
-        void run();
+        void logicalTick(float delta_time);
+        void rendererTick();
 
     protected:
         std::shared_ptr<EditorUI> m_editor_ui;
-        PilotEngine*              m_engine_runtime {nullptr};
+        MoYuEngine* m_engine_runtime {nullptr};
     };
 } // namespace MoYu

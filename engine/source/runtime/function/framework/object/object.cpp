@@ -120,21 +120,11 @@ namespace MoYu
 
 		for (auto& component : m_components)
 		{
-			if (component->getTypeName() != MoYu::TransformComponent::getTypeName())
+			if (component->getTypeName() != COMPONENT_NAME(TransformComponent))
 			{
 				component->markToErase();
 			}
 		}
-	}
-
-	std::shared_ptr<TransformComponent> GObject::getTransformComponent()
-	{
-		return m_transform_component;
-	}
-
-	std::weak_ptr<TransformComponent> GObject::getTransformComponentWeak()
-	{
-		return m_transform_component;
 	}
 
 	bool GObject::hasComponent(const std::string& compenent_type_name) const
@@ -168,36 +158,36 @@ namespace MoYu
 			std::string type_name = component_define_res.m_type_name;
 			const std::string component_json_data = component_define_res.m_component_json_data;
 
-			if (type_name == TransformComponent::getTypeName())
+			if (type_name == COMPONENT_NAME(TransformComponent))
 			{
 				// Load data into the built-in TransformComponent
 				m_transform_component->postLoadResource(weak_from_this(), component_json_data);
 			}
-			else if (type_name == MeshRendererComponent::getTypeName())
+			else if (type_name == COMPONENT_NAME(MeshRendererComponent))
 			{
 				std::shared_ptr<MeshRendererComponent> m_component = std::make_shared<MeshRendererComponent>();
 				m_component->postLoadResource(weak_from_this(), component_json_data);
 				m_components.push_back(m_component);
 			}
-			else if (type_name == LocalVolumetricFogComponent::getTypeName())
+			else if (type_name == COMPONENT_NAME(LocalVolumetricFogComponent))
 			{
 				std::shared_ptr<LocalVolumetricFogComponent> m_component = std::make_shared<LocalVolumetricFogComponent>();
 				m_component->postLoadResource(weak_from_this(), component_json_data);
 				m_components.push_back(m_component);
 			}
-			else if (type_name == TerrainComponent::getTypeName())
+			else if (type_name == COMPONENT_NAME(TerrainComponent))
 			{
 				std::shared_ptr<TerrainComponent> m_component = std::make_shared<TerrainComponent>();
 				m_component->postLoadResource(weak_from_this(), component_json_data);
 				m_components.push_back(m_component);
 			}
-			else if (type_name == LightComponent::getTypeName())
+			else if (type_name == COMPONENT_NAME(LightComponent))
 			{
 				std::shared_ptr<LightComponent> m_component = std::make_shared<LightComponent>();
 				m_component->postLoadResource(weak_from_this(), component_json_data);
 				m_components.push_back(m_component);
 			}
-			else if (type_name == CameraComponent::getTypeName())
+			else if (type_name == COMPONENT_NAME(CameraComponent))
 			{
 				std::shared_ptr<CameraComponent> m_component = std::make_shared<CameraComponent>();
 				m_component->postLoadResource(weak_from_this(), component_json_data);

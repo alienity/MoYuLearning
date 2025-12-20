@@ -8,17 +8,23 @@
 #include <thread>
 #include <future>
 #include <memory>
+#include <functional>
+#include "function/thread/thread_pool.h"
 
 namespace MoYu
 {
-    class ThreadPool;
-
-    extern bool                            g_is_editor_mode;
+    extern bool g_is_editor_mode;
     extern std::unordered_set<std::string> g_editor_tick_component_types;
 
-    class PilotEngine
+    // Define main loop delegate type
+    using MainLoopDelegate = std::function<void(float delta_time)>;
+
+    // Define render delegate type
+    using RenderDelegate = std::function<void()>;
+
+    class MoYuEngine
     {
-        friend class PilotEditor;
+        friend class MoYuEditor;
 
         static const float k_fps_alpha;
 
@@ -31,9 +37,13 @@ namespace MoYu
 
         bool isQuit() const { return m_is_quit; }
         void run();
-        bool tickOneFrame(float delta_time);
-
+        
         int getFPS() const { return m_fps; }
+
+        // Set main loop delegate
+        void setMainLoopDelegate(MainLoopDelegate delegate) { m_main_loop_delegate = std::move(delegate); }
+        // Set render delegate
+        void setRenderDelegate(RenderDelegate delegate) { m_render_delegate = std::move(delegate); }
 
     protected:
         void logicalTick(float delta_time);
@@ -47,9 +57,9 @@ namespace MoYu
         float calculateDeltaTime();
 
         // Multi-threading support
-        void startGameThread();
-        void stopGameThread();
-        void gameThreadFunc();
+        void startRenderThread();
+        void stopRenderThread();
+        void renderThreadFunc();
 
         bool m_is_quit {false};
 
@@ -60,11 +70,19 @@ namespace MoYu
         int   m_fps {0};
 
         // Threading members
-        std::unique_ptr<ThreadPool> m_game_thread_pool;
         std::unique_ptr<ThreadPool> m_render_thread_pool;
-        std::atomic<bool> m_game_thread_running {false};
-        std::future<void> m_game_thread_future;
+        std::atomic<bool> m_render_thread_running {false};
+        std::future<void> m_render_thread_future;
         std::atomic<bool> m_exit_requested {false};
+        std::mutex m_render_mutex;
+        std::condition_variable m_render_cv;
+        bool m_frame_ready {false};
+        bool m_frame_processed {true};
+
+        // Main loop delegate
+        MainLoopDelegate m_main_loop_delegate;
+        // Render delegate
+        RenderDelegate m_render_delegate;
     };
 
 } // namespace MoYu

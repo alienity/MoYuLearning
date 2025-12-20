@@ -7,11 +7,11 @@ namespace MoYu
     void RenderScene::updateLight(SceneLight sceneLight, SceneTransform sceneTransform)
     {
         // remove old light
-        if (sceneLight.m_identifier == m_ambient_light.m_identifier && sceneLight.m_light_type != LightType::AmbientLight)
+        if (sceneLight.m_identifier == m_ambient_light.m_identifier && sceneLight.m_light_type != RLightType::AMBIENT)
         {
             m_ambient_light.m_identifier = _UndefCommonIdentifier;
         }
-        if (sceneLight.m_identifier == m_directional_light.m_identifier && sceneLight.m_light_type != LightType::DirectionLight)
+        if (sceneLight.m_identifier == m_directional_light.m_identifier && sceneLight.m_light_type != RLightType::DIRECTIONAL)
         {
             m_directional_light.m_identifier = _UndefCommonIdentifier;
         }
@@ -59,7 +59,7 @@ namespace MoYu
 
         glm::float3 direction = m_orientation * MYFloat3::Forward;
 
-        if (sceneLight.m_light_type == LightType::AmbientLight)
+        if (sceneLight.m_light_type == RLightType::AMBIENT)
         {
             m_ambient_light.m_color = sceneLight.ambient_light.m_color;
 
@@ -71,7 +71,7 @@ namespace MoYu
             m_ambient_light.right = right;
             m_ambient_light.up = up;
         }
-        else if (sceneLight.m_light_type == LightType::DirectionLight)
+        else if (sceneLight.m_light_type == RLightType::DIRECTIONAL)
           {
             m_directional_light.m_position_delation = (m_translation - m_directional_light.position);
             m_directional_light.position = m_translation;
@@ -117,7 +117,7 @@ namespace MoYu
             m_directional_light.m_shadow_far_plane     = sceneLight.direction_light.m_shadow_far_plane;
             m_directional_light.m_shadowmap_size       = sceneLight.direction_light.m_shadowmap_size;
         }
-        else if (sceneLight.m_light_type == LightType::PointLight)
+        else if (sceneLight.m_light_type == RLightType::POINT)
         {
             int index_finded = -1;
             for (int i = 0; i < m_point_light_list.size(); i++)
@@ -152,7 +152,7 @@ namespace MoYu
             pInternalPointLight->right = right;
             pInternalPointLight->up = up;
         }
-        else if (sceneLight.m_light_type == LightType::SpotLight)
+        else if (sceneLight.m_light_type == RLightType::SPOT)
         {
             int index_finded = -1;
             for (int i = 0; i < m_spot_light_list.size(); i++)
@@ -430,15 +430,15 @@ namespace MoYu
 
     void RenderScene::removeLight(SceneLight sceneLight)
     {
-        if (sceneLight.m_light_type == LightType::AmbientLight)
+        if (sceneLight.m_light_type == RLightType::AMBIENT)
         {
             m_ambient_light = {};
         }
-        else if (sceneLight.m_light_type == LightType::DirectionLight)
+        else if (sceneLight.m_light_type == RLightType::DIRECTIONAL)
         {
             m_directional_light = {};
         }
-        else if (sceneLight.m_light_type == LightType::PointLight)
+        else if (sceneLight.m_light_type == RLightType::POINT)
         {
             for (int i = 0; i < m_point_light_list.size(); i++)
             {
@@ -449,7 +449,7 @@ namespace MoYu
                 }
             }
         }
-        else if (sceneLight.m_light_type == LightType::SpotLight)
+        else if (sceneLight.m_light_type == RLightType::SPOT)
         {
             for (int i = 0; i < m_spot_light_list.size(); i++)
             {

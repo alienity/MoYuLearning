@@ -134,19 +134,13 @@ namespace MoYu
 		}
 
 		template<typename TComponent>
-		std::shared_ptr<TComponent> tryGetComponent(const std::string& compenent_type_name)
+		std::shared_ptr<TComponent> tryGetComponent()
 		{
-			// Special handling for TransformComponent
-			if (compenent_type_name == TransformComponent::getTypeName())
+			for (size_t i = 0; i < m_components.size(); i++)
 			{
-				return std::static_pointer_cast<TComponent>(m_transform_component);
-			}
-
-			for (size_t i = 1; i < m_components.size(); i++) // Start from index 1 to skip TransformComponent
-			{
-				if (m_components[i]->getTypeName() == compenent_type_name)
+				if (auto component = std::dynamic_pointer_cast<TComponent>(m_components[i]))
 				{
-					return std::static_pointer_cast<TComponent>(m_components[i]);
+					return component;
 				}
 			}
 			return nullptr;

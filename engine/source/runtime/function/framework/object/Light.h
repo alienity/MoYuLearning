@@ -4,6 +4,12 @@
 
 namespace MoYu
 {
+    enum class LightType {
+        DIRECTIONAL,
+        POINT,
+        SPOT
+    };
+
     // Base light class
     class Light {
     protected:

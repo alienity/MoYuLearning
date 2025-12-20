@@ -1200,7 +1200,7 @@ namespace MoYu
         {
             if (ImGui::MenuItem("Camera Component"))
             {
-                if (selected_object->tryGetComponent<CameraComponent>("CameraComponent"))
+                if (selected_object->tryGetComponent<CameraComponent>())
                 {
                     LOG_INFO("object {} already has Camera Component", selected_object->getName());
                 }
@@ -1214,7 +1214,7 @@ namespace MoYu
 
             if (ImGui::BeginMenu("Light Component"))
             {
-                if (selected_object->tryGetComponent<LightComponent>("LightComponent"))
+                if (selected_object->tryGetComponent<LightComponent>())
                 {
                     LOG_INFO("object {} already has Light Component", selected_object->getName());
                 }
@@ -1244,20 +1244,21 @@ namespace MoYu
 
             if (ImGui::BeginMenu("Mesh Renderer Component"))
             {
-                if (selected_object->tryGetComponent<MeshRendererComponent>("MeshRendererComponent"))
+                if (selected_object->tryGetComponent<MeshRendererComponent>())
                 {
                     LOG_INFO("object {} already has Mesh Renderer Component", selected_object->getName());
                 }
                 else
                 {
-                    static const DefaultMeshType param_types[] = {DefaultMeshType::Capsule,
-                                                                  DefaultMeshType::Cone,
-                                                                  DefaultMeshType::Convexmesh,
-                                                                  DefaultMeshType::Cube,
-                                                                  DefaultMeshType::Cylinder,
-                                                                  DefaultMeshType::Sphere,
-                                                                  DefaultMeshType::Triangle,
-                                                                  DefaultMeshType::Square};
+                    static const DefaultMeshType param_types[] = {
+                    	DefaultMeshType::CAPSULE,
+                        DefaultMeshType::CONE,
+                        DefaultMeshType::CONVEXMESH,
+                        DefaultMeshType::CUBE,
+                        DefaultMeshType::CYLINDER,
+                        DefaultMeshType::SPHERE,
+                        DefaultMeshType::TRIANGLE,
+                        DefaultMeshType::SQUARE };
 
                     for (int i = 0; i < IM_ARRAYSIZE(param_types); i++)
                     {
@@ -1282,7 +1283,7 @@ namespace MoYu
 
             if (ImGui::MenuItem("Local Volume Fog Component"))
             {
-                if (selected_object->tryGetComponent<LocalVolumetricFogComponent>("LocalVolumetricFogComponent"))
+                if (selected_object->tryGetComponent<LocalVolumetricFogComponent>())
                 {
                     LOG_INFO("object {} already has Local Volume Fog Component", selected_object->getName());
                 }
@@ -1296,7 +1297,7 @@ namespace MoYu
 
             if (ImGui::MenuItem("Terrain Renderer Component"))
             {
-                if (selected_object->tryGetComponent<TerrainComponent>("TerrainComponent"))
+                if (selected_object->tryGetComponent<TerrainComponent>())
                 {
                     LOG_INFO("object {} already has Terrain Renderer Component", selected_object->getName());
                 }
@@ -1545,7 +1546,7 @@ namespace MoYu
                 std::shared_ptr<GObject> selected_object = g_editor_global_context.m_scene_manager->getSelectedGObject().lock();
                 if (selected_object != nullptr)
                 {
-                    TransformComponent* trans_component_ptr = selected_object->getTransformComponent().lock().get();
+	                std::shared_ptr<TransformComponent> trans_component_ptr = selected_object->getTransformComponent();
                     glm::float4x4 worldMatrix = trans_component_ptr->getMatrixWorld();
                     glm::mat4 _worldMatrix = worldMatrix;
 

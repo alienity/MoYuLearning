@@ -8,7 +8,7 @@
 
 namespace MoYu
 {
-    class PilotEditor;
+    class MoYuEditor;
     class RenderCamera;
 
     /**/

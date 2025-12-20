@@ -265,7 +265,7 @@ namespace MoYu
         std::shared_ptr<GObject> selected_gobject = getSelectedGObject().lock();
         if (selected_gobject)
         {
-            std::shared_ptr<TransformComponent> transform_component = selected_gobject->tryGetComponent(TransformComponent);
+            std::shared_ptr<TransformComponent> transform_component = selected_gobject->tryGetComponent<TransformComponent>();
             m_selected_object_matrix = transform_component->getMatrix();
         }
 

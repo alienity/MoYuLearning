@@ -49,7 +49,7 @@ namespace MoYu
 
         GComponentID getComponentId() { return m_id; }
 
-        static std::string getTypeName() { return m_component_name; }
+        virtual std::string getTypeName() { return m_component_name; }
 
         bool m_tick_in_editor_mode {false};
 

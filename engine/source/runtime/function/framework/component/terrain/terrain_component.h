@@ -15,7 +15,7 @@ namespace MoYu
     public:
         TerrainComponent() { m_component_name = "TerrainComponent"; };
 
-        void reset();
+        virtual void reset();
 
         void postLoadResource(std::weak_ptr<GObject> object, const std::string json_data) override;
 
@@ -23,10 +23,10 @@ namespace MoYu
 
         void tick(float delta_time) override;
 
-        void updateTerrainRes(const TerrainComponentRes& res);
+        virtual void updateTerrainRes(const TerrainComponentRes& res);
 
         // for editor
-        SceneMaterial& getTerrainMaterial() { return m_material; }
+        virtual SceneMaterial& getTerrainMaterial() { return m_material; }
 
     //private:
         TerrainComponentRes m_terrain_res;

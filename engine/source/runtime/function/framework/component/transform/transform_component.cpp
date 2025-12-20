@@ -155,7 +155,7 @@ namespace MoYu
             auto children = object->getChildren();
             for (auto& child : children) 
             {
-                if (auto childTransform = child->getTransformComponent().lock()) 
+                if (auto childTransform = child->getTransformComponent()) 
                 {
                     childTransform->markWorldTransformDirty();
                 }
@@ -192,7 +192,7 @@ namespace MoYu
             else 
             {
                 // Get the transform component of the parent object
-                auto parentTransform = parent->getTransformComponent().lock();
+                auto parentTransform = parent->getTransformComponent();
                 if (parentTransform) 
                 {
                     // World matrix = Parent object's world matrix * Local matrix

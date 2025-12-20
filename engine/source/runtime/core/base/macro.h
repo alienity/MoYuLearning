@@ -24,3 +24,5 @@ inline constexpr ENUMTYPE &operator ^= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMT
 #define ASSERT(statement) assert(statement)
 //#define ASSERT(...)
 #endif
+
+#define COMPONENT_NAME(x) #x

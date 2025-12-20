@@ -6,7 +6,7 @@ namespace MoYu
     {
         class WindowSystem* window_system;
         class RenderSystem* render_system;
-        class PilotEngine*  engine_runtime;
+        class MoYuEngine*  engine_runtime;
     };
 
     class EditorGlobalContext
@@ -16,7 +16,7 @@ namespace MoYu
         class EditorInputManager* m_input_manager {nullptr};
         class RenderSystem*       m_render_system {nullptr};
         class WindowSystem*       m_window_system {nullptr};
-        class PilotEngine*        m_engine_runtime {nullptr};
+        class MoYuEngine*        m_engine_runtime {nullptr};
 
     public:
         void initialize(const EditorGlobalContextInitInfo& init_info);

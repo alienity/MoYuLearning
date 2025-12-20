@@ -16,54 +16,67 @@ namespace MoYu
     bool                            g_is_editor_mode {false};
     std::unordered_set<std::string> g_editor_tick_component_types {};
 
-    void PilotEngine::startEngine(const std::string& config_file_path)
+    void MoYuEngine::startEngine(const std::string& config_file_path)
     {
         g_runtime_global_context.startSystems(config_file_path);
 
         LOG_INFO("engine start");
     }
 
-    void PilotEngine::shutdownEngine()
+    void MoYuEngine::shutdownEngine()
     {
         LOG_INFO("engine shutdown");
 
-        // Stop game thread before shutting down systems
-        stopGameThread();
+        // Stop render thread before shutting down systems
+        stopRenderThread();
 
         g_runtime_global_context.shutdownSystems();
     }
 
-    void PilotEngine::initialize() {}
-    void PilotEngine::clear() {}
+    void MoYuEngine::initialize() {}
+    void MoYuEngine::clear() {}
 
-    void PilotEngine::run()
+    void MoYuEngine::run()
     {
-        // Initialize thread pools
-        m_game_thread_pool = std::make_unique<ThreadPool>(1);
+        // Initialize render thread pool
         m_render_thread_pool = std::make_unique<ThreadPool>(1);
 
-        // Start game thread
-        startGameThread();
+        // Start render thread
+        startRenderThread();
 
         std::shared_ptr<WindowSystem> window_system = g_runtime_global_context.m_window_system;
         ASSERT(window_system);
 
         while (!window_system->shouldClose() && !m_exit_requested.load())
         {
+            // Poll window events on main thread
+            g_runtime_global_context.m_window_system->pollEvents();
+            
+            // Execute main loop logic
             const float delta_time = calculateDeltaTime();
             
-            // Process render tasks in render thread
-            auto render_future = m_render_thread_pool->enqueue([this, delta_time]() {
-                // Exchange data between logic and render contexts
-                g_runtime_global_context.m_render_system->swapLogicRenderData();
-                
-                rendererTick();
-                
-                g_runtime_global_context.m_window_system->pollEvents();
-            });
+            // If main loop delegate is set, call it (e.g. execute editor logic)
+            if (m_main_loop_delegate)
+            {
+                m_main_loop_delegate(delta_time);
+            }
+
+            // Process game logic on main thread
+            logicalTick(delta_time);
+
+            // Notify render thread that a new frame is ready
+            {
+                std::lock_guard<std::mutex> lock(m_render_mutex);
+                m_frame_ready = true;
+                m_frame_processed = false;
+            }
+            m_render_cv.notify_one();
             
-            // Wait for render to complete
-            render_future.wait();
+            // Wait for render thread to finish processing the frame
+            {
+                std::unique_lock<std::mutex> lock(m_render_mutex);
+                m_render_cv.wait(lock, [this] { return m_frame_processed && !m_frame_ready; });
+            }
             
             // Update window title
             g_runtime_global_context.m_window_system->setTile(
@@ -73,28 +86,31 @@ namespace MoYu
         }
 
         // Stop threads before exiting
-        stopGameThread();
+        stopRenderThread();
     }
 
-    void PilotEngine::startGameThread()
+    void MoYuEngine::startRenderThread()
     {
-        m_game_thread_running.store(true);
-        m_game_thread_future = m_game_thread_pool->enqueue([this]() {
-            gameThreadFunc();
+        m_render_thread_running.store(true);
+        m_render_thread_future = m_render_thread_pool->enqueue([this]() {
+            renderThreadFunc();
         });
     }
 
-    void PilotEngine::stopGameThread()
+    void MoYuEngine::stopRenderThread()
     {
-        m_game_thread_running.store(false);
+        m_render_thread_running.store(false);
         m_exit_requested.store(true);
         
-        if (m_game_thread_future.valid()) {
-            m_game_thread_future.wait();
+        // Wake up render thread so it can exit
+        {
+            std::lock_guard<std::mutex> lock(m_render_mutex);
+            m_frame_ready = true;
         }
+        m_render_cv.notify_one();
         
-        if (m_game_thread_pool) {
-            m_game_thread_pool->stop();
+        if (m_render_thread_future.valid()) {
+            m_render_thread_future.wait();
         }
         
         if (m_render_thread_pool) {
@@ -102,20 +118,38 @@ namespace MoYu
         }
     }
 
-    void PilotEngine::gameThreadFunc()
+    void MoYuEngine::renderThreadFunc()
     {
-        // Game thread main loop
-        while (m_game_thread_running.load() && !m_exit_requested.load())
+        // Render thread main loop
+        while (m_render_thread_running.load() && !m_exit_requested.load())
         {
-            const float delta_time = calculateDeltaTime();
-            logicalTick(delta_time);
+            // Wait for a new frame to be ready
+            std::unique_lock<std::mutex> lock(m_render_mutex);
+            m_render_cv.wait(lock, [this] { return m_frame_ready; });
             
-            // Sleep briefly to prevent excessive CPU usage
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            if (!m_render_thread_running.load() || m_exit_requested.load())
+                break;
+            
+            // Process render commands
+            // Exchange data between logic and render contexts
+            g_runtime_global_context.m_render_system->swapLogicRenderData();
+            
+            // If render delegate is set, call it (e.g. execute editor render logic)
+            if (m_render_delegate)
+            {
+                m_render_delegate();
+            }
+
+            rendererTick();
+            // Mark frame as processed
+            m_frame_ready = false;
+            m_frame_processed = true;
+            lock.unlock();
+            m_render_cv.notify_one();
         }
     }
 
-    float PilotEngine::calculateDeltaTime()
+    float MoYuEngine::calculateDeltaTime()
     {
         float delta_time;
         {
@@ -130,42 +164,22 @@ namespace MoYu
         return delta_time;
     }
 
-    bool PilotEngine::tickOneFrame(float delta_time)
-    {
-        logicalTick(delta_time);
-        calculateFPS(delta_time);
-
-        // single thread
-        // exchange data between logic and render contexts
-        g_runtime_global_context.m_render_system->swapLogicRenderData();
-
-        rendererTick();
-
-        g_runtime_global_context.m_window_system->pollEvents();
-
-
-        g_runtime_global_context.m_window_system->setTile(
-            std::string("MoYu - " + std::to_string(getFPS()) + " FPS").c_str());
-
-        const bool should_window_close = g_runtime_global_context.m_window_system->shouldClose();
-        return !should_window_close;
-    }
-
-    void PilotEngine::logicalTick(float delta_time)
+    void MoYuEngine::logicalTick(float delta_time)
     {
         g_runtime_global_context.m_world_manager->tick(delta_time);
         g_runtime_global_context.m_input_system->tick();
         g_runtime_global_context.m_material_manager->tick(delta_time);
     }
 
-    bool PilotEngine::rendererTick()
+    bool MoYuEngine::rendererTick()
     {
         g_runtime_global_context.m_render_system->tick();
         return true;
     }
 
-    const float PilotEngine::k_fps_alpha = 1.f / 100;
-    void        PilotEngine::calculateFPS(float delta_time)
+    const float MoYuEngine::k_fps_alpha = 1.f / 100;
+
+    void MoYuEngine::calculateFPS(float delta_time)
     {
         m_frame_count++;
 

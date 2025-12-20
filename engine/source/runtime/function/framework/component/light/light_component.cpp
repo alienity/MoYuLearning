@@ -112,7 +112,7 @@ namespace MoYu
         (&light_res)->m_PointLightParam     = m_light_res_buffer[m_next_index].m_PointLightParam;
         (&light_res)->m_SpotLightParam      = m_light_res_buffer[m_next_index].m_SpotLightParam;
 
-        out_component_res.m_type_name           = "LightComponent";
+        out_component_res.m_type_name           = LightComponent::getTypeName();
         out_component_res.m_component_name      = this->m_component_name;
         out_component_res.m_component_json_data = AssetManager::saveJson(light_res);
     }
@@ -167,7 +167,7 @@ namespace MoYu
             direction_light.m_shadowmap_size    = m_light_res_ptr->m_DirectionLightParam.shadowmap_size;
 
             scene_light.direction_light = direction_light;
-            scene_light.m_light_type    = LightType::DIRECTIONAL;
+            scene_light.m_light_type    = RLightType::DIRECTIONAL;
         }
         else if (m_light_res_ptr->m_LightParamName == PointLightParameterName)
         {
@@ -183,7 +183,7 @@ namespace MoYu
             point_light.m_shadowmap_size = m_light_res_ptr->m_PointLightParam.shadowmap_size;
 
             scene_light.point_light  = point_light;
-            scene_light.m_light_type = LightType::POINT;
+            scene_light.m_light_type = RLightType::POINT;
         }
         else if (m_light_res_ptr->m_LightParamName == SpotLightParameterName)
         {
@@ -201,7 +201,7 @@ namespace MoYu
             spot_light.m_shadowmap_size    = m_light_res_ptr->m_SpotLightParam.shadowmap_size;
 
             scene_light.spot_light   = spot_light;
-            scene_light.m_light_type = LightType::SPOT;
+            scene_light.m_light_type = RLightType::SPOT;
         }
 
         GameObjectComponentDesc light_component_desc = {};

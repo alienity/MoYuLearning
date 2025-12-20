@@ -39,27 +39,27 @@ namespace MoYu
     MeshRendererComponentRes _triangle_mesh_mat = { _triangle_mesh, _pbr_mat };
     MeshRendererComponentRes _square_mesh_mat = { _square_mesh, _pbr_mat };
     
-    // 使用静态unordered_map存储映射关系，提高查找效率
+    // Use static unordered_map to store mapping relationships for improved lookup efficiency
     static const std::unordered_map<DefaultMeshType, std::string> mesh_type_name_map = {
-        {Capsule, "Capsule"},
-        {Cone, "Cone"},
-        {Convexmesh, "Convexmesh"},
-        {Cube, "Cube"},
-        {Cylinder, "Cylinder"},
-        {Sphere, "Sphere"},
-        {Triangle, "Triangle"},
-        {Square, "Square"}
+        {DefaultMeshType::CAPSULE, "Capsule"},
+        {DefaultMeshType::CONE, "Cone"},
+        {DefaultMeshType::CONVEXMESH, "Convexmesh"},
+        {DefaultMeshType::CUBE, "Cube"},
+        {DefaultMeshType::CYLINDER, "Cylinder"},
+        {DefaultMeshType::SPHERE, "Sphere"},
+        {DefaultMeshType::TRIANGLE, "Triangle"},
+        {DefaultMeshType::SQUARE, "Square"}
     };
 
     static const std::unordered_map<DefaultMeshType, MeshRendererComponentRes> mesh_type_component_map = {
-        {Capsule, _capsule_mesh_mat},
-        {Cone, _cone_mesh_mat},
-        {Convexmesh, _convexmesh_mesh_mat},
-        {Cube, _cube_mesh_mat},
-        {Cylinder, _cylinder_mesh_mat},
-        {Sphere, _sphere_mesh_mat},
-        {Triangle, _triangle_mesh_mat},
-        {Square, _square_mesh_mat}
+        {DefaultMeshType::CAPSULE, _capsule_mesh_mat},
+        {DefaultMeshType::CONE, _cone_mesh_mat},
+        {DefaultMeshType::CONVEXMESH, _convexmesh_mesh_mat},
+        {DefaultMeshType::CUBE, _cube_mesh_mat},
+        {DefaultMeshType::CYLINDER, _cylinder_mesh_mat},
+        {DefaultMeshType::SPHERE, _sphere_mesh_mat},
+        {DefaultMeshType::TRIANGLE, _triangle_mesh_mat},
+        {DefaultMeshType::SQUARE, _square_mesh_mat}
     };
 
     std::string DefaultMeshTypeToName(DefaultMeshType type)
@@ -68,7 +68,7 @@ namespace MoYu
         if (it != mesh_type_name_map.end()) {
             return it->second;
         }
-        return "Capsule"; // 默认返回Capsule
+        return "Capsule"; // Return Capsule by default
     }
 
     MeshRendererComponentRes DefaultMeshTypeToComponentRes(DefaultMeshType type)
@@ -77,7 +77,7 @@ namespace MoYu
         if (it != mesh_type_component_map.end()) {
             return it->second;
         }
-        return _capsule_mesh_mat; // 默认返回_capsule_mesh_mat
+        return _capsule_mesh_mat; // Return _capsule_mesh_mat by default
     }
 
     void MeshRendererComponent::postLoadResource(std::weak_ptr<GObject> object, const std::string json_data)
@@ -92,19 +92,19 @@ namespace MoYu
 
     void MeshRendererComponent::save(ComponentDefinitionRes& out_component_res)
     {
-        // 直接设置字段值而不是创建临时变量
+        // Set field values directly instead of creating temporary variables
         out_component_res.m_type_name = "MeshRendererComponent";
         out_component_res.m_component_name = this->m_component_name;
         
-        // 构造mesh renderer组件资源数据
+        // Construct mesh renderer component resource data
         MeshRendererComponentRes mesh_renderer_res{};
         
-        // 直接设置mesh资源字段
+        // Set mesh resource fields directly
         mesh_renderer_res.m_mesh_res.m_is_mesh_data = m_scene_mesh.m_is_mesh_data;
         mesh_renderer_res.m_mesh_res.m_mesh_data_path = m_scene_mesh.m_mesh_data_path;
         mesh_renderer_res.m_mesh_res.m_sub_mesh_file = m_scene_mesh.m_sub_mesh_file;
 
-        // 直接设置material资源字段
+        // Set material resource fields directly
         mesh_renderer_res.m_material_res.m_material_file = m_mesh_renderer_res.m_material_res.m_material_file;
         mesh_renderer_res.m_material_res.m_is_material_init = true;
 
@@ -176,7 +176,7 @@ namespace MoYu
 
         if (this->isToErase())
         {
-            // 直接构造对象而不是调用函数，减少临时对象创建
+            // Construct object directly instead of calling function to reduce temporary object creation
             glm::float4x4 transform_matrix = m_transform_component_ptr->getMatrixWorld();
 
             glm::float3 m_scale;
@@ -209,7 +209,7 @@ namespace MoYu
         }
         else if (m_transform_component_ptr->isMatrixDirty() || this->isDirty())
         {
-            // 直接构造对象而不是调用函数，减少临时对象创建
+            // Construct object directly instead of calling function to reduce temporary object creation
             glm::float4x4 transform_matrix = m_transform_component_ptr->getMatrixWorld();
 
             glm::float3 m_scale;
@@ -246,7 +246,7 @@ namespace MoYu
     {
         bool is_dirty = false;
         
-        // 检查网格资源是否有变化
+        // Check if mesh resource has changed
         if (m_mesh_renderer_res.m_mesh_res.m_is_mesh_data != res.m_mesh_res.m_is_mesh_data ||
             m_mesh_renderer_res.m_mesh_res.m_mesh_data_path != res.m_mesh_res.m_mesh_data_path ||
             m_mesh_renderer_res.m_mesh_res.m_sub_mesh_file != res.m_mesh_res.m_sub_mesh_file)
@@ -258,7 +258,7 @@ namespace MoYu
             is_dirty = true;
         }
 
-        // 检查材质资源是否有变化
+        // Check if material resource has changed
         if (m_mesh_renderer_res.m_material_res.m_material_file != res.m_material_res.m_material_file ||
             m_mesh_renderer_res.m_material_res.m_is_material_init != res.m_material_res.m_is_material_init ||
             m_mesh_renderer_res.m_material_res.m_material_serialized_json_data != res.m_material_res.m_material_serialized_json_data)
@@ -292,7 +292,7 @@ namespace MoYu
 
     void MeshRendererComponent::updateMeshRes(std::string mesh_file_path)
     {
-        // 只有当mesh文件路径确实发生变化时才更新
+        // Only update when the mesh file path actually changes
         if (m_mesh_renderer_res.m_mesh_res.m_mesh_data_path == mesh_file_path)
             return;
 
@@ -308,7 +308,7 @@ namespace MoYu
 
     void MeshRendererComponent::updateMaterial(std::string material_path, std::string serialized_json_str)
     {
-        // 只有当材质路径确实发生变化时才更新
+        // Only update when the material path actually changes
         if (m_mesh_renderer_res.m_material_res.m_material_file == material_path &&
             m_mesh_renderer_res.m_material_res.m_material_serialized_json_data == serialized_json_str)
             return;
