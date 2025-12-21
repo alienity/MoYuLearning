@@ -129,8 +129,6 @@ namespace MoYu
         RawCameraData& GetRawCameraData();
         ViewConstants& GetViewConstants();
 
-        static const glm::float3 X, Y, Z;
-
         static constexpr float MIN_FOVY{ 10.0f };
         static constexpr float MAX_FOVY{ 120.0f };
         static constexpr int   MAIN_VIEW_MATRIX_INDEX{ 0 };
@@ -206,9 +204,5 @@ namespace MoYu
 
         std::mutex m_view_matrix_mutex;
     };
-
-    inline const glm::float3 RenderCamera::X = { 1.0f, 0.0f, 0.0f };
-    inline const glm::float3 RenderCamera::Y = { 0.0f, 1.0f, 0.0f };
-    inline const glm::float3 RenderCamera::Z = { 0.0f, 0.0f, 1.0f };
 
 } // namespace MoYu

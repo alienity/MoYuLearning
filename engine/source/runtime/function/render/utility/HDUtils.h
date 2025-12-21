@@ -20,7 +20,15 @@ namespace MoYu
 		// Determine if a projection matrix is off-center
 		inline static bool IsProjectionMatrixAsymmetric(glm::float4x4 matrix)
 		{
-			return matrix[2][0] != 0 || matrix[2][1] != 0;
+            // Check projection matrix asymmetry
+            // In standard perspective projection, if the left/right or top/bottom frustum boundaries are asymmetric, the matrix is asymmetric
+            // Specifically checking projMatrix[0][2] and projMatrix[1][2], which correspond to:
+            //   projMatrix[2][0] = (right + left) / (right - left)
+            //   projMatrix[2][1] = (top + bottom) / (top - bottom)
+            // If these two values are close to 0, the projection is symmetric
+
+            const float asymmetryThreshold = 0.001f;
+            return (glm::abs(matrix[2][0]) > asymmetryThreshold || glm::abs(matrix[2][1]) > asymmetryThreshold);
 		}
 
         inline static glm::float4x4 ComputePixelCoordToWorldSpaceViewDirectionMatrix(

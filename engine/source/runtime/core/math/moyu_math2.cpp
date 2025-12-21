@@ -182,22 +182,32 @@ namespace MoYu
             assert(fovY > 0.0f && fovY < MoYu::F_PI);
 
             float tanHalfFov = std::tan(fovY * 0.5f);
-            float range = far - near;
 
             glm::float4x4 proj(0.0f);
 
             // X-axis scaling factor
             proj[0][0] = 1.0f / (aspect * tanHalfFov);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling factor
+            proj[1][0] = 0.0f;
             proj[1][1] = 1.0f / tanHalfFov;
-
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
+            
             // Z-axis transformation for depth range [0,1] from [-near, -far]
-            proj[2][2] = -far / range;    // -(f/(f-n))
-            proj[2][3] = -far * near / range;  // -(fn/(f-n))
+            proj[2][0] = 0.0f;
+            proj[2][1] = 0.0f;
+            proj[2][2] = far / (near - far);    // -(f/(f-n))
+            proj[2][3] = -1.0f;                 // W_clip = -Z_view
 
             // Homogeneous w-coordinate transformation
-            proj[3][2] = -1.0f;
+            proj[3][0] = 0.0f;
+            proj[3][1] = 0.0f;
+            proj[3][2] = -(far * near) / (far - near); // B = (far*near)/(near-far)
+            proj[3][3] = 0.0f;
 
             return proj;
         }
@@ -221,22 +231,33 @@ namespace MoYu
             assert(fovY > 0.0f && fovY < MoYu::F_PI);
 
             float tanHalfFov = std::tan(fovY * 0.5f);
-            float range = far - near;
-
+            
             glm::float4x4 proj(0.0f);
 
             // X-axis scaling factor
             proj[0][0] = 1.0f / (aspect * tanHalfFov);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling factor
+            proj[1][0] = 0.0f;
             proj[1][1] = 1.0f / tanHalfFov;
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
 
             // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
-            proj[2][2] = near / range;    // n/(f-n)
-            proj[2][3] = near * far / range;  // nf/(f-n)
+            proj[2][0] = 0.0f;
+            proj[2][1] = 0.0f;
+            proj[2][2] = near / (far - near);    // A = near/(far-near)
+            proj[2][3] = -1.0f;                  // W_clip = -Z_view
+
 
             // Homogeneous w-coordinate transformation
-            proj[3][2] = -1.0f;
+            proj[3][0] = 0.0f;
+            proj[3][1] = 0.0f;
+            proj[3][2] = (near * far) / (far - near); // B = (near*far)/(far-near)
+            proj[3][3] = 0.0f;
 
             return proj;
         }
@@ -282,23 +303,31 @@ namespace MoYu
             assert(near > 0.0f && far > near);
             assert(right != left && top != bottom);
 
-            glm::float4x4 proj(0.0f);
-            float range = far - near;
+            glm::float4x4 proj(1.0f);
 
             // X-axis scaling factor
             proj[0][0] = (2.0f * near) / (right - left);
-            proj[2][0] = (right + left) / (right - left);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling factor
+            proj[1][0] = 0.0f;
             proj[1][1] = (2.0f * near) / (top - bottom);
-            proj[2][1] = (top + bottom) / (top - bottom);
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
 
             // Z-axis transformation for depth range [0,1] from [-near, -far]
-            proj[2][2] = -far / range;    // -(f/(f-n))
-            proj[3][2] = -far * near / range;  // -(fn/(f-n))
+            proj[2][0] = (right + left) / (right - left);      // X translation (horizontal offset)
+            proj[2][1] = (top + bottom) / (top - bottom);      // Y translation (vertical offset)
+            proj[2][2] = far / (near - far);                   // Z scaling (map to [0,1])
+            proj[2][3] = -1.0f;                                // W component (W_clip = -z)
 
             // Homogeneous w-coordinate transformation
-            proj[2][3] = -1.0f;
+            proj[3][0] = 0.0f;
+            proj[3][1] = 0.0f;
+            proj[3][2] = (far * near) / (near - far);          // Z translation
+            proj[3][3] = 0.0f;
 
             return proj;
         }
@@ -322,23 +351,31 @@ namespace MoYu
             assert(near > 0.0f && far > near);
             assert(right != left && top != bottom);
 
-            glm::float4x4 proj(0.0f);
-            float range = far - near;
+            glm::float4x4 proj(1.0f);
 
             // X-axis scaling factor
             proj[0][0] = (2.0f * near) / (right - left);
-            proj[2][0] = (right + left) / (right - left);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling factor
+            proj[1][0] = 0.0f;
             proj[1][1] = (2.0f * near) / (top - bottom);
-            proj[2][1] = (top + bottom) / (top - bottom);
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
 
             // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
-            proj[2][2] = near / range;    // n/(f-n)
-            proj[3][2] = near * far / range;  // nf/(f-n)
+            proj[2][0] = (right + left) / (right - left);      // X translation (horizontal offset)
+            proj[2][1] = (top + bottom) / (top - bottom);      // Y translation (vertical offset)
+            proj[2][2] = near / (far - near);                  // Z scaling (Reverse Z mapping)
+            proj[2][3] = -1.0f;                                // W component (W_clip = -z)
 
             // Homogeneous w-coordinate transformation
-            proj[2][3] = -1.0f;
+            proj[3][0] = 0.0f;
+            proj[3][1] = 0.0f;
+            proj[3][2] = (near * far) / (far - near);          // Z translation (Reverse Z mapping)
+            proj[3][3] = 0.0f;
 
             return proj;
         }
@@ -395,16 +432,27 @@ namespace MoYu
 
             // X-axis scaling and translation
             proj[0][0] = 2.0f / (right - left);
-            proj[3][0] = -(right + left) / (right - left);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling and translation
+            proj[1][0] = 0.0f;
             proj[1][1] = 2.0f / (top - bottom);
-            proj[3][1] = -(top + bottom) / (top - bottom);
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
 
             // Z-axis transformation for depth range [0,1] from [-near, -far]
-            float range = far - near;
-            proj[2][2] = -1.0f / range;    // -1/(f-n)
-            proj[3][2] = -near / range;    // -n/(f-n)
+            proj[2][0] = 0.0f;
+            proj[2][1] = 0.0f;
+            proj[2][2] = -1.0f / (far - near); // Negative sign because RH coordinate system looks along -Z direction
+            proj[2][3] = 0.0f;
+
+            // Translation components
+            proj[3][0] = -(right + left) / (right - left);   // X translation
+            proj[3][1] = -(top + bottom) / (top - bottom);   // Y translation
+            proj[3][2] = -near / (far - near);               // Z translation (map to [0,1])
+            proj[3][3] = 1.0f;                               // Preserve homogeneous coordinate w component
 
             return proj;
         }
@@ -431,16 +479,27 @@ namespace MoYu
 
             // X-axis scaling and translation
             proj[0][0] = 2.0f / (right - left);
-            proj[3][0] = -(right + left) / (right - left);
+            proj[0][1] = 0.0f;
+            proj[0][2] = 0.0f;
+            proj[0][3] = 0.0f;
 
             // Y-axis scaling and translation
+            proj[1][0] = 0.0f;
             proj[1][1] = 2.0f / (top - bottom);
-            proj[3][1] = -(top + bottom) / (top - bottom);
+            proj[1][2] = 0.0f;
+            proj[1][3] = 0.0f;
 
             // Z-axis transformation for reversed depth range [1,0] from [-near, -far]
-            float range = far - near;
-            proj[2][2] = 1.0f / range;    // 1/(f-n)
-            proj[3][2] = far / range;     // f/(f-n)
+            proj[2][0] = 0.0f;
+            proj[2][1] = 0.0f;
+            proj[2][2] = 1.0f / (far - near); // Positive sign achieves Reverse Z mapping
+            proj[2][3] = 0.0f;
+
+            // Translation components
+            proj[3][0] = -(right + left) / (right - left);   // X translation
+            proj[3][1] = -(top + bottom) / (top - bottom);   // Y translation
+            proj[3][2] = far / (far - near);                 // Z translation (Reverse Z mapping)
+            proj[3][3] = 1.0f;                               // Preserve homogeneous coordinate w component
 
             return proj;
         }
@@ -499,28 +558,26 @@ namespace MoYu
             glm::float3 newUp = glm::normalize(glm::cross(right, forward));
 
             // Build rotation matrix
-            glm::float4x4 rotation(1.0f);
-            rotation[0][0] = right.x;
-            rotation[1][0] = right.y;
-            rotation[2][0] = right.z;
+            glm::float4x4 view(1.0f);
+            view[0][0] = right.x;
+            view[1][0] = right.y;
+            view[2][0] = right.z;
 
-            rotation[0][1] = newUp.x;
-            rotation[1][1] = newUp.y;
-            rotation[2][1] = newUp.z;
+            view[0][1] = newUp.x;
+            view[1][1] = newUp.y;
+            view[2][1] = newUp.z;
 
-            rotation[0][2] = -forward.x; // Negative Z-axis
-            rotation[1][2] = -forward.y;
-            rotation[2][2] = -forward.z;
+            view[0][2] = -forward.x; // Negative Z-axis
+            view[1][2] = -forward.y;
+            view[2][2] = -forward.z;
 
             // Build translation matrix
-            glm::float4x4 translation(1.0f);
-            translation[3][0] = -eye.x;
-            translation[3][1] = -eye.y;
-            translation[3][2] = -eye.z;
+            view[3][0] = -glm::dot(right, eye);
+            view[3][1] = -glm::dot(newUp, eye);
+            view[3][2] = glm::dot(forward, eye);
+            view[3][3] = 1.0f;
 
-            // View Matrix = Rotation * Translation
-            // (Apply translation first, then rotation)
-            return rotation * translation;
+            return view;
         }
 
         glm::float4x4 lookAtRH(const glm::float3& eye, const glm::float3& center, const glm::float3& up)
@@ -543,23 +600,25 @@ namespace MoYu
          */
         glm::float4x4 viewMatrixFromEulerAngles(const glm::float3& position, float yaw, float pitch, float roll)
         {
-            // Calculate forward vector (looking down the -Z axis)
-            glm::float3 forward;
-            forward.x = cos(yaw) * cos(pitch);
-            forward.y = sin(pitch);
-            forward.z = sin(yaw) * cos(pitch);
-            forward = glm::normalize(forward);
+            // Convert angles to radians
+            float yawRad = glm::radians(yaw);
+            float pitchRad = glm::radians(pitch);
+            float rollRad = glm::radians(roll);
 
-            // Calculate right vector (perpendicular to up and forward)
-            glm::float3 right = glm::normalize(glm::cross(forward, glm::float3(0.0f, 1.0f, 0.0f)));
+            // Create quaternion (order: Yaw -> Pitch -> Roll)
+            glm::quat quat = glm::quat(glm::vec3(pitchRad, yawRad, rollRad));
 
-            // Recalculate up vector (perpendicular to forward and right)
-            glm::float3 up = glm::normalize(glm::cross(right, forward));
+            // Get rotation matrix (from camera space to world space)
+            glm::float4x4 rotationMatrix = glm::toMat4(quat);
 
-            // Build View Matrix
+            // In right-handed coordinate system, camera looks along -Z direction
+            glm::float3 forward = glm::normalize(glm::float3(rotationMatrix * glm::float4(0, 0, -1, 0)));
+            glm::float3 right = glm::normalize(glm::float3(rotationMatrix * glm::float4(1, 0, 0, 0)));
+            glm::float3 up = glm::normalize(glm::float3(rotationMatrix * glm::float4(0, 1, 0, 0)));
+
+            // Build view matrix (consistent with GLM's lookAtRH)
             glm::float4x4 view(1.0f);
 
-            // Assign basis vectors to matrix columns
             view[0][0] = right.x;
             view[1][0] = right.y;
             view[2][0] = right.z;
@@ -568,15 +627,13 @@ namespace MoYu
             view[1][1] = up.y;
             view[2][1] = up.z;
 
-            view[0][2] = -forward.x; // Negative Z-axis
+            view[0][2] = -forward.x;
             view[1][2] = -forward.y;
             view[2][2] = -forward.z;
 
-            // Apply translation
-            glm::float3 translation = -(glm::mat3(view) * position);
-            view[3][0] = translation.x;
-            view[3][1] = translation.y;
-            view[3][2] = translation.z;
+            view[3][0] = -glm::dot(right, position);
+            view[3][1] = -glm::dot(up, position);
+            view[3][2] = glm::dot(forward, position);
 
             return view;
         }
@@ -595,19 +652,40 @@ namespace MoYu
          */
         glm::float4x4 viewMatrixFromQuaternion(const glm::float3& position, const glm::quat& orientation)
         {
-            // Inverse the orientation (conjugate of quaternion)
-            glm::quat invOrientation = glm::inverse(orientation);
+            // Convert quaternion to rotation matrix
+            glm::float4x4 rotationMatrix = glm::mat4_cast(orientation);
 
-            // Calculate translation: -R^T * position
-            glm::float3 translation = -glm::rotate(invOrientation, position);
+            // In right-handed coordinate system, camera looks along -Z direction by default, up direction is Y-axis
+            glm::float3 forward = -glm::normalize(glm::float3(rotationMatrix * glm::float4(0.0f, 0.0f, -1.0f, 0.0f)));
+            glm::float3 up = glm::normalize(glm::float3(rotationMatrix * glm::float4(0.0f, 1.0f, 0.0f, 0.0f)));
 
-            // Build view matrix from quaternion
-            glm::float4x4 viewMatrix = glm::mat4_cast(invOrientation);
+            // Right vector can be calculated via cross product
+            glm::float3 right = glm::normalize(glm::cross(forward, up));
+            // Update up vector to ensure all three basis vectors are mutually perpendicular
+            up = glm::normalize(glm::cross(right, forward));
 
-            // Apply translation to view matrix
-            viewMatrix[3][0] = translation.x;
-            viewMatrix[3][1] = translation.y;
-            viewMatrix[3][2] = translation.z;
+            // Build view matrix
+            glm::float4x4 viewMatrix(1.0f);
+
+            // Set first column: right vector
+            viewMatrix[0][0] = right.x;
+            viewMatrix[1][0] = right.y;
+            viewMatrix[2][0] = right.z;
+
+            // Set second column: up vector
+            viewMatrix[0][1] = up.x;
+            viewMatrix[1][1] = up.y;
+            viewMatrix[2][1] = up.z;
+
+            // Set third column: forward vector (note the negative sign)
+            viewMatrix[0][2] = -forward.x;
+            viewMatrix[1][2] = -forward.y;
+            viewMatrix[2][2] = -forward.z;
+
+            // Set fourth column: translation components
+            viewMatrix[3][0] = -glm::dot(right, position);
+            viewMatrix[3][1] = -glm::dot(up, position);
+            viewMatrix[3][2] = glm::dot(forward, position); // Note the positive sign here
 
             return viewMatrix;
         }
@@ -625,42 +703,36 @@ namespace MoYu
          */
         glm::float4x4 transformDirect(const glm::float3& position, const glm::quat& rotation, const glm::float3& scale)
         {
-            // Normalize the rotation quaternion
-            glm::quat normalizedRot = glm::normalize(rotation);
+			// glm::mat4_cast converts quaternion to 4x4 rotation matrix
+            glm::float4x4 rotationMatrix = glm::mat4_cast(rotation);
 
-            // Calculate squared components for rotation matrix
-            float xx = normalizedRot.x * normalizedRot.x;
-            float yy = normalizedRot.y * normalizedRot.y;
-            float zz = normalizedRot.z * normalizedRot.z;
-            float xy = normalizedRot.x * normalizedRot.y;
-            float xz = normalizedRot.x * normalizedRot.z;
-            float yz = normalizedRot.y * normalizedRot.z;
-            float wx = normalizedRot.w * normalizedRot.x;
-            float wy = normalizedRot.w * normalizedRot.y;
-            float wz = normalizedRot.w * normalizedRot.z;
-
-            // Build transformation matrix
+            // Create final transformation matrix (initialized as identity matrix)
             glm::float4x4 transform(1.0f);
 
-            // First column (X-axis) with scale
-            transform[0][0] = (1.0f - 2.0f * (yy + zz)) * scale.x;
-            transform[0][1] = (2.0f * (xy + wz)) * scale.x;
-            transform[0][2] = (2.0f * (xz - wy)) * scale.x;
+            // Manually apply scale to rotation matrix
+            // Note: In GLM, matrices are column-major, so column 0 is x-axis, column 1 is y-axis, column 2 is z-axis
+            transform[0][0] = rotationMatrix[0][0] * scale.x;  // Column 0, x-axis scaling
+            transform[1][0] = rotationMatrix[1][0] * scale.x;
+            transform[2][0] = rotationMatrix[2][0] * scale.x;
 
-            // Second column (Y-axis) with scale
-            transform[1][0] = (2.0f * (xy - wz)) * scale.y;
-            transform[1][1] = (1.0f - 2.0f * (xx + zz)) * scale.y;
-            transform[1][2] = (2.0f * (yz + wx)) * scale.y;
+            transform[0][1] = rotationMatrix[0][1] * scale.y;  // Column 1, y-axis scaling
+            transform[1][1] = rotationMatrix[1][1] * scale.y;
+            transform[2][1] = rotationMatrix[2][1] * scale.y;
 
-            // Third column (Z-axis) with scale
-            transform[2][0] = (2.0f * (xz + wy)) * scale.z;
-            transform[2][1] = (2.0f * (yz - wx)) * scale.z;
-            transform[2][2] = (1.0f - 2.0f * (xx + yy)) * scale.z;
+            transform[0][2] = rotationMatrix[0][2] * scale.z;  // Column 2, z-axis scaling
+            transform[1][2] = rotationMatrix[1][2] * scale.z;
+            transform[2][2] = rotationMatrix[2][2] * scale.z;
 
-            // Fourth column (Translation)
+            // Set translation part (column 3)
             transform[3][0] = position.x;
             transform[3][1] = position.y;
             transform[3][2] = position.z;
+
+            // Preserve homogeneous coordinate w=1
+            transform[0][3] = 0.0f;
+            transform[1][3] = 0.0f;
+            transform[2][3] = 0.0f;
+            transform[3][3] = 1.0f;
 
             return transform;
         }
@@ -714,60 +786,100 @@ namespace MoYu
         /**
          * Convert quaternion to Euler angles (right-handed coordinate system)
          *
-         * @param q Quaternion
-         * @return Euler angles (degrees)
+         * Note on rotation order (YXZ Tait-Bryan angles):
+         * This function uses INTRINSIC rotation order (local coordinate system):
+         * 1. First:  Rotate around LOCAL Z-axis (roll)
+         * 2. Second: Rotate around ROTATED X-axis (pitch)
+         * 3. Third:  Rotate around TWICE-ROTATED Y-axis (yaw)
+         *
+         * This matches aerospace "yaw-pitch-roll" convention:
+         * - Yaw (heading)    = Y-axis rotation
+         * - Pitch (attitude) = X-axis rotation
+         * - Roll (bank)      = Z-axis rotation
+         *
+         * @param q Quaternion (normalized)
+         * @return Euler angles (degrees) in YXZ order
          */
         EulerAngle quaternionToEuler(const glm::quat& q) {
+            // Ensure quaternion is normalized
+            glm::quat normalizedQ = glm::normalize(q);
+
             // Squared components
-            float sqw = q.w * q.w;
-            float sqx = q.x * q.x;
-            float sqy = q.y * q.y;
-            float sqz = q.z * q.z;
+            float sqw = normalizedQ.w * normalizedQ.w;
+            float sqx = normalizedQ.x * normalizedQ.x;
+            float sqy = normalizedQ.y * normalizedQ.y;
+            float sqz = normalizedQ.z * normalizedQ.z;
 
             // Cross products
-            float qxy = 2.0f * q.x * q.y;
-            float qxz = 2.0f * q.x * q.z;
-            float qyz = 2.0f * q.y * q.z;
-            float qxw = 2.0f * q.x * q.w;
-            float qyw = 2.0f * q.y * q.w;
-            float qzw = 2.0f * q.z * q.w;
+            float qxy = 2.0f * normalizedQ.x * normalizedQ.y;
+            float qxz = 2.0f * normalizedQ.x * normalizedQ.z;
+            float qyz = 2.0f * normalizedQ.y * normalizedQ.z;
+            float qxw = 2.0f * normalizedQ.x * normalizedQ.w;
+            float qyw = 2.0f * normalizedQ.y * normalizedQ.w;
+            float qzw = 2.0f * normalizedQ.z * normalizedQ.w;
 
             float yaw, pitch, roll;
 
-            // Yaw (Y-axis rotation)
+            // Yaw (Y-axis rotation) - CORRECT
             yaw = glm::atan(qyw + qxz, sqw - sqx - sqy + sqz);
 
-            // Pitch (X-axis rotation)
-            float sinp = qyz - qxw;
-            // Handle singularity
+            // Pitch (X-axis rotation) - FIXED SIGN
+            float sinp = qxw - qyz;  // Correct sign for YXZ order
             if (glm::abs(sinp) >= 1.0f) {
+                // Gimbal lock - pitch is б└90 degrees
                 pitch = MoYu::gameEngineCopysign(glm::half_pi<float>(), sinp);
+
+                // When gimbal locked, set roll to zero and adjust yaw accordingly
+                roll = 0.0f;
+                if (sinp < 0.0f) {
+                    yaw -= glm::atan(qxy - qzw, sqw - sqx + sqy - sqz);
+                }
+                else {
+                    yaw += glm::atan(qxy - qzw, sqw - sqx + sqy - sqz);
+                }
             }
             else {
                 pitch = glm::asin(sinp);
+                // Roll (Z-axis rotation) - FIXED DENOMINATOR
+                roll = glm::atan(qzw + qxy, sqw - sqx + sqy - sqz);
             }
-
-            // Roll (Z-axis rotation)
-            roll = glm::atan(qzw + qxy, sqw + sqx - sqy - sqz);
 
             // Convert to degrees
             yaw = glm::degrees(yaw);
             pitch = glm::degrees(pitch);
             roll = glm::degrees(roll);
 
-            // Normalize to [-180, 180]
-            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;
-            pitch = fmodf(pitch + 180.0f, 360.0f) - 180.0f;
-            roll = fmodf(roll + 180.0f, 360.0f) - 180.0f;
+            // Normalize to [-180, 180] with better numerical stability
+            auto normalizeAngle = [](float angle) {
+                while (angle > 180.0f) angle -= 360.0f;
+                while (angle < -180.0f) angle += 360.0f;
+                return angle;
+                };
 
-            return EulerAngle(yaw, pitch, roll);
+            return EulerAngle(
+                normalizeAngle(yaw),
+                normalizeAngle(pitch),
+                normalizeAngle(roll)
+            );
         }
 
         /**
          * Convert Euler angles to quaternion (right-handed coordinate system)
          *
-         * @param euler Euler angles (degrees)
-         * @return Quaternion
+         * Note on rotation order (YXZ Tait-Bryan angles):
+         * In 3D graphics, YXZ order typically refers to INTRINSIC rotations
+         * (applied in local/object coordinate system) in the following sequence:
+         * 1. First:  Rotate around LOCAL Z-axis (roll)
+         * 2. Second: Rotate around ROTATED X-axis (pitch)
+         * 3. Third:  Rotate around TWICE-ROTATED Y-axis (yaw)
+         *
+         * This is equivalent to the aerospace "yaw-pitch-roll" convention where:
+         * - Yaw (heading)    = rotation around Y-axis
+         * - Pitch (attitude) = rotation around X-axis
+         * - Roll (bank)      = rotation around Z-axis
+         *
+         * @param euler Euler angles (degrees) in YXZ order
+         * @return Quaternion representing the combined rotation
          */
         glm::quat eulerToQuaternion(const EulerAngle& euler) {
             // Convert to radians
@@ -785,7 +897,7 @@ namespace MoYu
 
             glm::quat q;
 
-            // YXZ Tait-Bryan angles
+            // YXZ Tait-Bryan angles (intrinsic rotation order: Z-X-Y)
             q.w = cr * cp * cy + sr * sp * sy;
             q.x = cr * sp * cy + sr * cp * sy;
             q.y = cr * cp * sy - sr * sp * cy;
@@ -807,118 +919,53 @@ namespace MoYu
             const glm::float3& up,
             const glm::float3& forwardReference
         ) {
-            // Check for zero direction vector
-            float dirLength = glm::length(direction);
-            if (dirLength < 0.001f) {
-                return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Return identity quaternion
-            }
-
-            // Normalize input vectors
-            glm::float3 forward = glm::normalize(direction);
-            glm::float3 worldUp = glm::normalize(up);
-            glm::float3 refForward = glm::normalize(forwardReference);
-
-            // Check for parallel vectors
-            float dotProduct = glm::dot(refForward, forward);
-            if (dotProduct > 0.9999f) {
-                return glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Return identity quaternion
-            }
-
-            // Handle opposite vectors
-            if (dotProduct < -0.9999f) {
-                // Find an appropriate axis
-                glm::float3 axis;
-                if (glm::abs(refForward.x) < 0.9f) {
-                    axis = glm::normalize(glm::cross(refForward, glm::float3(1.0f, 0.0f, 0.0f)));
-                }
-                else {
-                    axis = glm::normalize(glm::cross(refForward, glm::float3(0.0f, 1.0f, 0.0f)));
-                }
-                // 180 degree rotation
-                return glm::angleAxis(glm::radians(180.0f), axis);
-            }
-
-            // Calculate the right vector
-            glm::float3 right = glm::normalize(glm::cross(worldUp, forward));
-            if (glm::length(right) < 0.001f) {
-                // Use fallback right vector
-                glm::float3 tempRight = glm::float3(1.0f, 0.0f, 0.0f);
-                if (glm::abs(glm::dot(forward, tempRight)) > 0.9f) {
-                    tempRight = glm::float3(0.0f, 0.0f, 1.0f); // Use Z axis instead
-                }
-
-                right = glm::normalize(glm::cross(forward, tempRight));
-                glm::float3 newUp = glm::normalize(glm::cross(right, forward));
-
-                // Build rotation matrix
-                glm::mat3 rotationMatrix(
-                    right,      // Right vector (X-axis)
-                    newUp,      // Up vector (Y-axis) 
-                    forward     // Forward vector (Z-axis)
-                );
-
-                return glm::normalize(glm::quat_cast(glm::float4x4(rotationMatrix)));
-            }
-
-            // Calculate the corrected up vector
-            glm::float3 correctedUp = glm::normalize(glm::cross(forward, right));
-
-            // Build rotation matrix
-            glm::mat3 rotationMatrix(
-                right,         // Right vector (X-axis)
-                correctedUp,   // Up vector (Y-axis)
-                forward        // Forward vector (Z-axis)
-            );
-
-            // Convert to quaternion
-            return glm::normalize(glm::quat_cast(glm::float4x4(rotationMatrix)));
-        }
-
-        /**
-         * Optimized version: Create quaternion from direction vector (right-handed coordinate system, assuming up direction is (0,1,0))
-         * Suitable for common scenarios like FPS/TPS cameras, avoids matrix conversion
-         */
-        glm::quat fastDirectionToQuaternion(const glm::float3& direction) {
+            // Check for zero vector
             if (glm::length(direction) < 0.001f) {
                 return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
             }
 
+            // Normalize inputs
             glm::float3 forward = glm::normalize(direction);
-            glm::float3 worldUp(0.0f, 1.0f, 0.0f);
-            glm::float3 refForward(0.0f, 0.0f, -1.0f); // Reference forward vector
+            glm::float3 worldUp = glm::normalize(up);
+            glm::float3 refForward = glm::normalize(forwardReference);
 
-            // Handle vertical directions
-            if (glm::abs(forward.y) > 0.9999f) {
-                // Handle up/down case
-                glm::float3 right;
-                if (forward.y > 0) {
-                    // Pointing up
-                    right = glm::float3(1.0f, 0.0f, 0.0f);
-                }
-                else {
-                    // Pointing down
-                    right = glm::float3(-1.0f, 0.0f, 0.0f);
-                }
-
-                glm::float3 up = glm::normalize(glm::cross(right, forward));
-                glm::float3 newForward = glm::normalize(glm::cross(up, right));
-
-                glm::mat3 rotMat(right, up, newForward);
-                return glm::normalize(glm::quat_cast(glm::float4x4(rotMat)));
+            // Handle parallel/anti-parallel cases
+            float dot = glm::dot(refForward, forward);
+            if (dot > 0.9999f) return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+            if (dot < -0.9999f) {
+                glm::float3 axis = glm::abs(refForward.x) < 0.9f ?
+                    glm::normalize(glm::cross(refForward, glm::float3(1.0f, 0.0f, 0.0f))) :
+                    glm::normalize(glm::cross(refForward, glm::float3(0.0f, 1.0f, 0.0f)));
+                return glm::angleAxis(glm::radians(180.0f), axis);
             }
 
-            // Calculate yaw (Y-axis rotation)
-            float yaw = glm::atan(forward.x, -forward.z);
+            // Build target coordinate system - Key correction: use correct cross product order
+            glm::float3 right = glm::normalize(glm::cross(forward, worldUp));
 
-            // Calculate pitch (X-axis rotation)
-            float pitch = glm::asin(forward.y);
+            // Handle degenerate case (when forward and worldUp are parallel)
+            if (glm::length(right) < 0.001f) {
+                glm::float3 tempAxis = glm::abs(forward.x) < 0.9f ?
+                    glm::float3(1.0f, 0.0f, 0.0f) :
+                    glm::float3(0.0f, 1.0f, 0.0f);
+                right = glm::normalize(glm::cross(forward, tempAxis));
+            }
 
-            // Create quaternions
-            glm::quat pitchQuat = glm::angleAxis(pitch, glm::float3(1.0f, 0.0f, 0.0f));
-            glm::quat yawQuat = glm::angleAxis(yaw, glm::float3(0.0f, 1.0f, 0.0f));
+            // Calculate corrected up vector (maintain right-handed coordinate system)
+            glm::float3 correctedUp = glm::normalize(glm::cross(right, forward));
 
-            // Combine rotations
-            return glm::normalize(yawQuat * pitchQuat);
+            // Build rotation matrix
+		    // Note: Here we directly build a local-to-world transformation matrix
+		    // Since forwardReference=(0,0,-1), we are actually constructing a matrix
+		    // that rotates the standard right-handed coordinate system (Z pointing into the screen)
+		    // to the target direction
+            glm::mat3 rotationMatrix(
+                right.x, right.y, right.z,
+                correctedUp.x, correctedUp.y, correctedUp.z,
+                -forward.x, -forward.y, -forward.z  // Key: use negative sign because forwardReference is (0,0,-1)
+            );
+
+            // Convert to quaternion
+            return glm::normalize(glm::quat_cast(glm::float4x4(rotationMatrix)));
         }
 
         /**
@@ -961,17 +1008,26 @@ namespace MoYu
         /**
          * Calculate Euler angles from direction vector (full version)
          *
+         * Note on coordinate system:
+         * This function assumes a RIGHT-HANDED coordinate system with Y-up.
+         * Default forward direction is -Z (OpenGL convention), but can be customized.
+         *
+         * Rotation order follows YXZ Tait-Bryan convention (intrinsic rotations):
+         * 1. Roll (Z-axis)  - applied first
+         * 2. Pitch (X-axis) - applied second
+         * 3. Yaw (Y-axis)   - applied last
+         *
          * @param direction Direction vector (does not need normalization)
          * @param up Reference up vector (defaults to (0,1,0))
          * @param forwardReference Reference forward vector (standard is (0,0,-1))
-         * @return Euler angles (unit: degrees)
+         * @return Euler angles (yaw, pitch, roll) in degrees
          */
         EulerAngle directionToEuler(
             const glm::float3& direction,
             const glm::float3& up,
             const glm::float3& forwardReference
         ) {
-            // Normalize the direction vector
+            // Handle zero direction vector
             float length = glm::length(direction);
             if (length < 0.001f) {
                 return EulerAngle(0.0f, 0.0f, 0.0f);
@@ -980,83 +1036,166 @@ namespace MoYu
             // Normalize direction vector
             glm::float3 dir = direction / length;
 
-            // Yaw (Y-axis rotation)
-            // yaw = atan2(x, -z) since we're looking down the -Z axis
-            float yaw = glm::degrees(glm::atan(dir.x, -dir.z));
+            // Calculate yaw and pitch based on coordinate system
+            float yaw, pitch, roll;
 
-            // Pitch (X-axis rotation)
-            // Clamp to [-1,1] to avoid floating point errors
-            float pitch = glm::degrees(glm::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
+            // Special case: when direction is parallel to up vector (gimbal lock)
+            glm::float3 rightReference = glm::normalize(glm::cross(forwardReference, up));
 
-            // Roll (Z-axis rotation)
-            // 1. Calculate the right vector
-            glm::float3 right = glm::normalize(glm::cross(up, dir));
+            if (glm::abs(glm::dot(dir, up)) > 0.999f) {
+                // Direction is nearly parallel to up vector - gimbal lock
+                yaw = glm::degrees(glm::atan(dir.x, -dir.z)); // Fallback to XZ projection
+                pitch = glm::sign(glm::dot(dir, up)) * 90.0f;
+                roll = 0.0f; // Undefined in gimbal lock, set to 0
+            }
+            else {
+                // Calculate yaw using projection onto XZ plane
+                glm::float3 xzProjection = glm::float3(dir.x, 0.0f, dir.z);
+                if (glm::length(xzProjection) > 0.001f) {
+                    xzProjection = glm::normalize(xzProjection);
+                    // Calculate angle between projection and reference forward
+                    float cosYaw = glm::dot(xzProjection, glm::normalize(glm::float3(forwardReference.x, 0.0f, forwardReference.z)));
+                    float sinYaw = glm::dot(glm::cross(glm::float3(forwardReference.x, 0.0f, forwardReference.z), xzProjection), up);
+                    yaw = glm::degrees(glm::atan2(sinYaw, cosYaw));
+                }
+                else {
+                    yaw = 0.0f;
+                }
 
-            // 2. Calculate the leveled up vector (ignoring roll)
-            glm::float3 levelUp = glm::normalize(glm::cross(dir, right));
+                // Calculate pitch as angle between direction and XZ plane
+                pitch = glm::degrees(glm::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
 
-            // 3. Calculate roll angle
-            float rollAngle = glm::acos(glm::clamp(glm::dot(levelUp, up), -1.0f, 1.0f));
+                // Calculate roll
+                // 1. Calculate right vector (X-axis) - CORRECTED CROSS PRODUCT ORDER
+                glm::float3 right = glm::normalize(glm::cross(dir, up)); // cross(forward, up) = right
 
-            // 4. Determine roll direction
-            float rollDirection = glm::dot(glm::cross(levelUp, up), dir);
-            float roll = glm::degrees(rollAngle * ((rollDirection >= 0.0f) ? 1.0f : -1.0f));
+                // 2. Calculate reference up vector (Y-axis) with no roll
+                glm::float3 levelUp = glm::normalize(glm::cross(right, dir)); // cross(right, forward) = up
 
-            // Normalize angles
-            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;  // [-180, 180]
-            pitch = glm::clamp(pitch, -89.99f, 89.99f);  // Prevent gimbal lock
-            roll = fmodf(roll + 180.0f, 360.0f) - 180.0f; // [-180, 180]
+                // 3. Calculate roll angle between reference up and actual up
+                float cosRoll = glm::dot(levelUp, up);
+                float sinRoll = glm::dot(glm::cross(levelUp, up), dir); // Direction of rotation around forward axis
 
-            return EulerAngle(yaw, pitch, roll);
+                roll = glm::degrees(glm::atan2(sinRoll, cosRoll));
+            }
+
+            // Normalize angles to [-180, 180]
+            auto normalizeAngle = [](float angle) {
+                angle = fmodf(angle, 360.0f);
+                if (angle > 180.0f) angle -= 360.0f;
+                if (angle < -180.0f) angle += 360.0f;
+                return angle;
+                };
+
+            // Prevent pitch gimbal lock in edge cases
+            pitch = glm::clamp(pitch, -89.99f, 89.99f);
+
+            return EulerAngle(
+                normalizeAngle(yaw),
+                normalizeAngle(pitch),
+                normalizeAngle(roll)
+            );
         }
 
         /**
          * Calculate direction vector from Euler angles
          *
-         * @param euler Euler angles (unit: degrees)
-         * @param forwardReference Reference forward vector (standard is (0,0,-1))
-         * @return Rotated direction vector (unit vector)
+         * Note on coordinate system:
+         * This function supports arbitrary forward reference directions while maintaining Y-up convention.
+         * The resulting direction vector is calculated by applying yaw (around world Y) and pitch
+         * (around local X) rotations to the forwardReference vector.
+         *
+         * @param euler Euler angles (unit: degrees). Roll is ignored for direction calculation.
+         * @param forwardReference Reference forward vector (standard is (0,0,-1) for OpenGL)
+         * @param upReference Reference up vector (defaults to (0,1,0), Y-up convention)
+         * @return Rotated direction vector (normalized)
          */
         glm::float3 eulerToDirection(
             const EulerAngle& euler,
-            const glm::float3& forwardReference
+            const glm::float3& forwardReference,
+            const glm::float3& upReference
         ) {
-            // Convert to radians
+            // Normalize reference vectors
+            glm::float3 forward = glm::normalize(forwardReference);
+            glm::float3 up = glm::normalize(upReference);
+
+            // Ensure forward and up are perpendicular (within numerical tolerance)
+            float dotFU = glm::abs(glm::dot(forward, up));
+            if (dotFU > 0.999f) {
+                // Forward and up are nearly parallel - need to find an orthogonal up vector
+                glm::float3 arbitrary = glm::abs(forward.x) < 0.9f ?
+                    glm::float3(1.0f, 0.0f, 0.0f) :
+                    glm::float3(0.0f, 1.0f, 0.0f);
+                up = glm::normalize(glm::cross(glm::cross(forward, arbitrary), forward));
+            }
+
+            // Calculate right vector (X-axis) from forward and up
+            glm::float3 right = glm::normalize(glm::cross(forward, up));
+
+            // Convert angles to radians
             float yaw = glm::radians(euler.yaw);
             float pitch = glm::radians(euler.pitch);
 
-            // Calculate direction vector
-            float cosPitch = glm::cos(pitch);
-            glm::float3 direction(
-                glm::sin(yaw) * cosPitch,  // X component
-                glm::sin(pitch),           // Y component
-                -glm::cos(yaw) * cosPitch  // Z component (-Z because forward is -Z axis)
-            );
+            // Calculate direction by applying rotations in YX order:
+            // 1. Start with forward reference vector
+            // 2. Apply yaw rotation around world up vector
+            // 3. Apply pitch rotation around resulting right vector
 
-            // Handle case when cosPitch approaches 0
-            float length = glm::length(direction);
-            if (length < 0.001f) {
-                // When pitch is at +/-90 degrees (Y axis)
-                return glm::float3(0.0f, (pitch > 0.0f) ? 1.0f : -1.0f, 0.0f);
+            // Apply yaw rotation (around world Y/up)
+            glm::mat4 yawRotation = glm::rotate(glm::mat4(1.0f), yaw, up);
+            glm::float3 yawedForward = glm::normalize(glm::vec3(yawRotation * glm::vec4(forward, 0.0f)));
+            glm::float3 yawedRight = glm::normalize(glm::vec3(yawRotation * glm::vec4(right, 0.0f)));
+
+            // Apply pitch rotation (around local X/right)
+            glm::mat4 pitchRotation = glm::rotate(glm::mat4(1.0f), pitch, yawedRight);
+            glm::float3 direction = glm::normalize(glm::vec3(pitchRotation * glm::vec4(yawedForward, 0.0f)));
+
+            // Handle edge cases when pitch approaches +/-90 degrees (gimbal lock)
+            // This ensures numerical stability when cos(pitch) approaches zero
+            if (glm::abs(glm::dot(direction, up)) > 0.9999f) {
+                direction = glm::normalize(glm::mix(
+                    up,          // Looking straight up
+                    -up,         // Looking straight down
+                    (pitch < 0.0f) ? 1.0f : 0.0f
+                ));
             }
 
-            return direction / length;
+            return direction;
         }
 
         /**
-         * High-performance version: Calculate only yaw and pitch from direction vector (no roll)
-         * Suitable for scenarios like FPS/TPS cameras that don't need roll
+         * High-performance version: Compute yaw and pitch from direction vector (no roll)
+         * Suitable for FPS/TPS cameras and other scenarios where roll is not needed
+         *
+         * @param direction Input direction vector (does not need to be pre-normalized)
+         * @param yaw Output yaw angle (in degrees, range [-180, 180])
+         * @param pitch Output pitch angle (in degrees, range [-89.99, 89.99])
          */
-        void fastDirectionToYawPitch(const glm::float3& direction, float& yaw, float& pitch) {
-            // Normalize the direction vector
-            glm::float3 dir = glm::normalize(direction);
+        void fastDirectionToYawPitch(const glm::vec3& direction, float& yaw, float& pitch) {
+            // Normalize input vector
+            glm::vec3 dir = glm::normalize(direction);
+
+            // Handle gimbal lock (pitch near б└90бу)
+            if (std::abs(dir.y) > 0.9999f) {
+                pitch = glm::sign(dir.y) * 89.99f;  // Prevent exact 90бу to avoid issues
+                yaw = 0.0f;  // Yaw is undefined at poles, set to 0
+                return;
+            }
 
             // Calculate yaw and pitch
-            yaw = glm::degrees(glm::atan(dir.x, -dir.z));  // Looking down the -Z axis
-            pitch = glm::degrees(glm::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
+            // Note: Using -dir.z because forward direction is -Z axis (OpenGL convention)
+            yaw = glm::degrees(glm::atan(dir.x, -dir.z));
+            pitch = glm::degrees(glm::asin(dir.y));
 
-            // Normalize angles
-            yaw = fmodf(yaw + 180.0f, 360.0f) - 180.0f;
+            // Optimized angle normalization (avoid fmod performance overhead)
+            if (yaw > 180.0f) {
+                yaw -= 360.0f;
+            }
+            else if (yaw < -180.0f) {
+                yaw += 360.0f;
+            }
+
+            // Clamp pitch range to prevent gimbal lock
             pitch = glm::clamp(pitch, -89.99f, 89.99f);
         }
 
@@ -1386,40 +1525,66 @@ namespace MoYu
         return CONTAINMENT_INTERSECTS;
     }
 
-    Frustum ExtractPlanesDX(const glm::float4x4 mvp)
+    // Extract frustum planes from a DirectX-style MVP matrix
+    static Frustum ExtractPlanesDX(const glm::float4x4& mvp)
     {
         Frustum frustum;
 
-        // Left clipping plane
-        frustum.Left.normal.x = mvp[3][0] + mvp[0][0];
-        frustum.Left.normal.y = mvp[3][1] + mvp[0][1];
-        frustum.Left.normal.z = mvp[3][2] + mvp[0][2];
-        frustum.Left.offset   = -(mvp[3][3] + mvp[0][3]);
-        // Right clipping plane
-        frustum.Right.normal.x = mvp[3][0] - mvp[0][0];
-        frustum.Right.normal.y = mvp[3][1] - mvp[0][1];
-        frustum.Right.normal.z = mvp[3][2] - mvp[0][2];
-        frustum.Right.offset   = -(mvp[3][3] - mvp[0][3]);
-        // Bottom clipping plane
-        frustum.Bottom.normal.x = mvp[3][0] + mvp[1][0];
-        frustum.Bottom.normal.y = mvp[3][1] + mvp[1][1];
-        frustum.Bottom.normal.z = mvp[3][2] + mvp[1][2];
-        frustum.Bottom.offset   = -(mvp[3][3] + mvp[1][3]);
-        // Top clipping plane
-        frustum.Top.normal.x = mvp[3][0] - mvp[1][0];
-        frustum.Top.normal.y = mvp[3][1] - mvp[1][1];
-        frustum.Top.normal.z = mvp[3][2] - mvp[1][2];
-        frustum.Top.offset   = -(mvp[3][3] - mvp[1][3]);
-        // Far clipping plane
-        frustum.Far.normal.x = mvp[2][0];
-        frustum.Far.normal.y = mvp[2][1];
-        frustum.Far.normal.z = mvp[2][2];
-        frustum.Far.offset   = -(mvp[2][3]);
-        // Near clipping plane
-        frustum.Near.normal.x = mvp[3][0] - mvp[2][0];
-        frustum.Near.normal.y = mvp[3][1] - mvp[2][1];
-        frustum.Near.normal.z = mvp[3][2] - mvp[2][2];
-        frustum.Near.offset   = -(mvp[3][3] - mvp[2][3]);
+        // Since GLM uses column-major storage, we transpose to work with row-major convention
+        glm::float4x4 m = glm::transpose(mvp);
+
+        // Left clipping plane: column4 + column1
+        frustum.Left.normal.x = m[3][0] + m[0][0];
+        frustum.Left.normal.y = m[3][1] + m[0][1];
+        frustum.Left.normal.z = m[3][2] + m[0][2];
+        frustum.Left.offset = m[3][3] + m[0][3];
+
+        // Right clipping plane: column4 - column1
+        frustum.Right.normal.x = m[3][0] - m[0][0];
+        frustum.Right.normal.y = m[3][1] - m[0][1];
+        frustum.Right.normal.z = m[3][2] - m[0][2];
+        frustum.Right.offset = m[3][3] - m[0][3];
+
+        // Bottom clipping plane: column4 + column2
+        frustum.Bottom.normal.x = m[3][0] + m[1][0];
+        frustum.Bottom.normal.y = m[3][1] + m[1][1];
+        frustum.Bottom.normal.z = m[3][2] + m[1][2];
+        frustum.Bottom.offset = m[3][3] + m[1][3];
+
+        // Top clipping plane: column4 - column2
+        frustum.Top.normal.x = m[3][0] - m[1][0];
+        frustum.Top.normal.y = m[3][1] - m[1][1];
+        frustum.Top.normal.z = m[3][2] - m[1][2];
+        frustum.Top.offset = m[3][3] - m[1][3];
+
+        // Near clipping plane (DirectX convention: z_clip = 0) = column3
+        frustum.Near.normal.x = m[2][0];
+        frustum.Near.normal.y = m[2][1];
+        frustum.Near.normal.z = m[2][2];
+        frustum.Near.offset = m[2][3];
+
+        // Far clipping plane (DirectX convention: z_clip = 1) = column4 - column3
+        frustum.Far.normal.x = m[3][0] - m[2][0];
+        frustum.Far.normal.y = m[3][1] - m[2][1];
+        frustum.Far.normal.z = m[3][2] - m[2][2];
+        frustum.Far.offset = m[3][3] - m[2][3];
+
+        // Normalize all planes (crucial for correct distance calculations)
+        auto NormalizePlane = [](Plane& plane) {
+            float length = glm::length(plane.normal);
+            // Avoid division by zero
+            if (length > 0.0f) {
+                plane.normal /= length;
+                plane.offset /= length;
+            }
+            };
+
+        NormalizePlane(frustum.Left);
+        NormalizePlane(frustum.Right);
+        NormalizePlane(frustum.Bottom);
+        NormalizePlane(frustum.Top);
+        NormalizePlane(frustum.Near);
+        NormalizePlane(frustum.Far);
 
         return frustum;
     }
@@ -1528,8 +1693,8 @@ namespace MoYu
     const Color Color::Black(0.f, 0.f, 0.f, 0.f);
     const Color Color::Red(1.f, 0.f, 0.f, 1.f);
     const Color Color::Green(0.f, 1.f, 0.f, 1.f);
-    const Color Color::Blue(0.f, 1.f, 0.f, 1.f);
-
+    const Color Color::Blue(0.f, 0.f, 1.f, 1.f);
+    
     Color Color::ToSRGB() const
     {
         float c[3] = {r, g, b};

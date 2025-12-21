@@ -95,11 +95,6 @@ namespace MoYu
 
         m_current_camera_type = type;
         rawCameraData.m_view_matrix = view_matrix;
-
-        glm::float3 s  = glm::float3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]);
-        glm::float3 u  = glm::float3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]);
-        glm::float3 f  = glm::float3(-view_matrix[0][2], -view_matrix[1][2], -view_matrix[2][2]);
-        //m_position = s * (-view_matrix[3][0]) + u * (-view_matrix[3][1]) + f * view_matrix[3][2];
         rawCameraData.m_position = -glm::column(view_matrix, 3);
 
         rawCameraData.m_rotation = glm::toQuat(view_matrix);
@@ -196,21 +191,22 @@ namespace MoYu
             MoYu::f::DEG_TO_RAD * rawCameraData.m_fieldOfViewY, tAspect, rawCameraData.m_nearClipPlane, rawCameraData.m_farClipPlane);
 
         // Analyze the projection matrix.
-            // p[2][3] = (reverseZ ? 1 : -1) * (depth_0_1 ? 1 : 2) * (f * n) / (f - n)
+        // p[2][3] = (reverseZ ? 1 : -1) * (depth_0_1 ? 1 : 2) * (f * n) / (f - n)
         float n = znear;
         float f = zfar;
         float scale = rawCameraData.m_project_matrix[3][2] / (f * n) * (f - n);
-        bool depth_0_1 = glm::abs(scale) < 1.5f;
+        //bool depth_0_1 = glm::abs(scale) < 1.5f;
         bool reverseZ = scale > 0;
 
         // http://www.humus.name/temp/Linearize%20depth.txt
         if (reverseZ)
         {
-            rawCameraData.zBufferParams = glm::float4(-1 + f / n, 1, -1 / f + 1 / n, 1 / f);
+            // { (f-n)/n, 1, (f-n)/(n*f), 1/f }
+            rawCameraData.zBufferParams = glm::float4((f - n) / n, 1, (f - n) / (n * f), 1 / f);
         }
         else
         {
-            rawCameraData.zBufferParams = glm::float4(1 - f / n, f / n, 1 / f - 1 / n, 1 / n);
+            rawCameraData.zBufferParams = glm::float4((f - n) / n, f / n, (f - n) / (n * f), 1 / n);
         }
     }
 
@@ -267,17 +263,17 @@ namespace MoYu
 
     glm::float3 RenderCamera::forward() const
     { 
-        return (rawCameraData.m_invRotation * (-Z));
+        return (rawCameraData.m_invRotation * glm::float3(0, 0, -1));
     }
 
     glm::float3 RenderCamera::up() const
     {
-        return (rawCameraData.m_invRotation * Y);
+        return (rawCameraData.m_invRotation * glm::float3(0, 1, 0));
     }
 
     glm::float3 RenderCamera::right() const
     {
-        return (rawCameraData.m_invRotation * X);
+        return (rawCameraData.m_invRotation * glm::float3(1, 0, 0));
     }
 
     glm::float4x4 RenderCamera::getViewMatrix()
@@ -365,7 +361,7 @@ namespace MoYu
 
         {
             // Analyze the projection matrix.
-            // p[2][3] = (reverseZ ? 1 : -1) * (depth_0_1 ? 1 : 2) * (f * n) / (f - n)
+            // p[3][2] = (reverseZ ? 1 : -1) * (depth_0_1 ? 1 : 2) * (f * n) / (f - n)
             float n = rawCameraData.m_nearClipPlane;
             float f = rawCameraData.m_farClipPlane;
             float scale = rawCameraData.m_project_matrix[3][2] / (f * n) * (f - n);
@@ -432,28 +428,7 @@ namespace MoYu
         return MoYu::MYMatrix4x4::perspective(xm * cn, xp * cn, ym * cn, yp * cn, cn, cf);
     }
 
-    static glm::float4x4 Scale(glm::float3 vector)
-    {
-        glm::float4x4 result;
-        result[0][0] = vector.x;
-        result[1][0] = 0.0f;
-        result[2][0] = 0.0f;
-        result[3][0] = 0.0f;
-        result[0][1] = 0.0f;
-        result[1][1] = vector.y;
-        result[2][1] = 0.0f;
-        result[3][1] = 0.0f;
-        result[0][2] = 0.0f;
-        result[1][2] = 0.0f;
-        result[2][2] = vector.z;
-        result[3][2] = 0.0f;
-        result[0][3] = 0.0f;
-        result[1][3] = 0.0f;
-        result[2][3] = 0.0f;
-        result[3][3] = 1.0f;
-        return result;
-    }
-
+    /*
     glm::float4x4 RenderCamera::ComputePixelCoordToWorldSpaceViewDirectionMatrix(ViewConstants viewConstants, glm::float4 resolution, float aspect)
     {
         // Asymmetry is also possible from a user-provided projection, so we must check for it too.
@@ -488,5 +463,151 @@ namespace MoYu
     {
         transforms = ComputePixelCoordToWorldSpaceViewDirectionMatrix(mainViewConstants, resolution, aspect);
     }
+    */
 
+
+
+
+
+    static constexpr float PROJ_EPSILON = 1e-6f;
+
+    // 辅助函数2: 通用路径实现 - 处理任意投影矩阵
+    glm::float4x4 ComputeGenericPixelToViewDirMatrix(const ViewConstants& viewConstants, const glm::float4& resolution)
+    {
+        // 简化的屏幕空间到NDC变换
+        glm::mat4 screenToNDC(
+            glm::vec4(2.0f * resolution.z, 0.0f, 0.0f, 0.0f),
+            glm::vec4(0.0f, 2.0f * resolution.w, 0.0f, 0.0f),
+            glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+            glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f)
+        );
+
+        // 无需坐标系校正
+        return viewConstants.invViewProjMatrix * screenToNDC;
+    }
+
+    // 新增：检测是否使用Reverse Z
+    bool IsUsingReverseZ(const glm::mat4& projMatrix)
+    {
+        // 方法1: 检查投影矩阵参数
+        // 对于透视投影，标准Z: proj[2][2] = (far+near)/(far-near)
+        //              reverse Z: proj[2][2] = (far)/(far-near)
+        // 但这依赖于具体实现，更可靠的方法是:
+
+        // 方法2: 检查近远平面映射 (更可靠)
+        // 在NDC中，z=0应该映射到近平面
+        glm::vec4 ndcNear(0.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec4 clipNear = glm::inverse(projMatrix) * ndcNear;
+        float zNear = clipNear.z / clipNear.w;
+
+        // 如果zNear > 0，可能是标准Z；如果zNear < 0，可能是reverse Z
+        // 但这仍然不够可靠
+
+        // 最可靠方法: 引擎配置 (推荐)
+        return MOYU_REVERSE_DEPTH;
+    }
+
+    glm::mat4 ComputeOrthographicPixelToViewDir(
+        const ViewConstants& viewConstants,
+        const glm::vec4& resolution,
+        float aspect,
+        bool isReverseZ)
+    {
+        float projElem = viewConstants.projMatrix[1][1];
+        float orthoHeight = 2.0f / glm::abs(projElem);
+        float orthoWidth = orthoHeight * aspect;
+
+        // 正交投影: 所有视线平行，Z值不影响方向
+        glm::mat4 pixelToViewSpace(
+            glm::vec4(2.0f * orthoWidth * resolution.z, 0.0f, 0.0f, 0.0f),
+            glm::vec4(0.0f, 2.0f * orthoHeight * resolution.w, 0.0f, 0.0f),
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f),  // Z不影响方向
+            glm::vec4(-orthoWidth, -orthoHeight, 0.0f, 1.0f)
+        );
+
+        // 仅应用旋转，不应用平移 (正交投影视线平行)
+        glm::mat4 viewToWorld = glm::mat4(glm::transpose(glm::mat3(viewConstants.viewMatrix)));
+
+        return viewToWorld * pixelToViewSpace;
+    }
+
+    glm::mat4 ComputePerspectivePixelToViewDir(
+        const ViewConstants& viewConstants,
+        const glm::vec4& resolution,
+        float aspect,
+        bool isReverseZ)
+    {
+        // 1. 从投影矩阵提取参数
+        float projElem = viewConstants.projMatrix[1][1];
+        if (glm::abs(projElem) < PROJ_EPSILON) {
+            projElem = 1.0f / glm::tan(glm::radians(30.0f));
+        }
+
+        float verticalFoV = 2.0f * glm::atan(1.0f / glm::abs(projElem));
+        float tanHalfFovY = glm::tan(verticalFoV * 0.5f);
+        float tanHalfFovX = tanHalfFovY * aspect;
+
+        // 2. 计算相机位置 (世界空间)
+        glm::vec3 cameraPosition = -glm::transpose(glm::mat3(viewConstants.viewMatrix)) *
+            glm::vec3(viewConstants.viewMatrix[3]);
+
+        // 3. 构建像素到视图方向的变换
+        glm::mat4 pixelToViewDir(
+            glm::vec4(2.0f * tanHalfFovX * resolution.z, 0.0f, 0.0f, 0.0f),
+            glm::vec4(0.0f, 2.0f * tanHalfFovY * resolution.w, 0.0f, 0.0f),
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f),
+            glm::vec4(-tanHalfFovX, -tanHalfFovY, -1.0f, 0.0f)  // Z=-1.0f 指向相机前方
+        );
+
+        // 4. 构建视图到世界空间的变换
+        glm::mat4 viewToWorld = glm::mat4(glm::transpose(glm::mat3(viewConstants.viewMatrix)));
+        viewToWorld[3] = glm::vec4(cameraPosition, 1.0f);  // 添加相机位置
+
+        return viewToWorld * pixelToViewDir;
+    }
+
+    // 辅助函数3: 优化路径实现 - 标准对称投影
+    glm::float4x4 ComputeOptimizedPixelToViewDirMatrix(const ViewConstants& viewConstants, const glm::float4& resolution, float aspect)
+    {
+        // 1. 检查Z缓冲类型 (从投影矩阵推断)
+    //    标准方法: 检查投影矩阵的[2][2]和[3][2]元素
+        bool isReverseZ = IsUsingReverseZ(viewConstants.projMatrix);
+        bool isOrthographic = glm::abs(viewConstants.projMatrix[3][2]) < PROJ_EPSILON;
+
+        float projElem = viewConstants.projMatrix[1][1];
+        if (glm::abs(projElem) < PROJ_EPSILON) {
+            projElem = 1.0f / glm::tan(glm::radians(30.0f));
+        }
+
+        // 2. 处理不同Z缓冲类型
+        if (isOrthographic) {
+            return ComputeOrthographicPixelToViewDir(viewConstants, resolution, aspect, isReverseZ);
+        }
+        else {
+            return ComputePerspectivePixelToViewDir(viewConstants, resolution, aspect, isReverseZ);
+        }
+    }
+
+    glm::float4x4 RenderCamera::ComputePixelCoordToWorldSpaceViewDirectionMatrix(ViewConstants viewConstants, glm::float4 resolution, float aspect)
+    {
+        // 步骤1: 检测投影矩阵是否非对称
+        // 非对称投影包括: 镜头偏移、VR立体投影、自定义投影矩阵等
+        bool isAsymmetric = HDUtils::IsProjectionMatrixAsymmetric(viewConstants.projMatrix);
+
+        // 步骤2: 根据投影类型选择最优计算路径
+        if (isAsymmetric)
+        {
+            // ===== 通用路径: 处理任意投影矩阵 =====
+            return ComputeGenericPixelToViewDirMatrix(viewConstants, resolution);
+        }
+        else
+        {
+            // ===== 优化路径: 标准对称投影 =====
+            return ComputeOptimizedPixelToViewDirMatrix(viewConstants, resolution, aspect);
+        }
+    }
+
+
+
+    
 } // namespace MoYu

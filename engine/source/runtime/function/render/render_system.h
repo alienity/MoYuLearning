@@ -6,7 +6,7 @@
 
 #include "runtime/resource/res_type/components/mesh_renderer.h"
 #include "runtime/resource/res_type/components/volume_renderer.h"
-#include "runtime/resource/res_type/components/terrain_renderer.h"
+#include "runtime/resource/res_type/components/terrain.h"
 
 #include <array>
 #include <memory>

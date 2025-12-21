@@ -584,12 +584,6 @@ namespace MoYu
         );
 
         /**
-         * Optimized version: Create quaternion from direction vector (right-handed coordinate system, assuming up direction is (0,1,0))
-         * Suitable for common scenarios like FPS/TPS cameras, avoids matrix conversion
-         */
-        glm::quat fastDirectionToQuaternion(const glm::float3& direction);
-
-        /**
          * Get direction vector from quaternion (right-handed coordinate system)
          *
          * @param rotation Rotation quaternion
@@ -839,7 +833,7 @@ namespace MoYu
     ContainmentFlag IsFrustumContainBSphere(const Frustum f, const BSphere& bsphere);
 
     // mvp row major storage
-    Frustum ExtractPlanesDX(const glm::float4x4 mvp);
+    static Frustum ExtractPlanesDX(const glm::float4x4 mvp);
     void UpdateFrustumCorners(Frustum& frustum);
 
     struct OrientedBBox
