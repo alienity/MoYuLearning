@@ -4,6 +4,10 @@
 #include "runtime/function/render/render_guid_allocator.h"
 #include "runtime/function/render/render_swap_context.h"
 
+#include "runtime/resource/res_type/components/mesh_renderer.h"
+#include "runtime/resource/res_type/components/volume_renderer.h"
+#include "runtime/resource/res_type/components/terrain_renderer.h"
+
 #include <array>
 #include <memory>
 #include <optional>
@@ -18,6 +22,7 @@ namespace MoYu
     class WindowUI;
 
     struct EngineContentViewport;
+    struct GlobalRenderingRes;
 
     struct RenderSystemInitInfo
     {
@@ -52,5 +57,11 @@ namespace MoYu
         std::shared_ptr<RendererManager> m_renderer_manager;
 
         void processSwapData(float deltaTimeMs);
+        void setupRenderCamera(const GlobalRenderingRes& global_rendering_res);
+        
+        // 资源预加载函数
+        void preloadMeshResources(const SceneMeshRenderer& meshRenderer);
+        void preloadVolumeResources(const SceneVolumeFogRenderer& volumeRenderer);
+        void preloadTerrainResources(const SceneTerrainRenderer& terrainRenderer);
     };
 } // namespace MoYu

@@ -17,6 +17,8 @@
 
 #include "runtime/platform/system/systemtime.h"
 
+#include <future>
+
 namespace MoYu
 {
     RenderSystem::~RenderSystem() 
@@ -81,15 +83,7 @@ namespace MoYu
         m_render_resource->InitDefaultTextures();
         
         // setup render camera
-        const CameraPose& camera_pose = global_rendering_res.m_camera_config.m_pose;
-        m_render_camera = std::make_shared<RenderCamera>(true);
-
-        m_render_camera->updateCameraData(true, 
-            MoYu::MYMatrix4x4::lookAtRH(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up), 
-            g_WindowConfig.width, g_WindowConfig.height, 
-            global_rendering_res.m_camera_config.m_z_near,
-            global_rendering_res.m_camera_config.m_z_far,
-            global_rendering_res.m_camera_config.m_fovY);
+        setupRenderCamera(global_rendering_res);
 
         // setup render scene
         m_render_scene = std::make_shared<RenderScene>();
@@ -107,6 +101,19 @@ namespace MoYu
         //m_renderer_manager->PreparePassData(m_render_resource);
     }
 
+    void RenderSystem::setupRenderCamera(const GlobalRenderingRes& global_rendering_res)
+    {
+        const CameraPose& camera_pose = global_rendering_res.m_camera_config.m_pose;
+        m_render_camera = std::make_shared<RenderCamera>(true);
+
+        m_render_camera->updateCameraData(true, 
+            MoYu::MYMatrix4x4::lookAtRH(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up), 
+            g_WindowConfig.width, g_WindowConfig.height, 
+            global_rendering_res.m_camera_config.m_z_near,
+            global_rendering_res.m_camera_config.m_z_far,
+            global_rendering_res.m_camera_config.m_fovY);
+    }
+
     void RenderSystem::tick()
     {
         // tick time
@@ -114,6 +121,9 @@ namespace MoYu
 
         // process swap data between logic and render contexts
         this->processSwapData(deltaTimeMilisec);
+
+        // Process pending GPU resource uploads
+        m_render_resource->processPendingGPUUploads();
 
         // prepare pipeline's render passes data
         m_renderer_manager->PreparePassData(m_render_resource);
@@ -146,7 +156,91 @@ namespace MoYu
         //m_render_scene->clearForLevelReloading();
     }
 
-    void RenderSystem::processSwapData(float deltaTimeMs)
+    void RenderSystem::preloadMeshResources(const SceneMeshRenderer& meshRenderer)
+    {
+        // Preload mesh file
+        if (!meshRenderer.m_scene_mesh.m_sub_mesh_file.empty()) {
+            // Check if resource is already loaded or currently loading
+            ResourceLoadState state = m_render_resource->getResourceLoadState(meshRenderer.m_scene_mesh.m_sub_mesh_file);
+            if (state == ResourceLoadState::NotLoaded) {
+                // Asynchronously load mesh data
+                m_render_resource->asyncLoadMeshData(meshRenderer.m_scene_mesh.m_sub_mesh_file);
+            }
+        }
+
+        // Preload material related textures
+        for (const auto& material : meshRenderer.m_material) {
+            // Preload base color texture
+            if (!material.m_base_color_texture.m_image_file.empty()) {
+                ResourceLoadState state = m_render_resource->getResourceLoadState(material.m_base_color_texture.m_image_file);
+                if (state == ResourceLoadState::NotLoaded) {
+                    m_render_resource->asyncLoadImage(material.m_base_color_texture.m_image_file);
+                }
+            }
+
+            // Preload normal texture
+            if (!material.m_normal_texture.m_image_file.empty()) {
+                ResourceLoadState state = m_render_resource->getResourceLoadState(material.m_normal_texture.m_image_file);
+                if (state == ResourceLoadState::NotLoaded) {
+                    m_render_resource->asyncLoadImage(material.m_normal_texture.m_image_file);
+                }
+            }
+
+            // Preload metallic roughness texture
+            if (!material.m_metallic_roughness_texture.m_image_file.empty()) {
+                ResourceLoadState state = m_render_resource->getResourceLoadState(material.m_metallic_roughness_texture.m_image_file);
+                if (state == ResourceLoadState::NotLoaded) {
+                    m_render_resource->asyncLoadImage(material.m_metallic_roughness_texture.m_image_file);
+                }
+            }
+
+            // Preload occlusion texture
+            if (!material.m_occlusion_texture.m_image_file.empty()) {
+                ResourceLoadState state = m_render_resource->getResourceLoadState(material.m_occlusion_texture.m_image_file);
+                if (state == ResourceLoadState::NotLoaded) {
+                    m_render_resource->asyncLoadImage(material.m_occlusion_texture.m_image_file);
+                }
+            }
+
+            // Preload emissive texture
+            if (!material.m_emissive_texture.m_image_file.empty()) {
+                ResourceLoadState state = m_render_resource->getResourceLoadState(material.m_emissive_texture.m_image_file);
+                if (state == ResourceLoadState::NotLoaded) {
+                    m_render_resource->asyncLoadImage(material.m_emissive_texture.m_image_file);
+                }
+            }
+        }
+    }
+    void RenderSystem::preloadVolumeResources(const SceneVolumeFogRenderer& volumeRenderer)
+    {
+        // Preload volume noise texture
+        if (!volumeRenderer.m_scene_volumetric_fog.m_NoiseImage.m_image.m_image_file.empty()) {
+            ResourceLoadState state = m_render_resource->getResourceLoadState(volumeRenderer.m_scene_volumetric_fog.m_NoiseImage.m_image.m_image_file);
+            if (state == ResourceLoadState::NotLoaded) {
+                m_render_resource->asyncLoadImage(volumeRenderer.m_scene_volumetric_fog.m_NoiseImage.m_image.m_image_file);
+            }
+        }
+    }
+    void RenderSystem::preloadTerrainResources(const SceneTerrainRenderer& terrainRenderer)
+    {
+        // Preload height texture
+        if (!terrainRenderer.m_scene_terrain_mesh.m_terrain_height_map.m_image_file.empty()) {
+            ResourceLoadState state = m_render_resource->getResourceLoadState(terrainRenderer.m_scene_terrain_mesh.m_terrain_height_map.m_image_file);
+            if (state == ResourceLoadState::NotLoaded) {
+                m_render_resource->asyncLoadImage(terrainRenderer.m_scene_terrain_mesh.m_terrain_height_map.m_image_file);
+            }
+        }
+
+        // Preload normal texture
+        if (!terrainRenderer.m_scene_terrain_mesh.m_terrain_normal_map.m_image_file.empty()) {
+            ResourceLoadState state = m_render_resource->getResourceLoadState(terrainRenderer.m_scene_terrain_mesh.m_terrain_normal_map.m_image_file);
+            if (state == ResourceLoadState::NotLoaded) {
+                m_render_resource->asyncLoadImage(terrainRenderer.m_scene_terrain_mesh.m_terrain_normal_map.m_image_file);
+            }
+        }
+
+    }
+	void RenderSystem::processSwapData(float deltaTimeMs)
     {
         RenderSwapData& swap_data = m_swap_context.getRenderSwapData();
 
@@ -178,11 +272,15 @@ namespace MoYu
                     if (objParts[i].m_component_type & ComponentType::C_MeshRenderer)
                     {
                         MoYu::SceneMeshRenderer meshRenderer = objParts[i].m_mesh_renderer_desc;
+                        // Preload mesh resources
+                        preloadMeshResources(meshRenderer);
                         m_render_scene->updateMeshRenderer(meshRenderer, meshTransform, m_render_resource);
                     }
-                    if (objParts[i].m_component_type & ComponentType::C_Volume)
+                    else if (objParts[i].m_component_type & ComponentType::C_Volume)
                     {
                         SceneVolumeFogRenderer volumeRenderer = objParts[i].m_volume_render_desc;
+                        // Preload volume resources
+                        preloadVolumeResources(volumeRenderer);
                         m_render_scene->updateVolumeRenderer(volumeRenderer, meshTransform, m_render_resource);
                     }
                     else if (objParts[i].m_component_type & ComponentType::C_Light)
@@ -198,6 +296,8 @@ namespace MoYu
                     else if (objParts[i].m_component_type & ComponentType::C_Terrain)
                     {
                         MoYu::SceneTerrainRenderer terrainRenderer = objParts[i].m_terrain_mesh_renderer_desc;
+                        // Preload terrain resources
+                        preloadTerrainResources(terrainRenderer);
                         m_render_scene->updateTerrainRenderer(terrainRenderer, meshTransform, m_render_resource);
                     }
                 }

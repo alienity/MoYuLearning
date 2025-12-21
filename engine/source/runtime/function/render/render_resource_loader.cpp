@@ -33,7 +33,6 @@
 #include <cctype>
 #include <algorithm>
 
-
 namespace MoYu
 {
     void RenderResourceBase::iniUploadBatch(RHI::D3D12Device* device)
@@ -65,6 +64,76 @@ namespace MoYu
                                               ->ExecuteCommandLists({}, false);
 
         m_GraphicsMemory->Commit(syncHandle);
+    }
+    
+    std::future<std::shared_ptr<MoYuScratchImage>> RenderResourceBase::asyncLoadImage(std::string file)
+    {
+        // Mark resource as loading
+        setResourceLoadState(file, ResourceLoadState::Loading);
+        
+        // Launch async task to load image
+        return std::async(std::launch::async, [this, file]() {
+            auto result = loadImage(file);
+            setResourceLoadState(file, ResourceLoadState::CPULoaded);
+            return result;
+        });
+    }
+
+    std::future<RenderMeshData> RenderResourceBase::asyncLoadMeshData(std::string mesh_file)
+    {
+        // Mark resource as loading
+        setResourceLoadState(mesh_file, ResourceLoadState::Loading);
+        
+        // Launch async task to load mesh
+        return std::async(std::launch::async, [this, mesh_file]() {
+            auto result = loadMeshData(mesh_file);
+            setResourceLoadState(mesh_file, ResourceLoadState::CPULoaded);
+            return result;
+        });
+    }
+
+    void RenderResourceBase::setResourceLoadState(const std::string& key, ResourceLoadState state)
+    {
+        std::lock_guard<std::mutex> lock(m_UploadQueueMutex);
+        _ResourceLoadStates[key] = state;
+    }
+
+    ResourceLoadState RenderResourceBase::getResourceLoadState(const std::string& key)
+    {
+        std::lock_guard<std::mutex> lock(m_UploadQueueMutex);
+        auto it = _ResourceLoadStates.find(key);
+        if (it != _ResourceLoadStates.end()) {
+            return it->second;
+        }
+        return ResourceLoadState::NotLoaded;
+    }
+
+    void RenderResourceBase::queueResourceForGPUUpload(const std::string& key, std::function<void()> upload_func)
+    {
+        std::lock_guard<std::mutex> lock(m_UploadQueueMutex);
+        m_PendingGPUUploads.push({key, upload_func});
+        setResourceLoadState(key, ResourceLoadState::GPULoading);
+    }
+
+    bool RenderResourceBase::processPendingGPUUploads()
+    {
+        bool processedAny = false;
+        std::lock_guard<std::mutex> lock(m_UploadQueueMutex);
+        
+        // Process all pending uploads
+        while (!m_PendingGPUUploads.empty()) {
+            auto uploadTask = m_PendingGPUUploads.front();
+            m_PendingGPUUploads.pop();
+            
+            // Execute the upload function
+            uploadTask.upload_function();
+            
+            // Mark as uploaded
+            _ResourceLoadStates[uploadTask.resource_key] = ResourceLoadState::GPULoaded;
+            processedAny = true;
+        }
+        
+        return processedAny;
     }
     
     /*
@@ -111,7 +180,7 @@ namespace MoYu
                     texture->Initialize2D(DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, iw, ih, 1, 1);
                     uint8_t* _pixels = texture->GetPixels();
                     memcpy(_pixels, _load_pixels, sizeof(float) * 4 * iw * ih);
-                    free(_pixels);
+                    free(_load_pixels);
                 }
             }
 
@@ -167,8 +236,8 @@ namespace MoYu
 
     std::shared_ptr<MoYuScratchImage> RenderResourceBase::loadImage(std::string file)
     {
-        auto _image = _TextureData_Caches.find(file);
-        if (_image == _TextureData_Caches.end())
+        auto _asset = _AssetData_Caches.find(file);
+        if (_asset == _AssetData_Caches.end() || _asset->second.type != ResourceType::Texture)
         {
             std::shared_ptr<AssetManager> asset_manager = g_runtime_global_context.m_asset_manager;
             ASSERT(asset_manager);
@@ -180,9 +249,9 @@ namespace MoYu
             auto texture = std::make_shared<MoYuScratchImage>();
 
             int iw, ih, in;
-            in = 4;
-            int desired_channels = in;
-
+            // No longer preset the number of channels, let stbi automatically detect
+            int desired_channels = 0; // 0 means using the native channel count of the image
+            
             if (file_extension == ".hdr")
             {
                 if (stbi_is_hdr(file.c_str()))
@@ -235,23 +304,51 @@ namespace MoYu
             else
             {
                 auto _load_pixels = stbi_load(file_path_str.c_str(), &iw, &ih, &in, desired_channels);
-                texture->Initialize2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_TYPELESS, iw, ih, 1, 1);
+                
+                // Select appropriate DXGI format based on actual channel count
+                DXGI_FORMAT format;
+                switch(in) 
+                {
+                case 1:
+                    format = DXGI_FORMAT::DXGI_FORMAT_R8_TYPELESS;
+                    break;
+                case 2:
+                    format = DXGI_FORMAT::DXGI_FORMAT_R8G8_TYPELESS;
+                    break;
+                case 3:
+                    format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_TYPELESS; // STBI converts 3 channels to 4 channels
+                    break;
+                case 4:
+                default:
+                    format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_TYPELESS;
+                    break;
+                }
+
+                texture->Initialize2D(format, iw, ih, 1, 1);
                 uint8_t* _pixels = texture->GetPixels();
-                memcpy(_pixels, _load_pixels, sizeof(char) * 4 * iw * ih);
+                
+                // Calculate the correct copy size
+                size_t pixel_size = iw * ih * in * sizeof(unsigned char);
+                memcpy(_pixels, _load_pixels, pixel_size);
                 stbi_image_free(_load_pixels);
             }
 
-            _TextureData_Caches[file] = texture;
+            // Store in unified cache with type information
+            AssetResource assetResource;
+            assetResource.type = ResourceType::Texture;
+            assetResource.data = texture;
+            _AssetData_Caches[file] = assetResource;
 
             return texture;
         }
 
-        return _image->second;
+        return std::get<std::shared_ptr<MoYuScratchImage>>(_asset->second.data);
     }
 
     RenderMeshData RenderResourceBase::loadMeshData(std::string mesh_file)
     {
-        if (_MeshData_Caches.find(mesh_file) == _MeshData_Caches.end())
+        auto _asset = _AssetData_Caches.find(mesh_file);
+        if (_asset == _AssetData_Caches.end() || _asset->second.type != ResourceType::Mesh)
         {
             std::shared_ptr<AssetManager> asset_manager = g_runtime_global_context.m_asset_manager;
             ASSERT(asset_manager);
@@ -329,13 +426,17 @@ namespace MoYu
                 }
             }
 
-            _MeshData_Caches[mesh_file] = ret;
+            // Store in unified cache with type information
+            AssetResource assetResource;
+            assetResource.type = ResourceType::Mesh;
+            assetResource.data = ret;
+            _AssetData_Caches[mesh_file] = assetResource;
 
             return ret;
         }
         else
         {
-            return _MeshData_Caches[mesh_file];
+            return std::get<RenderMeshData>(_asset->second.data);
         }
     }
 
